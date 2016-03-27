@@ -1,0 +1,25 @@
+#ifndef Windows
+ #include <sys/types.h>
+#else
+ #include <BaseTsd.h> 
+#endif
+
+#define ${CMAKE_SYSTEM_NAME}
+
+#define BLOCKSIZE 255
+
+#define PATHSIZE 1024
+
+#define MAXDEFAULTCONN 255
+
+#define MAXHEADERSIZE 16384
+
+#define EPOLLWAIT 2000
+
+#ifdef WIN32
+  #define NEWLINE "\r\n"
+#else
+  #define NEWLINE "\n"
+#endif
+
+#define DEBUG

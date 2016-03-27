@@ -1,0 +1,42 @@
+#include <iostream>
+#include "../src/exception.h"
+
+#include "http.h"
+#include "httpd.h"
+
+class ConnectionTest {
+  
+};
+
+void libhttppp::Queue::RequestEvent(libhttppp::Connection *curcon){
+   try{
+     std::cerr << "Parse Request\n";
+     HttpRequest curreq;
+     curreq.parse(curcon);
+     std::cerr << "Send answer\n";
+     HttpResponse curres;
+     curres.setState(HTTP200);
+     curres.setVersion(HTTPVERSION(1.1));
+     curres.send(curcon,"test\r\n",6);
+   }catch(HTTPException &e){
+     std::cerr << e.what() << "\n";
+     throw e;
+   }
+}
+
+class HttpConD : public libhttppp::HttpD {
+public:
+  HttpConD(int argc, char** argv) : HttpD(argc,argv){
+    libhttppp::HTTPException httpexception;
+    try {
+      runDaemon();
+    }catch(libhttppp::HTTPException &e){
+      std::cerr << e.what() << "\n";
+    }
+  };
+private:
+};
+
+int main(int argc, char** argv){
+  HttpConD(argc,argv);
+}
