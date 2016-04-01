@@ -60,9 +60,11 @@ namespace libhttppp {
     Connection     *nextConnection();
     
     int             copyValue(ConnectionData* startblock, int startpos, 
-                          ConnectionData* endblock, int endpos, char** buffer);
+                              ConnectionData* endblock, int endpos, char** buffer);
     int             searchValue(ConnectionData* startblock, ConnectionData** findblock, 
-			    const char* keyword,size_t keylen);
+ 			        const char* keyword);
+    int             searchValue(ConnectionData* startblock, ConnectionData** findblock, 
+			        const char* keyword,size_t keylen);
     
     ConnectionData *addSendQueue(const char *data,size_t datasize);
     ConnectionData *resizeSendQueue(size_t size);

@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "http.h" 
 #include <algorithm>
+#include <sstream>
 
 #ifdef WIN32
 #include "win32.h"
@@ -131,18 +132,30 @@ void HttpHeader::deldata(const char* key){
 }
 
 const char* HttpHeader::getHeader(){
-  if(_Header)
-    delete[] _Header;
-  _HeaderSize=((_HeaderDataSize+_HeadlineLen)+((4*_Elements)+3));
-  _Header=new char[(_HeaderSize+1)];
-  std::copy(_Headline,_Headline+_HeadlineLen,_Header);
-  size_t pos=_HeadlineLen;
+//   delete[] _Header;
+//   _HeaderSize=((_HeaderDataSize+_HeadlineLen)+((4*_Elements)+3));
+//   _Header=new char[(_HeaderSize+1)];
+//   std::copy(_Headline,_Headline+_HeadlineLen,_Header);
+//   size_t pos=_HeadlineLen;
+//   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
+//     pos+=(snprintf(_Header+pos,(_HeaderSize-pos),
+// 		   "%s: %s\r\n",curdat->_Key,curdat->_Value));
+//   }
+//   snprintf(_Header+pos,_HeaderSize,"\r\n");
+//   _Header[_HeaderSize]='\0';
+//   std::cerr << _Header;
+//   return _Header;
+  delete[] _Header;
+  std::stringstream hstream;
+  hstream << _Headline;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    pos+=(snprintf(_Header+pos,(_HeaderSize-pos),
-		   "%s: %s\r\n",curdat->_Key,curdat->_Value));
+    hstream << curdat->_Key << ": " << curdat->_Value << "\r\n";
   }
-  snprintf(_Header+pos,_HeaderSize,"\r\n");
-  _Header[_HeaderSize]='\0';
+  hstream << "\r\n";
+  std::string hdat=hstream.str();
+  _Header=new char[(hdat.length()+1)];
+  _HeaderSize=hdat.length();
+  std::copy(hdat.c_str(),hdat.c_str()+(hdat.length()+1),_Header);
   std::cerr << _Header;
   return _Header;
 }
@@ -220,8 +233,7 @@ void HttpResponse::send(Connection* curconnection, const char* data){
 void HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
   _HeadlineLen=snprintf(_Headline,512,"%s %s\r\n",_Version,_State);
   setData("Content-Length",datalen);
-  const char *header=getHeader();
-  curconnection->addSendQueue(header,getHeaderSize());
+  curconnection->addSendQueue(getHeader(),getHeaderSize());
   if(datalen!=0)
     curconnection->addSendQueue(data,datalen);
 }

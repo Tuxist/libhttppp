@@ -119,8 +119,7 @@ ConnectionData *Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datas
 }
 
 void Connection::cleanRecvData(){
-  if(_ReadDataFirst)
-    delete _ReadDataFirst;
+   delete _ReadDataFirst;
   _ReadDataFirst=NULL;
   _ReadDataLast=NULL;
   _ReadDataSize=0;
@@ -196,10 +195,13 @@ int Connection::copyValue(ConnectionData* startblock, int startpos,
 }
 
 int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
+			    const char* keyword){
+  searchValue(startblock, findblock, keyword,strlen(keyword));
+}
+
+int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
 			    const char* keyword,size_t keylen){
   size_t fpos=0,fcurpos=0;
-  if(keylen==(size_t)0)
-    keylen=strlen(keyword);
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
     for(size_t pos=0; pos<curdat->getDataSize(); pos++){
       if(keyword[fcurpos]==curdat->_Data[pos]){
@@ -250,12 +252,9 @@ Connection::Connection(ClientSocket *clientsocket){
 }
 
 Connection::~Connection(){
-  if(_ReadDataFirst)
-    delete _ReadDataFirst;
-  if(_SendDataFirst)
-    delete _SendDataFirst;
-  if(_nextConnection)
-    delete _nextConnection;
+  delete _ReadDataFirst;
+  delete _SendDataFirst;
+  delete _nextConnection;
 }
 
 
@@ -271,7 +270,6 @@ ConnectionPool::ConnectionPool(ServerSocket *socket){
 }
 
 ConnectionPool::~ConnectionPool(){
-  if(_firstConnection)
     delete _firstConnection;
 }
 
