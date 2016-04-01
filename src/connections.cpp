@@ -64,6 +64,15 @@ Connection *Connection::nextConnection(){
   return _nextConnection; 
 }
 
+/** \brief a method to add Data to Sendqueue
+  * \param data an const char* to add to sendqueue
+  * \param datasize an size_t 
+  * \return the last ConnectionData Block from Sendqueue
+  * 
+  * This method does unbelievably useful things.  
+  * And returns exceptionally useful results.
+  * Use it everyday with good health.
+  */
 ConnectionData *Connection::addSendQueue(const char*data,size_t datasize){
   size_t written=0;
   for(size_t cursize=datasize; cursize>0; cursize=datasize-written){

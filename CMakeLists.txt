@@ -18,6 +18,6 @@ ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
 configure_file(config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-# add_subdirectory(doc)
+add_subdirectory(doc)
 add_subdirectory(src)
 add_subdirectory(test)
