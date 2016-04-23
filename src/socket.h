@@ -50,7 +50,7 @@ namespace libhttppp {
   public:
     ClientSocket();
     ~ClientSocket();
-    void setnonblocking();
+    void              setnonblocking();
 #ifndef WIN32
     int               getSocket();
 #else
@@ -82,6 +82,7 @@ namespace libhttppp {
     ~ServerSocket();
 
     int           getMaxconnections();
+    void          setnonblocking();
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size);
   private:

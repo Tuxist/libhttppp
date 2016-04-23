@@ -32,6 +32,7 @@ using namespace libhttppp;
 HttpD::HttpD(int argc, char** argv){
   int port=0;
   _MaxConnections=MAXDEFAULTCONN;
+  _Queue=NULL;
   char *httpaddr=NULL,*rootpath=NULL;
   for(int args=1; args<argc; args++){
     if(strncmp(argv[args],"--httpaddr=",11)==0){
@@ -68,6 +69,6 @@ void HttpD::runDaemon(){
 }
 
 HttpD::~HttpD(){
-  if(_Queue)
-    delete _Queue;
+  delete _ServerSocket;
+  delete _Queue;
 }

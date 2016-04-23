@@ -205,7 +205,7 @@ int Connection::copyValue(ConnectionData* startblock, int startpos,
 
 int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
 			    const char* keyword){
-  searchValue(startblock, findblock, keyword,strlen(keyword));
+  return searchValue(startblock, findblock, keyword,strlen(keyword));
 }
 
 int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
@@ -249,8 +249,8 @@ bool Connection::tryUnlock(){
   }
 }
 
-Connection::Connection(ClientSocket *clientsocket){
-  _ClientSocket=clientsocket;
+Connection::Connection(){
+  _ClientSocket=new ClientSocket;
   _nextConnection=NULL;
   _ReadDataFirst=NULL;
   _ReadDataLast=NULL;
@@ -261,6 +261,7 @@ Connection::Connection(ClientSocket *clientsocket){
 }
 
 Connection::~Connection(){
+  delete _ClientSocket;
   delete _ReadDataFirst;
   delete _SendDataFirst;
   delete _nextConnection;
@@ -270,7 +271,6 @@ Connection::~Connection(){
 ConnectionPool::ConnectionPool(ServerSocket *socket){
   _firstConnection=NULL;
   _lastConnection=NULL;
-  _curConnection=NULL;
   _ServerSocket=socket;
   if(!_ServerSocket){
     _httpexception.Cirtical("ServerSocket not set!");
@@ -282,20 +282,15 @@ ConnectionPool::~ConnectionPool(){
     delete _firstConnection;
 }
 
-Connection* ConnectionPool::addConnection(ClientSocket *clientsocket){
-  try{
-    getConnection(clientsocket->getSocket());
-    throw _httpexception.Warning("Connection already exists!");
-  }catch(...){
+Connection* ConnectionPool::addConnection(){
   if(!_firstConnection){
-    _firstConnection=new Connection(clientsocket);
+    _firstConnection=new Connection;
     _lastConnection=_firstConnection;
   }else{
-    _lastConnection->_nextConnection=new Connection(clientsocket);
+    _lastConnection->_nextConnection=new Connection;
     _lastConnection=_lastConnection->_nextConnection;
   }
   return _lastConnection;
-  }
 }
 
 #ifndef WIN32
@@ -343,8 +338,7 @@ Connection* ConnectionPool::getConnection(ClientSocket *clientsocket){
     if(curcon->getClientSocket()==clientsocket)
       return curcon;
   }
-  _httpexception.Warning("Connection not found");
-  throw _httpexception;
+  return NULL;
 }
 
 #ifndef WIN32
@@ -356,6 +350,5 @@ Connection* ConnectionPool::getConnection(SOCKET socket){
     if(curcon->getClientSocket()->getSocket()==socket)
       return curcon;
   }
-  _httpexception.Warning("Connection not found");
-  throw _httpexception;
+  return NULL; 
 }

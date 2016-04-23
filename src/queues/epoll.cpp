@@ -67,11 +67,12 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
           /*will create warning debug mode that normally because the check already connection
            * with this socket if getconnection throw they will be create a new one
            */
-          ClientSocket *clientsocket = new ClientSocket;
+	  curcon=addConnection();
+	  ClientSocket *clientsocket=curcon->getClientSocket();
 	  clientsocket->setnonblocking();
           event.data.fd =_ServerSocket->acceptEvent(clientsocket);
           event.events = EPOLLIN | EPOLLRDHUP;
-          curcon=addConnection(clientsocket);
+          
           if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
         }catch(HTTPException &e){
@@ -149,8 +150,8 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
       }
     }
   }
-  if(events)
-    delete[] events;  
+  delete events;
+    
 }
 
 Queue::~Queue(){

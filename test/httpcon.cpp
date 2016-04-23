@@ -21,10 +21,10 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "  </head>"
              << "<body>"
              << "<p>Requested-Url: " << curreq->getRequestURL() << "</p>"
-	     << "<p> Host: " << curreq->getData("Host") << "</p>"
-             << "<p>User-Agent: " << curreq->getData("User-Agent") << "</p>"
-	     << "<p>Accept-Language: "<< curreq->getData("Accept-Language") << "</p>"
-	     << "<p>Accept-Encoding: "<< curreq->getData("Accept-Encoding") << "</p>"
+// 	     << "<p> Host: " << curreq->getData("Host") << "</p>"
+//              << "<p>User-Agent: " << curreq->getData("User-Agent") << "</p>"
+// 	     << "<p>Accept-Language: "<< curreq->getData("Accept-Language") << "</p>"
+// 	     << "<p>Accept-Encoding: "<< curreq->getData("Accept-Encoding") << "</p>"
 	     << "</body></html>";
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());

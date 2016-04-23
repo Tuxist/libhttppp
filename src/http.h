@@ -48,7 +48,13 @@ namespace libhttppp {
       HeaderData *_nextHeaderData;
       friend class HttpHeader;
     };
-    void        setVersion(const char *version);
+    
+    
+    HeaderData *getfirstHeaderData();
+    HeaderData *nextHeaderData(HeaderData *pos);
+    const char *getKey(HeaderData *pos);
+    const char *getValue(HeaderData *pos);
+    
     HeaderData *setData(const char *key,const char *value);
     HeaderData *setData(const char *key,const char *value,HeaderData *pos);
     HeaderData *setData(const char* key, size_t value,HeaderData *pos=NULL);
@@ -56,20 +62,11 @@ namespace libhttppp {
     const char *getData(const char *key,HeaderData **pos=NULL);
     void        deldata(const char *key);
     
-    const char *getHeader();
-    size_t      getHeaderSize();
   protected:
     HttpHeader();
     ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
-    char       *_Header;
-    size_t      _HeaderSize;
-    char        _Headline[512];
-    size_t      _HeadlineLen;
-    char        _Version[255];
-
-    size_t      _VersionLen;
     size_t      _HeaderDataSize;
     size_t      _Elements;
   };
@@ -78,16 +75,20 @@ namespace libhttppp {
   public:
     HttpResponse();
     ~HttpResponse();
-    void setState(const char *httpstate);
-    void setContentType(const char *type);
-    void setContentLength(size_t len);
-    void setConnection(const char *type);
-    void send(Connection *curconnection,const char* data);
-    void send(Connection *curconnection,const char* data, size_t datalen); //only use as server
-    void parse(ClientConnection *curconnection); //only use as client
+    void   setState(const char *httpstate);
+    void   setContentType(const char *type);
+    void   setContentLength(size_t len);
+    void   setConnection(const char *type);
+    void   setVersion(const char* version);
+    void   send(Connection *curconnection,const char* data);
+    void   send(Connection *curconnection,const char* data, size_t datalen); //only use as server
+    void   parse(ClientConnection *curconnection); //only use as client
+    size_t printHeader(char **buffer);
   private:
     char          _State[255];
     size_t        _Statelen;
+    char          _Version[255];
+    size_t        _VersionLen;
     HeaderData   *_Connection;
     HeaderData   *_ContentType;
     HeaderData   *_ContentLength;
@@ -99,17 +100,19 @@ namespace libhttppp {
   public:
     HttpRequest();
     ~HttpRequest();
-    void parse(Connection *curconnection); //only use as server
-    void send(ClientConnection *curconnection); //only use as client
-    
+    void           parse(Connection *curconnection); //only use as server
+    void           send(ClientConnection *curconnection); //only use as client
+    size_t         printHeader(char **buffer);
     const char    *getRequestURL();
-    char          *_Buffer;
   private:
+    char          *_Buffer;
     char          *_Request;
     size_t         _Requestsize;
     int            _RequestType;
     
     char           _RequestURL[255];
+    char           _Version[255];
+    size_t         _VersionLen;
     
     HttpHeader    *_HttpHeader;
     Connection    *_Connection;

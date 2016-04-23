@@ -98,7 +98,7 @@ namespace libhttppp {
     size_t          _ReadDataSize;
     std::mutex     *_Locked;   
     /*Helper functions*/
-    Connection(ClientSocket *clientsocket);
+    Connection();
     ~Connection();
     HTTPException   _httpexception;
     
@@ -110,7 +110,7 @@ namespace libhttppp {
   public:
     ConnectionPool(ServerSocket *socket);
     ~ConnectionPool();
-    Connection *addConnection(ClientSocket *clientsocket);
+    Connection *addConnection();
     
     Connection *delConnection(ClientSocket *clientsocket);
 #ifndef WIN32
@@ -129,7 +129,6 @@ namespace libhttppp {
   protected:
     HTTPException _httpexception;
     ServerSocket *_ServerSocket;
-    Connection   *_curConnection;
     Connection   *_firstConnection;
     Connection   *_lastConnection; 
   };

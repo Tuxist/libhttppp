@@ -179,12 +179,6 @@ SOCKET ServerSocket::acceptEvent(ClientSocket *clientsocket){
     strerror_r(errno,errbuf,255);
     _httpexception.Error(errbuf);
   }
-#ifndef WIN32
-  fcntl(socket, F_SETFL, O_NONBLOCK);
-#else
-  u_long bmode=1;
-  ioctlsocket(socket,FIONBIO,&bmode);
-#endif
   clientsocket->_Socket=socket;
   return socket;
 }

@@ -39,20 +39,24 @@ using namespace libhttppp;
 HttpHeader::HttpHeader(){
   _firstHeaderData=NULL;
   _lastHeaderData=NULL;
-  _Header=NULL;
   _Elements=0;
   _HeaderDataSize=0;
 }
 
-void HttpHeader::setVersion(const char* version){
-  if(version==NULL)
-    throw "http version not set don't do that !!!";
-  size_t vlen=strlen(version);
-  if(vlen>254)
-    throw "http version with over 255 signs sorry your are drunk !";
-  _VersionLen=vlen;
-  std::copy(version,version+vlen,_Version);
-  _Version[vlen]='\0';
+HttpHeader::HeaderData* HttpHeader::getfirstHeaderData(){
+  return _firstHeaderData;
+}
+
+HttpHeader::HeaderData* HttpHeader::nextHeaderData(HttpHeader::HeaderData* pos){
+  return pos->_nextHeaderData;
+}
+
+const char* HttpHeader::getKey(HttpHeader::HeaderData* pos){
+  return pos->_Key;
+}
+
+const char* HttpHeader::getValue(HttpHeader::HeaderData* pos){
+  return pos->_Value;
 }
 
 const char* HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
@@ -131,39 +135,6 @@ void HttpHeader::deldata(const char* key){
   }
 }
 
-const char* HttpHeader::getHeader(){
-//   delete[] _Header;
-//   _HeaderSize=((_HeaderDataSize+_HeadlineLen)+((4*_Elements)+3));
-//   _Header=new char[(_HeaderSize+1)];
-//   std::copy(_Headline,_Headline+_HeadlineLen,_Header);
-//   size_t pos=_HeadlineLen;
-//   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-//     pos+=(snprintf(_Header+pos,(_HeaderSize-pos),
-// 		   "%s: %s\r\n",curdat->_Key,curdat->_Value));
-//   }
-//   snprintf(_Header+pos,_HeaderSize,"\r\n");
-//   _Header[_HeaderSize]='\0';
-//   std::cerr << _Header;
-//   return _Header;
-  delete[] _Header;
-  std::stringstream hstream;
-  hstream << _Headline;
-  for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    hstream << curdat->_Key << ": " << curdat->_Value << "\r\n";
-  }
-  hstream << "\r\n";
-  std::string hdat=hstream.str();
-  _Header=new char[(hdat.length()+1)];
-  _HeaderSize=hdat.length();
-  std::copy(hdat.c_str(),hdat.c_str()+(hdat.length()+1),_Header);
-  std::cerr << _Header;
-  return _Header;
-}
-
-size_t HttpHeader::getHeaderSize(){
-  return _HeaderSize;
-}
-
 HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
   _nextHeaderData=NULL;
   _Keylen=strlen(key);
@@ -177,15 +148,11 @@ HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
 HttpHeader::HeaderData::~HeaderData(){
   delete[] _Key;
   delete[] _Value;
-  if(_nextHeaderData)
-    delete _nextHeaderData;
+  delete _nextHeaderData;
 }
 
 HttpHeader::~HttpHeader(){
-  if(_Header)
-    delete[] _Header;
-  if(_firstHeaderData)
-    delete _firstHeaderData;
+  delete _firstHeaderData;
 }
 
 HttpResponse::HttpResponse(){
@@ -223,6 +190,17 @@ void HttpResponse::setConnection(const char* type){
   setData("Connection",type,_ContentType);
 }
 
+void HttpResponse::setVersion(const char* version){
+  if(version==NULL)
+    throw "http version not set don't do that !!!";
+  size_t vlen=strlen(version);
+  if(vlen>254)
+    throw "http version with over 255 signs sorry your are drunk !";
+  _VersionLen=vlen;
+  std::copy(version,version+vlen,_Version);
+  _Version[vlen]='\0';
+}
+
 void HttpResponse::parse(ClientConnection *curconnection){
 }
 
@@ -230,10 +208,28 @@ void HttpResponse::send(Connection* curconnection, const char* data){
   send(curconnection,data,strlen(data));
 }
 
+size_t HttpResponse::printHeader(char **buffer){
+//   char *buf=*buffer;
+  std::stringstream hstream;
+  hstream << _Version << _State << "\r\n";
+  for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){
+    hstream << getKey(curdat) << ": " << getValue(curdat) << "\r\n";
+  }
+  hstream << "\r\n";
+  std::string hdat=hstream.str();
+//   buf=new char[(hdat.length()+1)];
+//   std::copy(hdat.c_str(),hdat.c_str()+(hdat.length()+1),buf);
+  std::cerr << hdat;
+  return hdat.length();
+}
+
+
 void HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
-  _HeadlineLen=snprintf(_Headline,512,"%s %s\r\n",_Version,_State);
   setData("Content-Length",datalen);
-  curconnection->addSendQueue(getHeader(),getHeaderSize());
+//   char *header;
+//   size_t headersize = printHeader(&header);
+//   curconnection->addSendQueue(header,headersize);
+//   delete[] header;
   if(datalen!=0)
     curconnection->addSendQueue(data,datalen);
 }
