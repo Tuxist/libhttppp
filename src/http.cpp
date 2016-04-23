@@ -209,16 +209,15 @@ void HttpResponse::send(Connection* curconnection, const char* data){
 }
 
 size_t HttpResponse::printHeader(char **buffer){
-//   char *buf=*buffer;
   std::stringstream hstream;
-  hstream << _Version << _State << "\r\n";
+  hstream << _Version << " " << _State << "\r\n";
   for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){
     hstream << getKey(curdat) << ": " << getValue(curdat) << "\r\n";
   }
   hstream << "\r\n";
   std::string hdat=hstream.str();
-//   buf=new char[(hdat.length()+1)];
-//   std::copy(hdat.c_str(),hdat.c_str()+(hdat.length()+1),buf);
+  *buffer=new char[(hdat.length()+1)];
+  std::copy(hdat.c_str(),hdat.c_str()+(hdat.length()+1),*buffer);
   std::cerr << hdat;
   return hdat.length();
 }
@@ -226,10 +225,10 @@ size_t HttpResponse::printHeader(char **buffer){
 
 void HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
   setData("Content-Length",datalen);
-//   char *header;
-//   size_t headersize = printHeader(&header);
-//   curconnection->addSendQueue(header,headersize);
-//   delete[] header;
+  char *header;
+  size_t headersize = printHeader(&header);
+  curconnection->addSendQueue(header,headersize);
+  delete[] header;
   if(datalen!=0)
     curconnection->addSendQueue(data,datalen);
 }
