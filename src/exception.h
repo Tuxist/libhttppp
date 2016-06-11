@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <config.h>
 #include <cstdio>
-#include <algorithm>
 
 /*
 * Error Statas
@@ -40,23 +39,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
-#include <exception>
-
 #ifdef WIN32
   #include "win32.h"
 #endif
 
 #ifdef DEBUG
-#include <iostream>
+
 #endif
 
 #define MSGLEN 255
 
 namespace libhttppp {
-  class HTTPException : public std::exception {
+  class HTTPException {
   public:
     
-    HTTPException() : std::exception(){
+    HTTPException(){
       _Note=false;
       _Warning=false;
       _Error=false;
@@ -106,10 +103,10 @@ namespace libhttppp {
     template <typename Arg1,typename Arg2>
     const char *ErrorTemplate(bool *type,char *buffer,Arg1 printstyle,Arg2 message){
       *type=true;
-      std::fill(buffer,buffer+MSGLEN,NULL);
+//       std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,message);
 #ifdef DEBUG
-      std::cerr << buffer;
+      printf("%s",buffer);
 #endif
       return buffer;
     }

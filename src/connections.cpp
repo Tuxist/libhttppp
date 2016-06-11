@@ -198,7 +198,7 @@ int Connection::copyValue(ConnectionData* startblock, int startpos,
     if(curdat==endblock)
       break;
   }
-  buf[copysize]='\0';
+  buf[copysize+1]='\0';
   *buffer=buf;
   return copysize; //not include termination
 }

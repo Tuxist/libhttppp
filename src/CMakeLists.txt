@@ -48,7 +48,6 @@ install(FILES connections.h
               httpdefinitions.h
               socket.h                
               exception.h
-              queue.h
               libhttp++.cmake
               ${CMAKE_BINARY_DIR}/config.h
         DESTINATION include/http++)
