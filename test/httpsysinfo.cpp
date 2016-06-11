@@ -1,6 +1,7 @@
 
 #include <http.h>
 #include <httpd.h>
+#include <iostream>
 #include <sstream>
 #include <exception.h>
 
