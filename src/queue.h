@@ -33,11 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define QUEUE_H
 
 namespace libhttppp {
-  class Queue : public ConnectionPool{
-  public:
-    Queue(ServerSocket *socket);
-    virtual ~Queue();
-    virtual void RequestEvent(Connection *curcon);
+	class Queue : public ConnectionPool {
+	public:
+		Queue(ServerSocket *socket);
+		virtual ~Queue();
+		virtual void RequestEvent(Connection *curcon);
   private:
     HTTPException       _httpexception;
   };

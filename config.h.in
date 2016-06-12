@@ -1,7 +1,10 @@
-#ifndef Windows
- #include <sys/types.h>
+#if defined(_MSC_VER)
+  #include <BaseTsd.h> 
+  typedef SSIZE_T ssize_t;
+  #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
+  #define ssize_t ptrdiff_t
 #else
- #include <BaseTsd.h> 
+  #include <sys/types.h>
 #endif
 
 #define ${CMAKE_SYSTEM_NAME}

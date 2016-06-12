@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <config.h>
 
-#ifndef WIN32
+#ifndef Windows
   #include <unistd.h>
   extern "C" {
     #include <sys/un.h>

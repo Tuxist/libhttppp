@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef WIN32_H
 #define WIN32_H
-
+/*
 inline int snprintf(char *str, size_t size, const char *format,...){
   va_list argptr;
   va_start(argptr,format);
@@ -37,8 +37,9 @@ inline int snprintf(char *str, size_t size, const char *format,...){
   va_end(argptr);
   return ret;
 }
-
-#define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
-#define ssize_t ptrdiff_t
-
+*/
 #endif
+
+
+
+

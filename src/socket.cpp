@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "socket.h"
 
-#ifndef WIN32
+#ifndef Windows
   #include <sys/socket.h>
   #include <arpa/inet.h>
   #include <sys/fcntl.h>
@@ -51,7 +51,7 @@ ClientSocket::ClientSocket(){
 
 ClientSocket::~ClientSocket(){
   shutdown(_Socket,
-#ifndef WIN32 
+#ifndef Windows 
   SHUT_RDWR 
 #else 
   SD_BOTH
@@ -60,7 +60,7 @@ ClientSocket::~ClientSocket(){
 }
 
 void ClientSocket::setnonblocking(){
-#ifndef WIN32
+#ifndef Windows
   fcntl(_Socket, F_SETFL, O_NONBLOCK);
 #else
   u_long bmode=1;
@@ -68,7 +68,7 @@ void ClientSocket::setnonblocking(){
 #endif 
 }
 
-#ifndef WIN32
+#ifndef Windows
 int ClientSocket::getSocket(){
 #else
 SOCKET ClientSocket::getSocket(){
@@ -76,7 +76,7 @@ SOCKET ClientSocket::getSocket(){
   return _Socket;
 }
 
-#ifndef WIN32
+#ifndef Windows
 ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   int optval = 1;
  _Maxconnections=maxconnections;
@@ -121,7 +121,7 @@ ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
     _httpexception.Cirtical("Can't create Server Socket");
     throw _httpexception;
   }
-#ifndef WIN32
+#ifndef Windows
   int optval = 1;
   setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
 #else
@@ -133,7 +133,7 @@ ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
     _httpexception.Cirtical("Can't create Server Socket");
     throw _httpexception;
   }
-#ifndef WIN32
+#ifndef Windows
   fcntl(_Socket, F_SETFL, O_NONBLOCK);
 #else
   u_long bmode=1;
@@ -149,7 +149,7 @@ ServerSocket::~ServerSocket(){
 
 }
 
-#ifndef WIN32
+#ifndef Windows
 int ServerSocket::getSocket(){
   return _Socket;
 }
@@ -163,13 +163,13 @@ int ServerSocket::getMaxconnections(){
   return _Maxconnections;
 }
 
-#ifndef WIN32
+#ifndef Windows
 int ServerSocket::acceptEvent(ClientSocket *clientsocket){
 #else
 SOCKET ServerSocket::acceptEvent(ClientSocket *clientsocket){
 #endif
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
-#ifndef WIN32
+#ifndef Windows
   int socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
 #else
   SOCKET socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
@@ -184,10 +184,10 @@ SOCKET ServerSocket::acceptEvent(ClientSocket *clientsocket){
 }
 
 ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
-#ifndef WIN32
+#ifndef Windows
    ssize_t rval=sendto(socket->getSocket(),data, size,0,&socket->_ClientAddr, socket->_ClientAddrLen);
 #else
-  int rval=sendto(socket->getSocket(), data, (int)size,0,&socket->_ClientAddr, socket->_ClientAddrLen);
+  int rval=sendto(socket->getSocket(),(const char*) data, (int)size,0,&socket->_ClientAddr, socket->_ClientAddrLen);
 #endif
   if(rval==-1){
 #ifdef Linux
@@ -205,7 +205,7 @@ ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
 }
 
 ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
-#ifndef WIN32
+#ifndef Windows
   ssize_t recvsize=recvfrom(socket->getSocket(),data, size,0,
 			    &socket->_ClientAddr, &socket->_ClientAddrLen);
 #else

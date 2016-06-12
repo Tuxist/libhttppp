@@ -7,7 +7,10 @@
 
 #include "header_png.h"
 
+#ifndef Windows
 #include <sys/utsname.h>
+#endif // !Windows
+
 
 class HtmlTable{
 public:
@@ -48,15 +51,17 @@ public:
   IndexPage(){
     sysstream << "<!DOCTYPE html><body>"
               << "<div><img src=\"images/header.png\"/></div>"
-              << "<span>System Info:</span><br/>";   
+              << "<span>System Info:</span><br/>"; 
+#ifndef Windows
     struct utsname usysinfo;
     uname(&usysinfo);
     HtmlTable htmltable;
     htmltable.createRow("Operating system:",usysinfo.sysname);
     htmltable.createRow("Release Version:",usysinfo.release);
     htmltable.createRow("Hardware:",usysinfo.machine);
-    sysstream << htmltable.getTable()
-              << "</body></html>";
+    sysstream << htmltable.getTable() << "</body></html>";
+#endif
+              
   }
   
   const char *getIndexPage(){
