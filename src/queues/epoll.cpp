@@ -127,7 +127,6 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
             }else{
               curcon->resizeSendQueue(sended); 
             }
-            continue;
           }else{
               event.events = EPOLLIN | EPOLLRDHUP;
               epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
@@ -143,6 +142,7 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
             try{
               delConnection(curcon);
               epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
+	      _httpexception.Note("Connection shutdown!");
             }catch(HTTPException &e){
               delConnection(curcon);
             }
