@@ -97,7 +97,7 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
             curcon->addRecvQueue(buf,rcvsize);
             RequestEvent(curcon);
             if(curcon->getSendData()){
-              event.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
+              event.events = EPOLLOUT | EPOLLRDHUP;
               epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
 	      _httpexception.Note("switch to send mode!");
             }
@@ -112,7 +112,7 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
       
       if(events[i].events & EPOLLOUT) {
         try{
-          if(curcon->getSendData()){
+          if(curcon && curcon->getSendData()){
             ssize_t sended=_ServerSocket->sendData(curcon->getClientSocket(),
                                                    (void*)curcon->getSendData()->getData(),
                                                     curcon->getSendData()->getDataSize());
@@ -143,8 +143,9 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
               delConnection(curcon);
               epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
 	      _httpexception.Note("Connection shutdown!");
+	      continue;
             }catch(HTTPException &e){
-              delConnection(curcon);
+               delConnection(curcon);
             }
           ;
       }

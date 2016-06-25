@@ -38,6 +38,7 @@ namespace libhttppp {
     ~HttpD();
     void runDaemon();
   private:
+    void            _Help();
     ServerSocket   *_ServerSocket;
     Queue          *_Queue;
     char            _RootPath[PATHSIZE];

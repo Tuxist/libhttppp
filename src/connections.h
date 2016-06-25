@@ -113,7 +113,7 @@ namespace libhttppp {
     Connection *addConnection();
     
     Connection *delConnection(ClientSocket *clientsocket);
-#ifndef WIN32
+#ifndef Windows
     Connection *delConnection(int socket);
 #else
     Connection *delConnection(SOCKET socket);
@@ -121,7 +121,7 @@ namespace libhttppp {
     Connection *delConnection(Connection *delcon);
     
     Connection *getConnection(ClientSocket *clientsocket);
-#ifndef WIN32
+#ifndef Windows
     Connection *getConnection(int socket);
 #else
     Connection *getConnection(SOCKET socket);

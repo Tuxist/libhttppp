@@ -24,7 +24,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
-#include <iostream>
+#include <algorithm>
 #include "httpd.h"
 
 using namespace libhttppp;
@@ -47,13 +47,12 @@ HttpD::HttpD(int argc, char** argv){
     }else if(strncmp(argv[args],"--maxconnections=",17)==0){
       _MaxConnections=atoi(argv[args]+17);
     }else if(strncmp(argv[args],"--help",6) || strncmp(argv[args],"-h",2)){
-        std::cout << "--httpaddr=0.0.0.0        Address to listen\n"
-                  << "--httpport=80             Port to listen\n" 
-                  << "--rootpath=/tmp           Directory for file content\n\n";
+      _Help();
     }
   }
   if(!httpaddr || !rootpath){
     _httpexception.Cirtical("not enough arguments given");
+    _Help();
     throw _httpexception;
   }
   if(port!=0)
@@ -62,6 +61,13 @@ HttpD::HttpD(int argc, char** argv){
   else
     _ServerSocket= new ServerSocket(httpaddr,_MaxConnections);
 #endif
+}
+
+void HttpD::_Help(){
+        printf("%s%s%s","--httpaddr=0.0.0.0        Address to listen\n"
+                       ,"--httpport=80             Port to listen\n" 
+                       ,"--rootpath=/tmp           Directory for file content\n\n"
+	      );
 }
 
 void HttpD::runDaemon(){

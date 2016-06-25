@@ -66,11 +66,11 @@ Connection *Connection::nextConnection(){
 
 /** \brief a method to add Data to Sendqueue
   * \param data an const char* to add to sendqueue
-  * \param datasize an size_t 
+  * \param datasize an size_t to set datasize
   * \return the last ConnectionData Block from Sendqueue
   * 
   * This method does unbelievably useful things.  
-  * And returns exceptionally useful results.
+  * And returns exceptionally the new connection data block.
   * Use it everyday with good health.
   */
 ConnectionData *Connection::addSendQueue(const char*data,size_t datasize){
@@ -293,7 +293,7 @@ Connection* ConnectionPool::addConnection(){
   return _lastConnection;
 }
 
-#ifndef WIN32
+#ifndef Windows
 Connection* ConnectionPool::delConnection(int socket){
   return delConnection(getConnection(socket));
 }
@@ -341,7 +341,7 @@ Connection* ConnectionPool::getConnection(ClientSocket *clientsocket){
   return NULL;
 }
 
-#ifndef WIN32
+#ifndef Windows
 Connection* ConnectionPool::getConnection(int socket){
 #else
 Connection* ConnectionPool::getConnection(SOCKET socket){
