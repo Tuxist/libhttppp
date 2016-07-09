@@ -185,7 +185,9 @@ int Connection::copyValue(ConnectionData* startblock, int startpos,
   char *buf;
   buf = new char[(copysize+1)]; //one more for termination
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
-    if(curdat==startblock){
+    if(curdat==startblock && curdat==endblock){
+      std::copy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
+    }else if(curdat==startblock){
       std::copy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
       copypos+=curdat->getDataSize()-startpos;
     }else if(curdat==endblock){
@@ -198,7 +200,7 @@ int Connection::copyValue(ConnectionData* startblock, int startpos,
     if(curdat==endblock)
       break;
   }
-  buf[copysize+1]='\0';
+  buf[copysize]='\0';
   *buffer=buf;
   return copysize; //not include termination
 }
