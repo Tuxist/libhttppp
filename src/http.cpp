@@ -26,9 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "http.h"
-#include <iostream>
 #include <algorithm>
-#include <sstream>
 
 #ifdef WIN32
 #include "win32.h"
@@ -221,16 +219,12 @@ size_t HttpResponse::printHeader(char **buffer){
   size_t headersize=((getHeaderSize()+_VersionLen+_Statelen)+((4*_Elements)+5)); 
   header=new char[(headersize+1)];
   size_t pos=snprintf(header,headersize,"%s %s\r\n",_Version,_State);
-  std::cerr << "POS" << pos << "\n";
   for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
     pos+=(snprintf(header+pos,(headersize-pos), 
            "%s: %s\r\n",getKey(curdat),getValue(curdat)));
-    std::cerr << "POS" << pos << "\n";
   } 
   pos+=snprintf(header+pos,headersize+1,"\r\n");
-  std::cerr << "POS" << pos << "HSIZE" << headersize << "\n";
   *buffer=header;
-  printf("%s\n",header); 
   return headersize;
 }
 
@@ -280,7 +274,7 @@ void HttpRequest::parse(Connection* curconnection){
       char *buffer;
       int buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
       curconnection->cleanRecvData();
-      std::cerr << buffer << "\n";
+      printf("%s\n",buffer);
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
          throw _httpexception;
