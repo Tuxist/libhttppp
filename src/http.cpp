@@ -41,7 +41,6 @@ HttpHeader::HttpHeader(){
   _firstHeaderData=NULL;
   _lastHeaderData=NULL;
   _Elements=0;
-  _HeaderDataSize=0;
 }
 
 HttpHeader::HeaderData* HttpHeader::getfirstHeaderData(){
@@ -83,7 +82,6 @@ HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value){
     _lastHeaderData->_nextHeaderData=new HeaderData(key,value);
     _lastHeaderData=_lastHeaderData->_nextHeaderData;
   }
-  _HeaderDataSize+=(_lastHeaderData->_Keylen+_lastHeaderData->_Valuelen);
   _Elements++;
   return _lastHeaderData;
 }
@@ -127,7 +125,6 @@ void HttpHeader::deldata(const char* key){
           _lastHeaderData=_firstHeaderData;
       }
       _Elements--;
-      _HeaderDataSize-=(curdat->_Keylen+curdat->_Valuelen);
       curdat->_nextHeaderData=NULL;
       delete curdat;
       return;
@@ -135,6 +132,16 @@ void HttpHeader::deldata(const char* key){
     prevdat=curdat;
   }
 }
+
+size_t HttpHeader::getHeaderSize(){
+  size_t hsize=0;
+  for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
+    hsize+=curdat->_Keylen+curdat->_Valuelen;
+  }
+  return hsize;
+}
+
+
 
 HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
   _nextHeaderData=NULL;
@@ -210,17 +217,21 @@ void HttpResponse::send(Connection* curconnection, const char* data){
 }
 
 size_t HttpResponse::printHeader(char **buffer){
-  std::stringstream hstream;
-  hstream << _Version << " " << _State << "\r\n";
-  for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){
-    hstream << getKey(curdat) << ": " << getValue(curdat) << "\r\n";
-  }
-  hstream << "\r\n";
-  std::string hdat=hstream.str();
-  *buffer=new char[(hdat.length()+1)];
-  std::copy(hdat.c_str(),hdat.c_str()+(hdat.length()+1),*buffer);
-  std::cerr << hdat;
-  return hdat.length();
+  char *header=NULL;
+  size_t headersize=((getHeaderSize()+_VersionLen+_Statelen)+((4*_Elements)+5)); 
+  header=new char[(headersize+1)];
+  size_t pos=snprintf(header,headersize,"%s %s\r\n",_Version,_State);
+  std::cerr << "POS" << pos << "\n";
+  for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
+    pos+=(snprintf(header+pos,(headersize-pos), 
+           "%s: %s\r\n",getKey(curdat),getValue(curdat)));
+    std::cerr << "POS" << pos << "\n";
+  } 
+  pos+=snprintf(header+pos,headersize+1,"\r\n");
+  std::cerr << "POS" << pos << "HSIZE" << headersize << "\n";
+  *buffer=header;
+  printf("%s\n",header); 
+  return headersize;
 }
 
 

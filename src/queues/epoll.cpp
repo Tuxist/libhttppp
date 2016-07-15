@@ -88,7 +88,8 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
           try{
             char buf[BLOCKSIZE];
             int rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-            if(rcvsize==-1){
+            printf("recvsize: %d\n",rcvsize);
+	    if(rcvsize==-1){
                if (errno == EAGAIN)
                  continue;
                else
