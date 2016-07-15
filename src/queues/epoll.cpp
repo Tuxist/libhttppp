@@ -146,7 +146,7 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
 	      _httpexception.Note("Connection shutdown!");
 	      continue;
             }catch(HTTPException &e){
-               delConnection(curcon);
+              _httpexception.Note("Can't do Connection shutdown!");
             }
           ;
       }
