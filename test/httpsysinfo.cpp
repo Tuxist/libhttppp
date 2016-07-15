@@ -90,15 +90,18 @@ public:
       libhttppp::HttpResponse curres;
       curres.setState(HTTP200);
       curres.setVersion(HTTPVERSION(1.1));
-      if(strncmp(cururl,"/images/header.png",19)==0){
-        curres.setContentType("image/png");
-	curres.setContentLength(header_png_size);
-        curres.send(curcon,(const char*)header_png,header_png_size);
-      }else{
+      if(strncmp(cururl,"/",strlen(cururl))==0){
         curres.setContentType("text/html");
         IndexPage idx;
         const char *idxpg=idx.getIndexPage();
         curres.send(curcon,idxpg,idx.getIndexPageSize());
+      }else if(strncmp(cururl,"/images/header.png",strlen(cururl))==0){
+        curres.setContentType("image/png");
+	curres.setContentLength(header_png_size);
+        curres.send(curcon,(const char*)header_png,header_png_size);
+      }else{
+	curres.setState(HTTP404);
+        curres.send(curcon,NULL,0);
       }
     }catch(libhttppp::HTTPException &e){
       throw e;

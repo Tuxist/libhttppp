@@ -278,47 +278,27 @@ void HttpRequest::parse(Connection* curconnection){
       char *buffer;
       int buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
       curconnection->cleanRecvData();
-      printf("%s\n",buffer);
+
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
          throw _httpexception;
       }
-//       size_t plend=0;
-//       for(ssize_t pos=0; pos<buffersize; pos++){
-// 	size_t lend=0;
-// 	if(buffer[pos]=='\r'){
-// 	  pos++;
-// 	  if(pos>buffersize)
-// 	    break;
-// 	  if(buffer[pos]=='\n'){
-// 	    lend=pos-1;
-// 	  }
-// 	}else if(buffer[pos]=='\n'){
-// 	  lend=pos;
-// 	}
-// 	if(lend>0){
-// 	  for(ssize_t delimter=plend; delimter<lend; delimter++){
-// 	    pos+=delimter;
-// 	    if(buffer[delimter]==':'){
-// 	      std::cerr << buffer[pos]; 
-// 	      delimter++;
-// 	      if(delimter>buffersize)
-// 		break;
-// 	      if(buffer[delimter]==' '){
-// 	        std::cerr << "split here" 
-// 		          << plend 
-// 	                  << ":" << delimter 
-// 	                  << ":" << lend 
-// 	                  << "\n";
-// 	        goto DelimterFound;
-// 	      }
-// 	    }  
-// 	  }
-// 	  DelimterFound:
-// 	  plend=lend;
-// 	  
-// 	}
-//       }
+      int rows=0;
+      size_t lrow=0;
+      size_t delimeter=0;
+      for(ssize_t pos=0; pos<buffersize; pos++){
+	  if(buffer[pos]==':'){
+	    delimeter=pos; 
+	  }
+	  if(buffer[pos]=='\r'){
+	    rows++;
+	    if(delimeter>lrow){
+	      printf("%zu:%zu:%zu\n",lrow,delimeter,pos);
+	    }
+	    lrow=pos;
+	  }
+      }
+      printf("rows: %d\n",rows);
       delete[] buffer;
     }else{
       _httpexception.Note("No Incoming data in queue");
