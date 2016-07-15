@@ -131,6 +131,10 @@ void HttpHeader::deldata(const char* key){
   }
 }
 
+size_t HttpHeader::getElements(){
+  return _Elements;
+}
+
 size_t HttpHeader::getHeaderSize(){
   size_t hsize=0;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
@@ -216,7 +220,7 @@ void HttpResponse::send(Connection* curconnection, const char* data){
 
 size_t HttpResponse::printHeader(char **buffer){
   char *header=NULL;
-  size_t headersize=((getHeaderSize()+_VersionLen+_Statelen)+((4*_Elements)+5)); 
+  size_t headersize=((getHeaderSize()+_VersionLen+_Statelen)+((4*getElements())+5)); 
   header=new char[(headersize+1)];
   size_t pos=snprintf(header,headersize,"%s %s\r\n",_Version,_State);
   for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 

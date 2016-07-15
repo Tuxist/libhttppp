@@ -62,6 +62,7 @@ namespace libhttppp {
     const char *getData(const char *key,HeaderData **pos=NULL);
     void        deldata(const char *key);
     
+    size_t      getElements();
     size_t      getHeaderSize();
   protected:
     HttpHeader();
