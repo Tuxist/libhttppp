@@ -60,7 +60,8 @@ const char* HttpHeader::getValue(HttpHeader::HeaderData* pos){
 const char* HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(strncmp(key,curdat->_Key,curdat->_Keylen)==0){
-      *pos=curdat;
+      if(pos!=NULL)
+        *pos=curdat;
       return curdat->_Value;
     }
   }
@@ -291,7 +292,6 @@ void HttpRequest::parse(Connection* curconnection){
 	  }
 	  if(buffer[pos]=='\r'){
 	    if(delimeter>lrow){
-	      printf("%zu:%zu:%zu\n",lrow,delimeter,pos);
 	      size_t keylen=delimeter-lrow;
 	      char key[keylen];
 	      std::copy(buffer+lrow,buffer+(lrow+keylen),key);
@@ -308,10 +308,6 @@ void HttpRequest::parse(Connection* curconnection){
 	    lrow=pos;
 	  }
       }
-      for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-        printf("Header: %s->%s \n",getKey(curdat),getValue(curdat));
-      }
-      
       delete[] buffer;
     }else{
       _httpexception.Note("No Incoming data in queue");
