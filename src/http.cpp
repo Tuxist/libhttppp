@@ -283,22 +283,35 @@ void HttpRequest::parse(Connection* curconnection){
 	 _httpexception.Error("can't parse http head");
          throw _httpexception;
       }
-      int rows=0;
       size_t lrow=0;
       size_t delimeter=0;
       for(ssize_t pos=0; pos<buffersize; pos++){
-	  if(buffer[pos]==':'){
+	  if(delimeter==0 && buffer[pos]==':'){
 	    delimeter=pos; 
 	  }
 	  if(buffer[pos]=='\r'){
-	    rows++;
 	    if(delimeter>lrow){
 	      printf("%zu:%zu:%zu\n",lrow,delimeter,pos);
+	      size_t keylen=delimeter-lrow;
+	      char key[keylen];
+	      std::copy(buffer+lrow,buffer+(lrow+keylen),key);
+	      key[keylen]='\0';
+	      
+	      size_t valuelen=pos-delimeter;
+	      char value[valuelen];
+	      value[valuelen]='\0';
+	      std::copy(buffer+delimeter,buffer+(delimeter+valuelen),value);
+	      
+	      setData(key+2,value+2);
 	    }
+	    delimeter=0;
 	    lrow=pos;
 	  }
       }
-      printf("rows: %d\n",rows);
+      for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
+        printf("Header: %s->%s \n",getKey(curdat),getValue(curdat));
+      }
+      
       delete[] buffer;
     }else{
       _httpexception.Note("No Incoming data in queue");
