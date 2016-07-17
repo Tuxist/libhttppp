@@ -104,6 +104,7 @@ namespace libhttppp {
     void           parse(Connection *curconnection); //only use as server
     void           send(ClientConnection *curconnection); //only use as client
     size_t         printHeader(char **buffer);
+    int            getRequestType();
     const char    *getRequestURL();
   private:
     char          *_Buffer;
@@ -135,6 +136,7 @@ namespace libhttppp {
       char     *value;
       FormData *nextFormData;
     };
+    HttpRequest *_Request;
   };
 
   class HttpCookie {

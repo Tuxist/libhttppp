@@ -8,6 +8,12 @@ target_link_libraries(httpcon
     http++-static
 )
 
+add_executable (httpform httpform.cpp)
+
+target_link_libraries(httpform
+    http++-static
+)
+
 add_executable (httpsysinfo httpsysinfo.cpp)
 
 target_link_libraries(httpsysinfo

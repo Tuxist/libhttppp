@@ -278,7 +278,7 @@ void HttpRequest::parse(Connection* curconnection){
           
       char *buffer;
       int buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
-      curconnection->cleanRecvData();
+      curconnection->resizeRecvQueue(buffersize);
 
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
@@ -322,6 +322,10 @@ void HttpRequest::send(ClientConnection *curconnection){
 
 }
 
+int HttpRequest::getRequestType(){
+  return _RequestType;
+}
+
 const char* HttpRequest::getRequestURL(){
   return _RequestURL;
 }
@@ -329,4 +333,17 @@ const char* HttpRequest::getRequestURL(){
 HttpRequest::~HttpRequest(){
   if(_Request)
     delete[] _Request;
+}
+
+HttpForm::HttpForm(HttpRequest* request){
+  _Request=request;
+  int rtype = _Request->getRequestType();
+  switch(rtype){
+    case GETREQUEST:{
+      printf("GETREQUEST");
+    }
+    case POSTREQUEST:{
+      printf("GETREQUEST");
+    }
+  }
 }
