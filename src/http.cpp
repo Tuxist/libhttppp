@@ -279,7 +279,7 @@ void HttpRequest::parse(Connection* curconnection){
       char *buffer;
       int buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
       curconnection->resizeRecvQueue(buffersize);
-
+//       curconnection->cleanRecvData();
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
          throw _httpexception;

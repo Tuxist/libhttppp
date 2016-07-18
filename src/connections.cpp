@@ -151,14 +151,14 @@ size_t Connection::getRecvSize(){
 ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
 					 size_t *qsize, size_t size){
   ConnectionData *firstdat=*firstdata;
-  while(firstdata && size!=0){
+  while(firstdat!=NULL && size!=0){
     size_t delsize=0;
-    if(size<=firstdat->getDataSize()){
+    if(size>=firstdat->getDataSize()){
        delsize=firstdat->getDataSize();
-       ConnectionData *deldat=*firstdata;
-       *firstdata=firstdat->_nextConnectionData;
+       ConnectionData *deldat=firstdat;
+       firstdat=firstdat->_nextConnectionData;
        if(deldat==*lastdata)
-         *lastdata=*firstdata;
+         *lastdata=firstdat;
        deldat->_nextConnectionData=NULL;
        delete deldat;
     }else{
@@ -168,6 +168,7 @@ ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionD
     size-=delsize;
     *qsize-=delsize;
   }
+  *firstdata=firstdat;
   return firstdat;
 }
 
