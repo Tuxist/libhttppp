@@ -38,7 +38,6 @@ using namespace libhttppp;
 HttpHeader::HttpHeader(){
   _firstHeaderData=NULL;
   _lastHeaderData=NULL;
-  _Elements=0;
 }
 
 HttpHeader::HeaderData* HttpHeader::getfirstHeaderData(){
@@ -81,7 +80,6 @@ HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value){
     _lastHeaderData->_nextHeaderData=new HeaderData(key,value);
     _lastHeaderData=_lastHeaderData->_nextHeaderData;
   }
-  _Elements++;
   return _lastHeaderData;
 }
 
@@ -123,7 +121,6 @@ void HttpHeader::deldata(const char* key){
         if(_lastHeaderData==curdat)
           _lastHeaderData=_firstHeaderData;
       }
-      _Elements--;
       curdat->_nextHeaderData=NULL;
       delete curdat;
       return;
@@ -133,7 +130,11 @@ void HttpHeader::deldata(const char* key){
 }
 
 size_t HttpHeader::getElements(){
-  return _Elements;
+  size_t elements=0;
+  for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
+    elements++;
+  }
+  return elements;
 }
 
 size_t HttpHeader::getHeaderSize(){

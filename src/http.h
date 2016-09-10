@@ -69,7 +69,6 @@ namespace libhttppp {
     ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
-    size_t      _Elements;
   };
   
   class HttpResponse : public HttpHeader {

@@ -103,7 +103,7 @@ namespace libhttppp {
     template <typename Arg1,typename Arg2>
     const char *ErrorTemplate(bool *type,char *buffer,Arg1 printstyle,Arg2 message){
       *type=true;
-//       std::fill(buffer,buffer+MSGLEN,NULL);
+//      std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,message);
 #ifdef DEBUG
       printf("%s",buffer);
