@@ -51,7 +51,7 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
     throw _httpexception;
   }
   
-  event.events = EPOLLIN | EPOLLRDHUP;
+  event.events = EPOLLIN;
   event.data.fd = socket->getSocket();
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, socket->getSocket(), &event) < 0){
     _httpexception.Cirtical("can't create epoll");
@@ -69,9 +69,9 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
            */
 	  curcon=addConnection();
 	  ClientSocket *clientsocket=curcon->getClientSocket();
-	  clientsocket->setnonblocking();
+ 	  clientsocket->setnonblocking();
           event.data.fd =_ServerSocket->acceptEvent(clientsocket);
-          event.events = EPOLLIN | EPOLLRDHUP;
+          event.events = EPOLLIN | EPOLLET;
           
           if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
@@ -86,19 +86,26 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
       
       if(events[i].events & EPOLLIN){
           try{
-            char buf[BLOCKSIZE];
-            int rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-            printf("recvsize: %d\n",rcvsize);
-	    if(rcvsize==-1){
-               if (errno == EAGAIN)
-                 continue;
-               else
-                 goto CloseConnection;
-            }
-            curcon->addRecvQueue(buf,rcvsize);
+	    for(;;){
+              char buf[BLOCKSIZE];
+              int rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
+              printf("recvsize: %d\n",rcvsize);
+	      
+	      if(rcvsize==-1){
+                if (errno == EAGAIN){
+		  printf("resr");
+                  break;
+		}else{
+                  goto CloseConnection;
+		}
+              }else if(rcvsize==0){	
+		break;
+	      }
+              curcon->addRecvQueue(buf,rcvsize);
+	    }
             RequestEvent(curcon);
             if(curcon->getSendData()){
-              event.events = EPOLLOUT | EPOLLRDHUP;
+              event.events = EPOLLOUT | EPOLLET;
               epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
 	      _httpexception.Note("switch to send mode!");
             }
@@ -129,7 +136,7 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
               curcon->resizeSendQueue(sended); 
             }
           }else{
-              event.events = EPOLLIN | EPOLLRDHUP;
+              event.events = EPOLLIN | EPOLLET;
               epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
 	      _httpexception.Note("switch to recv mode!");
           }

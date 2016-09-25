@@ -71,6 +71,8 @@ void HttpD::_Help(){
 }
 
 void HttpD::runDaemon(){
+  _ServerSocket->setnonblocking();
+  _ServerSocket->listenSocket();
   _Queue = new Queue(_ServerSocket);
 }
 

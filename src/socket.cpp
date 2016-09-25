@@ -99,13 +99,6 @@ ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
     _httpexception.Cirtical("Can't create Server Socket");
     throw _httpexception;
   }
-
-  fcntl(_Socket, F_SETFL, O_NONBLOCK);
-
-  if(listen(_Socket, _Maxconnections) < 0){
-    _httpexception.Cirtical("Can't create Server Socket");
-    throw _httpexception;
-  }
 }
 #endif
 
@@ -133,20 +126,26 @@ ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
     _httpexception.Cirtical("Can't create Server Socket");
     throw _httpexception;
   }
+}
+
+ServerSocket::~ServerSocket(){
+
+}
+
+void ServerSocket::setnonblocking(){
 #ifndef Windows
   fcntl(_Socket, F_SETFL, O_NONBLOCK);
 #else
   u_long bmode=1;
   ioctlsocket(_Socket,FIONBIO,&bmode);
 #endif
+}
+
+void ServerSocket::listenSocket(){
   if(listen(_Socket, _Maxconnections) < 0){
     _httpexception.Cirtical("Can't create Server Socket");
     throw _httpexception;
   }
-}
-
-ServerSocket::~ServerSocket(){
-
 }
 
 #ifndef Windows
