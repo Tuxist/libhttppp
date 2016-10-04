@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
 	class Queue : public ConnectionPool {
 	public:
-		Queue(ServerSocket *socket);
+		Queue(ServerSocket *serversocket);
 		virtual ~Queue();
 		virtual void RequestEvent(Connection *curcon);
   private:
