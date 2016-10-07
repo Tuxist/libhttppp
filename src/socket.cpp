@@ -50,14 +50,13 @@ ClientSocket::ClientSocket(){
 }
 
 ClientSocket::~ClientSocket(){
-//   shutdown(_Socket,
-// #ifndef Windows 
-//   SHUT_RDWR 
-// #else 
-//   SD_BOTH
-// #endif
-//   );
-  close(_Socket);
+  shutdown(_Socket,
+#ifndef Windows 
+  SHUT_RDWR 
+#else 
+  SD_BOTH
+#endif
+  );
 }
 
 void ClientSocket::setnonblocking(){
