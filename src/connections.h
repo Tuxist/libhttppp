@@ -59,6 +59,8 @@ namespace libhttppp {
     ClientSocket   *getClientSocket();
     Connection     *nextConnection();
     
+    /*Cache helper functions*/
+    
     int             copyValue(ConnectionData* startblock, int startpos, 
                               ConnectionData* endblock, int endpos, char** buffer);
     int             searchValue(ConnectionData* startblock, ConnectionData** findblock, 
@@ -66,15 +68,16 @@ namespace libhttppp {
     int             searchValue(ConnectionData* startblock, ConnectionData** findblock, 
 			        const char* keyword,size_t keylen);
     
+    /*Get Data funtions Send Queue*/
     ConnectionData *addSendQueue(const char *data,size_t datasize);
     ConnectionData *resizeSendQueue(size_t size);
     void            cleanSendData();
     ConnectionData *getSendData();
     size_t          getSendSize();
     
+    /*Get Data funtions Recv Queue*/
     ConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize);
     ConnectionData *resizeRecvQueue(size_t size);
-    
     void            cleanRecvData();
     ConnectionData *getRecvData();
     size_t          getRecvSize(); 

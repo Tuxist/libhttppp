@@ -50,13 +50,14 @@ ClientSocket::ClientSocket(){
 }
 
 ClientSocket::~ClientSocket(){
-  shutdown(_Socket,
-#ifndef Windows 
-  SHUT_RDWR 
-#else 
-  SD_BOTH
-#endif
-  );
+//   shutdown(_Socket,
+// #ifndef Windows 
+//   SHUT_RDWR 
+// #else 
+//   SD_BOTH
+// #endif
+//   );
+  close(_Socket);
 }
 
 void ClientSocket::setnonblocking(){
@@ -183,6 +184,10 @@ SOCKET ServerSocket::acceptEvent(ClientSocket *clientsocket){
 }
 
 ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
+  return sendData(socket,data,size,0);
+}
+
+ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
    ssize_t rval=sendto(socket->getSocket(),data, size,0,&socket->_ClientAddr, socket->_ClientAddrLen);
 #else
@@ -204,6 +209,10 @@ ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
 }
 
 ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
+   return recvData(socket,data,size,0);
+}
+
+ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
   ssize_t recvsize=recvfrom(socket->getSocket(),data, size,0,
 			    &socket->_ClientAddr, &socket->_ClientAddrLen);

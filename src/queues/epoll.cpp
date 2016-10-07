@@ -51,7 +51,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
     throw _httpexception;
   }
   
-  event.events = EPOLLIN;
+  event.events = EPOLLIN | EPOLLET;
   event.data.fd = serversocket->getSocket();
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, serversocket->getSocket(), &event) < 0){
     _httpexception.Cirtical("can't create epoll");
@@ -71,7 +71,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
 	  ClientSocket *clientsocket=curcon->getClientSocket();
           event.data.fd =_ServerSocket->acceptEvent(clientsocket);
 	  clientsocket->setnonblocking();
-          event.events = EPOLLIN | EPOLLET |EPOLLRDHUP;
+          event.events = EPOLLIN |EPOLLRDHUP;
           
           if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
@@ -130,19 +130,20 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
       if(events[i].events & EPOLLOUT) {
         try{
           if(curcon && curcon->getSendData()){
-            ssize_t sended=_ServerSocket->sendData(curcon->getClientSocket(),
-                                                   (void*)curcon->getSendData()->getData(),
-                                                    curcon->getSendData()->getDataSize());
-            if(sended==-1){
-              _httpexception.Note("Sending Failed");
-              if (errno == EAGAIN){
-                continue;
+	    ssize_t sended=0;
+	    while(curcon->getSendData()){
+              sended=_ServerSocket->sendData(curcon->getClientSocket(),
+                                                    (void*)curcon->getSendData()->getData(),
+                                                     curcon->getSendData()->getDataSize(),MSG_NOSIGNAL);
+	      
+	    
+              if(sended==-1){
+                _httpexception.Note("Sending Failed");
+		  curcon->cleanSendData();
+                  goto CloseConnection;
               }else{
-		curcon->cleanSendData();
-                goto CloseConnection;
-	      }
-            }else{
-              curcon->resizeSendQueue(sended); 
+                curcon->resizeSendQueue(sended); 
+              }
             }
           }else{
               event.events = EPOLLIN | EPOLLET;
