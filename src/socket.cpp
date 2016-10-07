@@ -188,9 +188,9 @@ ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
 
 ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
-   ssize_t rval=sendto(socket->getSocket(),data, size,0,&socket->_ClientAddr, socket->_ClientAddrLen);
+   ssize_t rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
 #else
-  int rval=sendto(socket->getSocket(),(const char*) data, (int)size,0,&socket->_ClientAddr, socket->_ClientAddrLen);
+  int rval=sendto(socket->getSocket(),(const char*) data, (int)size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
 #endif
   if(rval==-1){
 #ifdef Linux
@@ -213,10 +213,10 @@ ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
 
 ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
-  ssize_t recvsize=recvfrom(socket->getSocket(),data, size,0,
+  ssize_t recvsize=recvfrom(socket->getSocket(),data, size,flags,
 			    &socket->_ClientAddr, &socket->_ClientAddrLen);
 #else
-  ssize_t recvsize=recvfrom(socket->getSocket(), (char*)data,(int)size,0,
+  ssize_t recvsize=recvfrom(socket->getSocket(), (char*)data,(int)size,flags,
 			    &socket->_ClientAddr, &socket->_ClientAddrLen);
 #endif
   if(recvsize==-1){
