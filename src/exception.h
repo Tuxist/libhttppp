@@ -39,10 +39,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef EXCEPTION_H
 #define EXCEPTION_H
 
-#ifdef WIN32
-  #include "win32.h"
-#endif
-
 #ifdef DEBUG
 
 #endif

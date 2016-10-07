@@ -139,8 +139,12 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
 	    
               if(sended==-1){
                 _httpexception.Note("Sending Failed");
+                if (errno == EAGAIN){
+                  continue;
+                }else{
 		  curcon->cleanSendData();
                   goto CloseConnection;
+	        }
               }else{
                 curcon->resizeSendQueue(sended); 
               }

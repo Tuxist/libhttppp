@@ -82,7 +82,7 @@ namespace libhttppp {
     ConnectionData *getRecvData();
     size_t          getRecvSize(); 
 
-    int             pollState;
+    uint32_t        pollState;
     /*Helping function for multithreaded apps*/
     bool            tryLock();
     bool            tryUnlock();
