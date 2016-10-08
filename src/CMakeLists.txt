@@ -9,15 +9,15 @@ set(libhttpSrcs
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    ADD_DEFINITIONS(-DWIN)
-   list(APPEND libhttpSrcs "queues/iocp.cpp")
+   list(APPEND libhttpSrcs "event/iocp.cpp")
 ENDIF()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   list(APPEND libhttpSrcs "queues/epoll.cpp")
+   list(APPEND libhttpSrcs "event/epoll.cpp")
 ENDIF()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "BSD")
-   list(APPEND libhttpSrcs "queues/kqueue.cpp")
+   list(APPEND libhttpSrcs "event/kqueue.cpp")
 ENDIF()
 
 include_directories(
