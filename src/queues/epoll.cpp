@@ -51,7 +51,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
     throw _httpexception;
   }
   
-  event.events = EPOLLIN | EPOLLET |EPOLLPRI;
+  event.events = EPOLLIN;
   event.data.fd = serversocket->getSocket();
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, serversocket->getSocket(), &event) < 0){
     _httpexception.Cirtical("can't create epoll");
@@ -71,7 +71,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
 	  ClientSocket *clientsocket=curcon->getClientSocket();
           event.data.fd =_ServerSocket->acceptEvent(clientsocket);
 	  clientsocket->setnonblocking();
-          event.events = EPOLLIN |EPOLLRDHUP;
+          event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
           
           if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
@@ -100,24 +100,16 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
     
       if(events[i].events & EPOLLIN){
           try{
-	    for(;;){
-              char buf[BLOCKSIZE];
-	      int rcvsize=0;
-	      try{
-                rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-	      }catch(HTTPException &e){
-		  break;
-	      }
-	      if(rcvsize==0)
-		break;
-              curcon->addRecvQueue(buf,rcvsize);   
-	    }
+            char buf[BLOCKSIZE];
+	    int rcvsize=0;
+	    try{
+              rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
+	      if(rcvsize>0)
+		curcon->addRecvQueue(buf,rcvsize);
+	    }catch(HTTPException &e){
+		
+	    }       
             RequestEvent(curcon);
-            if(curcon->getSendData()){
-              event.events = EPOLLOUT | EPOLLET;
-              epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
-	      _httpexception.Note("switch to send mode!");
-            }
           }catch(HTTPException &e){
             if(e.isCritical()){
               throw e;
@@ -131,7 +123,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
         try{
           if(curcon && curcon->getSendData()){
 	    ssize_t sended=0;
-	    while(curcon->getSendData()){
+
               sended=_ServerSocket->sendData(curcon->getClientSocket(),
                                                     (void*)curcon->getSendData()->getData(),
                                                      curcon->getSendData()->getDataSize(),MSG_NOSIGNAL);
@@ -148,11 +140,6 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
               }else{
                 curcon->resizeSendQueue(sended); 
               }
-            }
-          }else{
-              event.events = EPOLLIN | EPOLLET;
-              epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
-	      _httpexception.Note("switch to recv mode!");
           }
         }catch(HTTPException &e){
            goto CloseConnection;
