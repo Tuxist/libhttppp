@@ -51,7 +51,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
     throw _httpexception;
   }
   
-  event.events = EPOLLIN | EPOLLET;
+  event.events = EPOLLIN | EPOLLET |EPOLLPRI;
   event.data.fd = serversocket->getSocket();
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, serversocket->getSocket(), &event) < 0){
     _httpexception.Cirtical("can't create epoll");

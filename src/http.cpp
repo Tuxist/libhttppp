@@ -236,6 +236,7 @@ size_t HttpResponse::printHeader(char **buffer){
 
 
 void HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
+  setData("Connection","keep-alive");
   setData("Content-Length",datalen);
   char *header;
   size_t headersize = printHeader(&header);
@@ -280,7 +281,6 @@ void HttpRequest::parse(Connection* curconnection){
       char *buffer;
       size_t buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
       curconnection->resizeRecvQueue(buffersize);
-//       curconnection->cleanRecvData();
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
          throw _httpexception;
