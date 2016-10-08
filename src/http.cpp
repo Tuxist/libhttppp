@@ -278,7 +278,7 @@ void HttpRequest::parse(Connection* curconnection){
       }
           
       char *buffer;
-      int buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
+      size_t buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
       curconnection->resizeRecvQueue(buffersize);
 //       curconnection->cleanRecvData();
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
@@ -287,25 +287,29 @@ void HttpRequest::parse(Connection* curconnection){
       }
       size_t lrow=0;
       size_t delimeter=0;
-      for(ssize_t pos=0; pos<buffersize; pos++){
+      for(size_t pos=0; pos<buffersize; pos++){
 	  if(delimeter==0 && buffer[pos]==':'){
 	    delimeter=pos; 
 	  }
 	  if(buffer[pos]=='\r'){
 	    if(delimeter>lrow){
 	      size_t keylen=delimeter-lrow;
-	      char *key=new char[keylen];
-	      std::copy(buffer+lrow,buffer+(lrow+keylen),key);
-	      key[keylen]='\0';
-	      
-	      size_t valuelen=pos-delimeter;
-	      char *value=new char[valuelen];
-	      value[valuelen]='\0';
-	      std::copy(buffer+delimeter,buffer+(delimeter+valuelen),value);
-	      
-	      setData(key+2,value+2);
-	      delete[] key;
-	      delete[] value;
+	      if(keylen>0 && keylen <=buffersize){
+		char *key=NULL;
+		key=new char[keylen+1];
+		std::copy(buffer+lrow,buffer+(lrow+keylen),key);
+		key[keylen]='\0';
+		size_t valuelen=pos-delimeter;
+		if(pos > 0 && valuelen <= buffersize){
+		  char *value=NULL;
+		  value=new char[valuelen+1];
+		  std::copy(buffer+delimeter,buffer+(delimeter+valuelen),value);
+		  value[valuelen]='\0';
+ 		  setData(key+2,value+2);
+		  delete[] value;
+		}
+		delete[] key;
+	      }
 	    }
 	    delimeter=0;
 	    lrow=pos;
