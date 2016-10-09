@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define READEVENT 0
 #define SENDEVENT 1
 
-#include "../queue.h"
+#include "../event.h"
 
 using namespace libhttppp;
 
@@ -51,7 +51,7 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
     throw _httpexception;
   }
   
-  event.events = EPOLLIN;
+  event.events = EPOLLIN | EPOLLOUT;
   event.data.fd = serversocket->getSocket();
   if (epoll_ctl(epollfd, EPOLL_CTL_ADD, serversocket->getSocket(), &event) < 0){
     _httpexception.Cirtical("can't create epoll");

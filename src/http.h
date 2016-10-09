@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "socket.h"
-#include "queue.h"
+#include "event.h"
 #include "httpdefinitions.h"
 #include "exception.h"
 
