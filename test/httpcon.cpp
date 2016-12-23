@@ -19,13 +19,14 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "    <meta charset=\"utf-8\">"
              << "    <style></style>"
              << "  </head>"
-             << "<body>"
-             << "<p>Requested-Url: " << curreq->getRequestURL() << "</p>"
-             << "<p>User-Agent: " << curreq->getData("User-Agent") << "</p>"
-	     << "<p> Host: " << curreq->getData("Host") << "</p>"
-	     << "<p>Accept-Language: "<< curreq->getData("Accept-Language") << "</p>"
-	     << "<p>Accept-Encoding: "<< curreq->getData("Accept-Encoding") << "</p>"
-	     << "</body></html>";
+             << "<body>";
+     for(libhttppp::HttpHeader::HeaderData *preq = curreq->getfirstHeaderData(); preq; preq=curreq->nextHeaderData(preq)){
+       condat  << curreq->getKey(preq) 
+               << ": "
+               << curreq->getValue(preq)
+               << "<br/>";
+     }
+     condat  << "</body></html>";
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());
 };

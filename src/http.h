@@ -60,6 +60,8 @@ namespace libhttppp {
     HeaderData *setData(const char* key, size_t value,HeaderData *pos=NULL);
     
     const char *getData(const char *key,HeaderData **pos=NULL);
+    size_t      getDataSizet(const char *key,HeaderData **pos=NULL);
+    int         getDataInt(const char *key,HeaderData **pos=NULL);
     void        deldata(const char *key);
     
     size_t      getElements();
@@ -105,10 +107,12 @@ namespace libhttppp {
     size_t         printHeader(char **buffer);
     int            getRequestType();
     const char    *getRequestURL();
+    const char    *getRequest();
+    size_t         getRequestSize();
   private:
     char          *_Buffer;
     char          *_Request;
-    size_t         _Requestsize;
+    size_t         _RequestSize;
     int            _RequestType;
     
     char           _RequestURL[255];
@@ -122,7 +126,8 @@ namespace libhttppp {
   
   class HttpForm {
   public:
-    HttpForm(HttpRequest *request);
+    HttpForm();
+    void        parse(HttpRequest *request);
     const char *getValue(const char *key);
     void        addPair(const char *key,const char *value);
     void        clear();
@@ -140,6 +145,7 @@ namespace libhttppp {
 
   class HttpCookie {
   private:
+    void parse(HttpRequest *curreq);
     class CookieData {
     private:
       CookieData();

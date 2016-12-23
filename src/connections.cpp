@@ -147,7 +147,7 @@ size_t Connection::getRecvSize(){
   return _ReadDataSize;
 }
 
-
+//buggy here resize not right working in same block
 ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
 					 size_t *qsize, size_t size){
   ConnectionData *firstdat=*firstdata;
@@ -164,6 +164,7 @@ ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionD
     }else{
        delsize=size;
        firstdat->_DataSize-=size;
+       std::copy(firstdat->_Data,firstdat->_Data+firstdat->_DataSize,firstdat->_Data);
     }
     size-=delsize;
     *qsize-=delsize;

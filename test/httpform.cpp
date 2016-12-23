@@ -20,10 +20,34 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "    <style></style>"
              << "  </head>"
              << "<body>"
-             << "<form>First name:<br> <input type=\"text\" name=\"firstname\"><br>"
-             << "Last name:<br> <input type=\"text\" name=\"lastname\"><br>"
-             << "<button type=\"submit\">Submit</button></form>"
-	     << "</body></html>";
+             << "<div style=\"border: thin solid black\">"
+             << "<h2>Get Request</h2>"
+             << "<form action=\"/\" method=\"get\">"
+             << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
+             << "Last name:<br>  <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
+             << "<button type=\"submit\">Submit</button>"
+             << "</form>"
+             << "</div><br/>"
+             << "<div style=\"border: thin solid black\">"
+             << "<h2>Post Request</h2>"
+             << "<form action=\"/\" method=\"post\">"
+             << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
+             << "Last name:<br> <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
+             << "<button type=\"submit\">Submit</button>"
+             << "</form>"
+             << "</div></br>"
+             << "<div style=\"border: thin solid black\">"
+             << "<h2>Encoding Test</h2>"
+             << "<form action=\"/\" method=\"post\">"
+             << "First name:<br> <input type=\"text\" name=\"encoding\" value=\"&=\" readonly><br>"
+             << "<button type=\"submit\">Submit</button>"
+             << "</form>"
+             << "</div></br>";
+     libhttppp::HttpForm curform;
+     curform.parse(curreq);
+     condat  << "<div style=\"border: thin solid black\">"
+             << "<h2>Output</h2>"
+             << "</div></body></html>";
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());
 };

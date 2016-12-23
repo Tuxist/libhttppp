@@ -28,10 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include <algorithm>
 
-#ifdef WIN32
-#include "win32.h"
-#endif
-
 using namespace libhttppp;
 
 
@@ -65,6 +61,26 @@ const char* HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
     }
   }
   return NULL;
+}
+
+size_t HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
+  size_t len = 0;
+  const char *buf=getData(key,pos);
+  if(buf){
+    if (1 == sscanf(buf, "%zu", &len))
+      return len;
+  }
+  return 0;
+}
+
+int HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
+  int len = 0;
+  const char *buf=getData(key,pos);
+  if(buf){
+    if (1 == sscanf(buf, "%d", &len))
+      return len;
+  }
+  return 0;
 }
 
 HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value){
@@ -251,6 +267,8 @@ HttpResponse::~HttpResponse(){
 
 HttpRequest::HttpRequest(){
   _Request=NULL;
+  _RequestType=0;
+  _RequestSize=0;
 }
 
 void HttpRequest::parse(Connection* curconnection){
@@ -259,9 +277,9 @@ void HttpRequest::parse(Connection* curconnection){
     if(curdat){
       ConnectionData *startblock;
       int startpos=0;
-      if((startpos=curconnection->searchValue(curdat,&startblock,"GET",3))!=-1){
+      if((startpos=curconnection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
         _RequestType=GETREQUEST;
-      }else if((startpos=curconnection->searchValue(curdat,&startblock,"POST",4))!=-1){
+      }else if((startpos=curconnection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
         _RequestType=POSTREQUEST;
       }else{
         _httpexception.Warning("Requesttype not known cleanup");
@@ -316,6 +334,15 @@ void HttpRequest::parse(Connection* curconnection){
 	  }
       }
       delete[] buffer;
+      size_t csize=getDataSizet("Content-Length");
+      if(csize!=0){
+        size_t rsize=curconnection->getRecvSize();
+        for(ConnectionData *dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
+          printf("block: %s\n",dblock->getData()); 
+          dblock->getDataSize();
+        }
+        curconnection->resizeRecvQueue(csize);
+      }
     }else{
       _httpexception.Note("No Incoming data in queue");
       throw _httpexception;
@@ -337,20 +364,34 @@ const char* HttpRequest::getRequestURL(){
   return _RequestURL;
 }
 
-HttpRequest::~HttpRequest(){
-  if(_Request)
-    delete[] _Request;
+const char* HttpRequest::getRequest(){
+  return _Request;  
 }
 
-HttpForm::HttpForm(HttpRequest* request){
-  _Request=request;
-  int rtype = _Request->getRequestType();
+size_t HttpRequest::getRequestSize(){
+  return _RequestSize;  
+}
+
+HttpRequest::~HttpRequest(){
+  delete[] _Request;
+}
+
+HttpForm::HttpForm(){
+    
+}
+
+void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
+  int rtype = request->getRequestType();
   switch(rtype){
     case GETREQUEST:{
-      printf("GETREQUEST");
+      printf("GETREQUEST: %s \n",request->getRequestURL());
+      break;
     }
     case POSTREQUEST:{
-      printf("GETREQUEST");
+       printf("POSTREQUEST %s \n",request->getRequest());
+      break;
     }
   }
 }
+
+

@@ -2,9 +2,9 @@ project(libhttp++)
 cmake_minimum_required(VERSION 2.6)
 enable_testing ()
 
-#if(CMAKE_CXX_COMPILER MATCHES "gcc")
-  SET(CMAKE_CXX_FLAGS "-O0 -g -Wall -std=c++11")
-#endif(CMAKE_CXX_COMPILER MATCHES "gcc")
+if(CMAKE_CXX_COMPILER MATCHES "gcc")
+  SET(CMAKE_CXX_FLAGS "-g -O0 -Wall -std=c++11")
+endif(CMAKE_CXX_COMPILER MATCHES "gcc")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)
 
