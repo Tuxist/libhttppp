@@ -293,11 +293,15 @@ void HttpRequest::parse(Connection* curconnection){
 	if(endpos==-1){
           _httpexception.Note("Request not complete termination not found");
           throw _httpexception;
-	}
+	}else{
+          endpos+=2;  
+        }
+      }else{
+        endpos+=4;  
       }
           
       char *buffer;
-      size_t buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos+1,&buffer);
+      size_t buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&buffer);
       curconnection->resizeRecvQueue(buffersize);
       if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
@@ -335,7 +339,7 @@ void HttpRequest::parse(Connection* curconnection){
       }
       delete[] buffer;
       size_t csize=getDataSizet("Content-Length");
-      if(csize!=0){
+      if(_RequestType==POSTREQUEST && csize!=0){
         size_t rsize=curconnection->getRecvSize();
         for(ConnectionData *dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
           printf("block: %s\n",dblock->getData()); 
