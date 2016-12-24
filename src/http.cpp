@@ -342,7 +342,6 @@ void HttpRequest::parse(Connection* curconnection){
       if(_RequestType==POSTREQUEST && csize!=0){
         size_t rsize=curconnection->getRecvSize();
         for(ConnectionData *dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
-          printf("block: %s\n",dblock->getData()); 
           dblock->getDataSize();
         }
         curconnection->resizeRecvQueue(csize);
