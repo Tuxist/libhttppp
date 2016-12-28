@@ -165,9 +165,7 @@ ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionD
        delsize=size;
        firstdat->_DataSize-=size;
        std::copy(firstdat->_Data+delsize,firstdat->_Data+BLOCKSIZE,firstdat->_Data);
-       memset(firstdat->_Data+firstdat->_DataSize,BLOCKSIZE,'\0');
-       printf("resized size: %zu\n",firstdat->_DataSize);
-       printf("resized block: %s\n",firstdat->_Data);
+       memset(firstdat->_Data+firstdat->_DataSize,(BLOCKSIZE-firstdat->_DataSize),'\0');
     }
     size-=delsize;
     *qsize-=delsize;

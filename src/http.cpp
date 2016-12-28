@@ -338,12 +338,23 @@ void HttpRequest::parse(Connection* curconnection){
 	  }
       }
       delete[] buffer;
-      size_t csize=getDataSizet("Content-Length");
-      if(_RequestType==POSTREQUEST && csize!=0){
+      if(_RequestType==POSTREQUEST){
+        size_t csize=getDataSizet("Content-Length");
         size_t rsize=curconnection->getRecvSize();
-        for(ConnectionData *dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
-          dblock->getDataSize();
-        }
+        if(csize<=rsize){
+          size_t dlocksize=curconnection->getRecvSize();
+          ConnectionData *dblock=NULL; 
+          for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
+            dlocksize-=dblock->getDataSize();
+            if(dlocksize>=BLOCKSIZE){
+                break;
+            }
+          }
+          size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
+        }else{
+          _httpexception.Note("Reuqeust incomplete");
+          throw _httpexception;
+        }        
         curconnection->resizeRecvQueue(csize);
       }
     }else{
@@ -391,7 +402,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
       break;
     }
     case POSTREQUEST:{
-       printf("POSTREQUEST %s \n",request->getRequest());
+      printf("POSTREQUEST %s \n",request->getRequest());
       break;
     }
   }
