@@ -6,7 +6,7 @@
 #include <exception.h>
 
 #include "header_png.h"
-
+#include "favicon_ico.h"
 #ifndef Windows
 #include <sys/utsname.h>
 #endif // !Windows
@@ -99,6 +99,10 @@ public:
         curres.setContentType("image/png");
 	curres.setContentLength(header_png_size);
         curres.send(curcon,(const char*)header_png,header_png_size);
+      }else if(strncmp(cururl,"/favicon.ico ",strlen(cururl))==0){
+        curres.setContentType("image/ico");
+	curres.setContentLength(favicon_ico_size);
+        curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
       }else{
 	curres.setState(HTTP404);
         curres.send(curcon,NULL,0);
