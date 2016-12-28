@@ -121,8 +121,6 @@ ConnectionData *Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datas
     _ReadDataLast->_nextConnectionData=new ConnectionData(data,datasize);
     _ReadDataLast=_ReadDataLast->_nextConnectionData;
   }
-  std::copy(data,data+datasize,_ReadDataLast->_Data);
-  _ReadDataLast->_DataSize=datasize;
   _ReadDataSize+=datasize;
   return _ReadDataLast;
 }
