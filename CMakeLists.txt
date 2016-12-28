@@ -2,10 +2,6 @@ project(libhttp++)
 cmake_minimum_required(VERSION 2.6)
 enable_testing ()
 
-if(CMAKE_CXX_COMPILER MATCHES "gcc")
-  SET(CMAKE_CXX_FLAGS "-g -O0 -Wall -std=c++11")
-endif(CMAKE_CXX_COMPILER MATCHES "gcc")
-
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
   if(CMAKE_CXX_COMPILER MATCHES "gcc")
      SET(CMAKE_CXX_FLAGS "-g -Wall -std=c++11")
