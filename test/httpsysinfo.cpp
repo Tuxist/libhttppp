@@ -3,6 +3,7 @@
 #include <httpd.h>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <exception.h>
 
 #include "header_png.h"
@@ -46,22 +47,42 @@ class HtmlContent{
   }
 };
 
+
 class IndexPage{
 public:
   IndexPage(){
     sysstream << "<!DOCTYPE html><body>"
               << "<div><img src=\"images/header.png\"/></div>"
               << "<span>System Info:</span><br/>"; 
-#ifndef Windows
-    struct utsname usysinfo;
-    uname(&usysinfo);
-    HtmlTable htmltable;
-    htmltable.createRow("Operating system:",usysinfo.sysname);
-    htmltable.createRow("Release Version:",usysinfo.release);
-    htmltable.createRow("Hardware:",usysinfo.machine);
-    sysstream << htmltable.getTable() << "</body></html>";
-#endif
+    KernelInfo();
+    CPUInfo();
+    sysstream << "</body></html>";
               
+  }
+  
+  void KernelInfo(){
+#ifndef Windows
+      struct utsname usysinfo;
+      uname(&usysinfo);
+      HtmlTable htmltable;
+      htmltable.createRow("Operating system:",usysinfo.sysname);
+      htmltable.createRow("Release Version:",usysinfo.release);
+      htmltable.createRow("Hardware:",usysinfo.machine);
+      sysstream << "<h2>KernelInfo:</h2>" << htmltable.getTable();
+#endif
+  }
+  void CPUInfo(){
+#ifndef Windows
+    sysstream << "<h2>CPUInfo:</h2>";
+    std::string line;
+    std::ifstream cpufile ("/proc/cpuinfo");
+    if (cpufile.is_open()){
+      while ( getline (cpufile,line) ){
+        sysstream << line << "<br/>";
+      }
+      cpufile.close();
+    }
+#endif      
   }
   
   const char *getIndexPage(){
@@ -76,7 +97,6 @@ public:
 private:
   std::string       _Buffer;
   std::stringstream sysstream;
-  size_t _BufferSize;
 };
 
 class Controller{
