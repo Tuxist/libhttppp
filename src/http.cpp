@@ -119,8 +119,8 @@ HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value,
 
 HttpHeader::HeaderData *HttpHeader::setData(const char* key, size_t value,
 					    HttpHeader::HeaderData *pos){
-  char buf[sizeof(size_t)+1];
-  snprintf(buf, sizeof(size_t)+1, "%zu", value);
+  char buf[255];
+  snprintf(buf, sizeof(buf), "%zu", value);
   return setData(key,buf,pos);
 }
 
