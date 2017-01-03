@@ -306,7 +306,6 @@ Connection* ConnectionPool::delConnection(SOCKET socket){
 }
 #endif
 
-
 Connection* ConnectionPool::delConnection(ClientSocket *clientsocket){
   return delConnection(getConnection(clientsocket));
 }

@@ -64,9 +64,10 @@ HttpD::HttpD(int argc, char** argv){
 }
 
 void HttpD::_Help(){
-        printf("%s%s%s","--httpaddr=0.0.0.0        Address to listen\n"
-                       ,"--httpport=80             Port to listen\n" 
-                       ,"--rootpath=/tmp           Directory for file content\n\n"
+        printf("%s%s%s%s","--httpaddr=0.0.0.0        Address to listen\n"
+                         ,"--httpport=80             Port to listen\n" 
+                         ,"--rootpath=/tmp           Directory for file content\n"
+                         ,"--maxconnections=         Max conncetoins thy can connect\n\n"          
 	      );
 }
 
