@@ -5,6 +5,7 @@ set(libhttpSrcs
   socket.cpp
   http.cpp
   httpd.cpp
+  https.cpp
 )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -50,7 +51,7 @@ install(FILES connections.h
               exception.h
               event.h
               session.h
-              ssl.h
+              https.h
               mimetypes.h
               libhttp++.cmake
               ${CMAKE_BINARY_DIR}/config.h

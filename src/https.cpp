@@ -25,3 +25,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include "https.h"
+
+using namespace libhttppp;
+
+HTTPS::HTTPS(){
+  SSL_load_error_strings();	
+  OpenSSL_add_ssl_algorithms();
+}
+
+HTTPS::~HTTPS(){
+  EVP_cleanup();
+}

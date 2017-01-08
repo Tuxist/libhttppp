@@ -25,3 +25,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <openssl/ssl.h>
+#include <openssl/err.h>
+
+#ifndef SSL_H
+#define SSL_H
+namespace libhttppp {
+  class HTTPS{
+    HTTPS();
+    ~HTTPS();
+    
+  };
+}
+#endif
