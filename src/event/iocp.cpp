@@ -25,17 +25,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "../queue.h"
+#include "../event.h"
 
 using namespace libhttppp;
 
 Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
   HANDLE iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0); // equals epoll_create
-CreateIoCompletionPort(mySocketHandle, iocp, 0, 0); // equals epoll_ctl(EPOLL_CTL_ADD)
+  CreateIoCompletionPort(socket, iocp, 0, 0); // equals epoll_ctl(EPOLL_CTL_ADD)
 
   for(;;){
-        if(GetQueuedCompletionStatus(iocp, &number_bytes, &key, &o, INFINITE)) // equals epoll_wait()
-        do_something();
+//         if(GetQueuedCompletionStatus(iocp, &number_bytes, &key, &o, INFINITE)) // equals epoll_wait()
+//         do_something();
 	  Connection *curcon;
 	  RequestEvent(curcon);
   }
