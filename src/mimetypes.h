@@ -26,19 +26,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 static const char* MimeTypes[][2] ={
-  {".htm","text/html"},
+  {".htm", "text/html"},
   {".html","text/html"},
-  {".php","text/html"},
-  {".txt","text/plain"},
-  {".js","text/javascript"}, 
-  {".css","text/css"},
-  {".xml","text/xml"},
-  {".jpg","image/jpeg"},
+  {".php", "text/html"},
+  {".txt", "text/plain"},
+  {".js",  "text/javascript"}, 
+  {".css", "text/css"},
+  {".xml", "text/xml"},
+  {".jpg", "image/jpeg"},
   {".jpeg","image/jpeg"},
-  {".png","image/png"},
-  {".gif","image/gif"},
-  {".svg","image/svg"},
+  {".png", "image/png"},
+  {".gif", "image/gif"},
+  {".svg", "image/svg"},
   {".tiff","image/tiff"},
-  {".ico","image/x-icon"},
+  {".ico", "image/x-icon"},
   {0,0}
 };

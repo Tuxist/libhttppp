@@ -52,11 +52,12 @@ class IndexPage{
 public:
   IndexPage(){
     sysstream << "<!DOCTYPE html><body>"
-              << "<div><img src=\"images/header.png\"/></div>"
-              << "<span>System Info:</span><br/>"; 
+              << "<div id=\"mainbar\" style=\"width:1280px; margin:0px auto;\">"
+              << "<div id=\"headerimage\"><img src=\"images/header.png\"/></div>"
+              << "<div id=\"sysinfo\"><span>System Info:</span><br/>"; 
     KernelInfo();
     CPUInfo();
-    sysstream << "</body></html>";
+    sysstream << "</div></div></body></html>";
               
   }
   
@@ -65,9 +66,9 @@ public:
       struct utsname usysinfo;
       uname(&usysinfo);
       HtmlTable htmltable;
-      htmltable.createRow("Operating system:",usysinfo.sysname);
-      htmltable.createRow("Release Version:",usysinfo.release);
-      htmltable.createRow("Hardware:",usysinfo.machine);
+      htmltable.createRow("Operating system ",usysinfo.sysname);
+      htmltable.createRow("Release Version  ",usysinfo.release);
+      htmltable.createRow("Hardware ",usysinfo.machine);
       sysstream << "<h2>KernelInfo:</h2>" << htmltable.getTable();
 #endif
   }
@@ -76,12 +77,16 @@ public:
     sysstream << "<h2>CPUInfo:</h2>";
     std::string line;
     std::ifstream cpufile ("/proc/cpuinfo");
+    HtmlTable cputable;
     if (cpufile.is_open()){
       while ( getline (cpufile,line) ){
-        sysstream << line << "<br/>";
+          size_t delimter=line.find(":");
+          if(delimter!=std::string::npos)
+             cputable.createRow(line.substr(0,delimter).c_str(),line.substr(delimter+1,(line.size()-(delimter+1))).c_str());
       }
       cpufile.close();
     }
+    sysstream << cputable.getTable();
 #endif      
   }
   

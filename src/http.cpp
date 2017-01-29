@@ -351,11 +351,12 @@ void HttpRequest::parse(Connection* curconnection){
             }
           }
           size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
+          curconnection->resizeRecvQueue(csize);
         }else{
-          _httpexception.Note("Reuqeust incomplete");
+          _httpexception.Note("Request incomplete clear Recvqueue");
+          curconnection->cleanRecvData();
           throw _httpexception;
-        }        
-        curconnection->resizeRecvQueue(csize);
+        }
       }
     }else{
       _httpexception.Note("No Incoming data in queue");
