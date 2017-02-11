@@ -4,7 +4,7 @@
   #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
   #define ssize_t ptrdiff_t
   #define MSVC
-#else MSVC
+#else
   #include <sys/types.h>
 #endif
 

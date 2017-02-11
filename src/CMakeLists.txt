@@ -23,7 +23,7 @@ ENDIF()
 
 include_directories(
   ${OPENSSL_INCLUDE_DIR}
-) 
+)
 
 add_library(http++        SHARED ${libhttpSrcs} )
 add_library(http++-static STATIC ${libhttpSrcs} )
