@@ -1,4 +1,4 @@
-find_library(OpenSSL REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 set(libhttpSrcs
   connections.cpp
