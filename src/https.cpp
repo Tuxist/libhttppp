@@ -37,3 +37,16 @@ HTTPS::HTTPS(){
 HTTPS::~HTTPS(){
   EVP_cleanup();
 }
+
+SSL_CTX *libhttppp::HTTPS::createContext(){
+  const SSL_METHOD *method;
+  SSL_CTX *ctx;
+  method = SSLv23_server_method();
+  ctx = SSL_CTX_new(method);
+  if (!ctx) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+  return ctx;
+}

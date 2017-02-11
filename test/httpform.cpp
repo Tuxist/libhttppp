@@ -20,6 +20,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "    <style></style>"
              << "  </head>"
              << "<body>"
+             
              << "<div style=\"border: thin solid black\">"
              << "<h2>Get Request</h2>"
              << "<form action=\"/\" method=\"get\">"
@@ -28,6 +29,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "<button type=\"submit\">Submit</button>"
              << "</form>"
              << "</div><br/>"
+             
              << "<div style=\"border: thin solid black\">"
              << "<h2>Post Request</h2>"
              << "<form action=\"/\" method=\"post\">"
@@ -36,6 +38,16 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "<button type=\"submit\">Submit</button>"
              << "</form>"
              << "</div></br>"
+             
+             << "<div style=\"border: thin solid black\">"
+             << "<h2>Post Multiform Request</h2>"
+             << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
+             << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
+             << "Last name:<br> <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
+             << "<button type=\"submit\">Submit</button>"
+             << "</form>"
+             << "</div></br>"
+             
              << "<div style=\"border: thin solid black\">"
              << "<h2>Encoding Test</h2>"
              << "<form action=\"/\" method=\"post\">"

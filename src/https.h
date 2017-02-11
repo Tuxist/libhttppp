@@ -32,9 +32,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SSL_H
 namespace libhttppp {
   class HTTPS{
+  public:
     HTTPS();
     ~HTTPS();
-    
+    void loadCertfile();
+    void loadKeyfile();
+    void setCert(const char *crt);
+    void setKey(const char *key);
+    SSL_CTX *createContext();
+  private:
+    char *cert;
+    char *key;
   };
 }
 #endif
