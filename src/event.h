@@ -38,7 +38,7 @@ namespace libhttppp {
 		Queue(ServerSocket *serversocket);
 		virtual ~Queue();
 #ifdef MSVC
-		extern "C" __declspec(dllexport) virtual void RequestEvent(Connection *curcon);
+		__declspec(dllexport) virtual void RequestEvent(Connection *curcon);
 #else
 		virtual void RequestEvent(Connection *curcon);
 #endif
