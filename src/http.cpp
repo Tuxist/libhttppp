@@ -317,14 +317,12 @@ void HttpRequest::parse(Connection* curconnection){
 	    if(delimeter>lrow){
 	      size_t keylen=delimeter-lrow;
 	      if(keylen>0 && keylen <=buffersize){
-		char *key=NULL;
-		key=new char[keylen+1];
+		char *key=new char[keylen+1];
 		std::copy(buffer+lrow,buffer+(lrow+keylen),key);
 		key[keylen]='\0';
 		size_t valuelen=pos-delimeter;
 		if(pos > 0 && valuelen <= buffersize){
-		  char *value=NULL;
-		  value=new char[valuelen+1];
+		  char *value=new char[valuelen+1];
 		  std::copy(buffer+delimeter,buffer+(delimeter+valuelen),value);
 		  value[valuelen]='\0';
  		  setData(key+2,value+2);
