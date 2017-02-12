@@ -50,7 +50,7 @@ HttpD::HttpD(int argc, char** argv){
       _Help();
     }
   }
-  if(!httpaddr || !rootpath){
+  if(!httpaddr || port==0){
     _httpexception.Cirtical("not enough arguments given");
     _Help();
     throw _httpexception;
