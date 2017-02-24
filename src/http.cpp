@@ -337,18 +337,20 @@ void HttpRequest::parse(Connection* curconnection){
       }
 
       delete[] header;
+      
       if(_RequestType==POSTREQUEST){
-        printf("postrequest\n");
         size_t csize=getDataSizet("Content-Length");
-        size_t rsize=curconnection->getRecvSize();
+        size_t rsize=curconnection->getRecvSize()-headersize;
         if(csize<=rsize){
           curconnection->resizeRecvQueue(headersize);
           size_t dlocksize=curconnection->getRecvSize();
-          ConnectionData *dblock=NULL; 
+          ConnectionData *dblock=NULL;
+          size_t cdlocksize=0;
           for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
             dlocksize-=dblock->getDataSize();
-            if(dlocksize>=BLOCKSIZE){
-                break;
+            cdlocksize+=dblock->getDataSize();
+            if(cdlocksize>csize){
+                 break;
             }
           }
           size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
@@ -401,11 +403,11 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   int rtype = request->getRequestType();
   switch(rtype){
     case GETREQUEST:{
-      printf("GETREQUEST: %s \n",request->getRequestURL());
+      printf("---=(Debug Console Parse GetRequest)=---\n%s\n",request->getRequestURL());
       break;
     }
     case POSTREQUEST:{
-      printf("POSTREQUEST %s \n",request->getRequest());
+      printf("---=(Debug Console Parse PostRequest)=---\n%s\n",request->getRequest());
       break;
     }
   }
