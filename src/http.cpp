@@ -300,30 +300,30 @@ void HttpRequest::parse(Connection* curconnection){
         endpos+=4;  
       }
           
-      char *buffer;
-      size_t buffersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&buffer);
-      curconnection->resizeRecvQueue(buffersize);
-      if(sscanf(buffer,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
+      char *header;
+      size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&header);
+      if(sscanf(header,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
 	 _httpexception.Error("can't parse http head");
          throw _httpexception;
       }
       size_t lrow=0;
       size_t delimeter=0;
-      for(size_t pos=0; pos<buffersize; pos++){
-	  if(delimeter==0 && buffer[pos]==':'){
+      /*parse the http header fields*/
+      for(size_t pos=0; pos<headersize; pos++){
+	  if(delimeter==0 && header[pos]==':'){
 	    delimeter=pos; 
 	  }
-	  if(buffer[pos]=='\r'){
+	  if(header[pos]=='\r'){
 	    if(delimeter>lrow){
 	      size_t keylen=delimeter-lrow;
-	      if(keylen>0 && keylen <=buffersize){
+	      if(keylen>0 && keylen <=headersize){
 		char *key=new char[keylen+1];
-		std::copy(buffer+lrow,buffer+(lrow+keylen),key);
+		std::copy(header+lrow,header+(lrow+keylen),key);
 		key[keylen]='\0';
 		size_t valuelen=pos-delimeter;
-		if(pos > 0 && valuelen <= buffersize){
+		if(pos > 0 && valuelen <= headersize){
 		  char *value=new char[valuelen+1];
-		  std::copy(buffer+delimeter,buffer+(delimeter+valuelen),value);
+		  std::copy(header+delimeter,header+(delimeter+valuelen),value);
 		  value[valuelen]='\0';
  		  setData(key+2,value+2);
 		  delete[] value;
@@ -335,11 +335,14 @@ void HttpRequest::parse(Connection* curconnection){
 	    lrow=pos;
 	  }
       }
-      delete[] buffer;
+
+      delete[] header;
       if(_RequestType==POSTREQUEST){
+        printf("postrequest\n");
         size_t csize=getDataSizet("Content-Length");
         size_t rsize=curconnection->getRecvSize();
         if(csize<=rsize){
+          curconnection->resizeRecvQueue(headersize);
           size_t dlocksize=curconnection->getRecvSize();
           ConnectionData *dblock=NULL; 
           for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
@@ -349,12 +352,13 @@ void HttpRequest::parse(Connection* curconnection){
             }
           }
           size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
-          curconnection->resizeRecvQueue(csize);
+          curconnection->resizeRecvQueue(rcsize);
         }else{
-          _httpexception.Note("Request incomplete clear Recvqueue");
-          curconnection->cleanRecvData();
+          _httpexception.Note("Request incomplete");
           throw _httpexception;
         }
+      }else{
+        curconnection->resizeRecvQueue(headersize);  
       }
     }else{
       _httpexception.Note("No Incoming data in queue");
