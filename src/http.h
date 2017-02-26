@@ -127,10 +127,13 @@ namespace libhttppp {
   class HttpForm {
   public:
     HttpForm();
+    ~HttpForm();
     void        parse(HttpRequest *request);
     const char *getValue(const char *key);
     void        addPair(const char *key,const char *value);
     void        clear();
+    /*multiform*/
+    const char *getBoundary();
   private:
     class FormData {
     private:
@@ -140,7 +143,10 @@ namespace libhttppp {
       char     *value;
       FormData *nextFormData;
     };
-    HttpRequest *_Request;
+    /*multiform*/
+    void         _parseMulitpart(HttpRequest *request);
+    void         _parseBoundary(const char *contenttype);
+    char        *_Boundary;
   };
 
   class HttpCookie {

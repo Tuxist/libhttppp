@@ -28,6 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include <algorithm>
 
+#ifdef Windows
+  #define strtok_r strtok_s
+#endif
+
 using namespace libhttppp;
 
 
@@ -349,7 +353,7 @@ void HttpRequest::parse(Connection* curconnection){
           for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
             dlocksize-=dblock->getDataSize();
             cdlocksize+=dblock->getDataSize();
-            if(cdlocksize>csize){
+            if(csize<cdlocksize){
                  break;
             }
           }
@@ -396,8 +400,13 @@ HttpRequest::~HttpRequest(){
 }
 
 HttpForm::HttpForm(){
-    
+  _Boundary=NULL;
 }
+
+libhttppp::HttpForm::~HttpForm(){
+  delete[] _Boundary;
+}
+
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   int rtype = request->getRequestType();
@@ -407,10 +416,58 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
       break;
     }
     case POSTREQUEST:{
-      printf("---=(Debug Console Parse PostRequest)=---\n%s\n",request->getRequest());
+      if(request->getData("Content-Type") && 
+         strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
+        _parseMulitpart(request);
+      }else{
+        printf("---=(Debug Console Parse PostRequest)=---\n%s\n",request->getRequest());
+      }
       break;
     }
   }
+}
+
+const char *libhttppp::HttpForm::getBoundary(){
+  return _Boundary;  
+}
+
+void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
+  size_t ctstartpos=0;
+  size_t ctendpos=0;
+  const char *boundary="boundary=\0";
+  size_t bdpos=0;
+  for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
+    if(bdpos==(strlen(boundary)-1)){
+      break;
+    }else if(contenttype[cpos]==boundary[bdpos]){
+      if(ctstartpos==0)
+        ctstartpos=cpos;
+      bdpos++;
+    }else{
+      bdpos=0;
+      ctstartpos=0;
+    }
+  }
+  for(size_t cpos=ctstartpos; cpos<strlen(contenttype); cpos++){
+      if(contenttype[cpos]==';'){
+          ctendpos=cpos;
+      }
+  }
+  if(ctendpos==0)
+    ctendpos=strlen(contenttype);
+  /*cut boundary=*/
+  ctstartpos+=strlen(boundary);
+  
+  delete[] _Boundary;
+  _Boundary=new char[(ctendpos-ctstartpos)+1];
+  std::copy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
+  _Boundary[(ctendpos-ctstartpos)]='\0';
+  printf("ctstartpos: %s \n",_Boundary);
+}
+
+
+void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
+  _parseBoundary(request->getData("Content-Type"));
 }
 
 
