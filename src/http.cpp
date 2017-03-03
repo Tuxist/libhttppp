@@ -462,12 +462,12 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary=new char[(ctendpos-ctstartpos)+1];
   std::copy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
   _Boundary[(ctendpos-ctstartpos)]='\0';
-  printf("ctstartpos: %s \n",_Boundary);
 }
 
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
+  
 }
 
 
