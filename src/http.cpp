@@ -359,6 +359,7 @@ void HttpRequest::parse(Connection* curconnection){
           }
           size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
           curconnection->resizeRecvQueue(rcsize);
+	  _RequestSize=rcsize;
         }else{
           _httpexception.Note("Request incomplete");
           throw _httpexception;
@@ -467,6 +468,11 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
+  const char *req=request->getRequest();
+  size_t reqsize=request->getRequestSize();
+  for(size_t cr=0; cr<reqsize; cr++){
+    printf("%c",req[cr]);
+  }
   
 }
 
