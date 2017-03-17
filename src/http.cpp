@@ -458,9 +458,10 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
     ctendpos=strlen(contenttype);
   /*cut boundary=*/
   ctstartpos+=strlen(boundary);
-  
-  delete[] _Boundary;
-  _Boundary=new char[(ctendpos-ctstartpos)+1];
+  if(_Boundary)
+    delete[] _Boundary;
+  _BoundarySize=(ctendpos-ctstartpos);
+  _Boundary=new char[_BoundarySize+1];
   std::copy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
   _Boundary[(ctendpos-ctstartpos)]='\0';
 }
@@ -470,7 +471,20 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
   const char *req=request->getRequest();
   size_t reqsize=request->getRequestSize();
+  ssize_t bdpos=-1;
   for(size_t cr=0; cr<reqsize; cr++){
+    for(size_t bpos=0; bpos<_BoundarySize; bpos++){
+      if(req[cr]==_Boundary[bpos]){
+	if(bdpos==-1)
+	  bdpos=bpos;
+	cr++;
+      }else{
+	bdpos=-1;
+      }
+    }
+    if(bdpos!=-1){
+      printf("bdpos: %zu \n",cr);
+    }
     printf("%c",req[cr]);
   }
   

@@ -110,7 +110,6 @@ namespace libhttppp {
     const char    *getRequest();
     size_t         getRequestSize();
   private:
-    char          *_Buffer;
     char          *_Request;
     size_t         _RequestSize;
     int            _RequestType;
@@ -147,6 +146,7 @@ namespace libhttppp {
     void         _parseMulitpart(HttpRequest *request);
     void         _parseBoundary(const char *contenttype);
     char        *_Boundary;
+    size_t       _BoundarySize;
   };
 
   class HttpCookie {
