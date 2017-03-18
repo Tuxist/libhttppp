@@ -32,31 +32,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #define strtok_r strtok_s
 #endif
 
-using namespace libhttppp;
 
-
-HttpHeader::HttpHeader(){
+libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=NULL;
   _lastHeaderData=NULL;
 }
 
-HttpHeader::HeaderData* HttpHeader::getfirstHeaderData(){
+libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
   return _firstHeaderData;
 }
 
-HttpHeader::HeaderData* HttpHeader::nextHeaderData(HttpHeader::HeaderData* pos){
+libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::nextHeaderData(HttpHeader::HeaderData* pos){
   return pos->_nextHeaderData;
 }
 
-const char* HttpHeader::getKey(HttpHeader::HeaderData* pos){
+const char* libhttppp::HttpHeader::getKey(HttpHeader::HeaderData* pos){
   return pos->_Key;
 }
 
-const char* HttpHeader::getValue(HttpHeader::HeaderData* pos){
+const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
   return pos->_Value;
 }
 
-const char* HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
+const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(strncmp(key,curdat->_Key,curdat->_Keylen)==0){
       if(pos!=NULL)
@@ -67,7 +65,7 @@ const char* HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   return NULL;
 }
 
-size_t HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
+size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
   size_t len = 0;
   const char *buf=getData(key,pos);
   if(buf){
@@ -77,7 +75,7 @@ size_t HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
   return 0;
 }
 
-int HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
+int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
   int len = 0;
   const char *buf=getData(key,pos);
   if(buf){
@@ -87,7 +85,7 @@ int HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
   return 0;
 }
 
-HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value){
+libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(strncmp(curdat->_Key,key,curdat->_Keylen)==0){
        return setData(key,value,curdat);
@@ -103,8 +101,8 @@ HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value){
   return _lastHeaderData;
 }
 
-HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value,
-					    HttpHeader::HeaderData *pos){
+libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value,
+								  libhttppp::HttpHeader::HeaderData *pos){
   if(pos){
     delete[] pos->_Key;
     delete[] pos->_Value;
@@ -121,14 +119,14 @@ HttpHeader::HeaderData *HttpHeader::setData(const char* key, const char* value,
   return pos;
 }
 
-HttpHeader::HeaderData *HttpHeader::setData(const char* key, size_t value,
-					    HttpHeader::HeaderData *pos){
+libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, size_t value,
+								  libhttppp::HttpHeader::HeaderData *pos){
   char buf[255];
   snprintf(buf, sizeof(buf), "%zu", value);
   return setData(key,buf,pos);
 }
 
-void HttpHeader::deldata(const char* key){
+void libhttppp::HttpHeader::deldata(const char* key){
   HeaderData *prevdat=NULL;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(strncmp(curdat->_Key,key,curdat->_Keylen)==0){
@@ -149,7 +147,7 @@ void HttpHeader::deldata(const char* key){
   }
 }
 
-size_t HttpHeader::getElements(){
+size_t libhttppp::HttpHeader::getElements(){
   size_t elements=0;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     elements++;
@@ -157,7 +155,7 @@ size_t HttpHeader::getElements(){
   return elements;
 }
 
-size_t HttpHeader::getHeaderSize(){
+size_t libhttppp::HttpHeader::getHeaderSize(){
   size_t hsize=0;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     hsize+=curdat->_Keylen+curdat->_Valuelen;
@@ -167,7 +165,7 @@ size_t HttpHeader::getHeaderSize(){
 
 
 
-HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
+libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
   _nextHeaderData=NULL;
   _Keylen=strlen(key);
   _Valuelen=strlen(value);
@@ -177,17 +175,17 @@ HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
   std::copy(value,value+(_Valuelen+1),_Value);
 }
 
-HttpHeader::HeaderData::~HeaderData(){
+libhttppp::HttpHeader::HeaderData::~HeaderData(){
   delete[] _Key;
   delete[] _Value;
   delete _nextHeaderData;
 }
 
-HttpHeader::~HttpHeader(){
+libhttppp::HttpHeader::~HttpHeader(){
   delete _firstHeaderData;
 }
 
-HttpResponse::HttpResponse(){
+libhttppp::HttpResponse::HttpResponse(){
   setState(HTTP200);
   setVersion(HTTPVERSION("1.1"));
   _ContentType=setData("Content-Type","text/plain");
@@ -195,7 +193,7 @@ HttpResponse::HttpResponse(){
   _Connection=setData("Connection","Keep-Alive");
 }
 
-void HttpResponse::setState(const char* httpstate){
+void libhttppp::HttpResponse::setState(const char* httpstate){
   if(httpstate==NULL){
     _httpexception.Error("http state not set don't do that !!!");
     throw _httpexception;
@@ -210,19 +208,19 @@ void HttpResponse::setState(const char* httpstate){
   _State[hlen]='\0';
 }
 
-void HttpResponse::setContentLength(size_t len){
+void libhttppp::HttpResponse::setContentLength(size_t len){
   setData("Content-Length",len,_ContentLength);
 }
 
-void HttpResponse::setContentType(const char* type){
+void libhttppp::HttpResponse::setContentType(const char* type){
   setData("Content-Type",type,_ContentType);
 }
 
-void HttpResponse::setConnection(const char* type){
+void libhttppp::HttpResponse::setConnection(const char* type){
   setData("Connection",type,_ContentType);
 }
 
-void HttpResponse::setVersion(const char* version){
+void libhttppp::HttpResponse::setVersion(const char* version){
   if(version==NULL)
     throw "http version not set don't do that !!!";
   size_t vlen=strlen(version);
@@ -233,14 +231,14 @@ void HttpResponse::setVersion(const char* version){
   _Version[vlen]='\0';
 }
 
-void HttpResponse::parse(ClientConnection *curconnection){
+void libhttppp::HttpResponse::parse(ClientConnection *curconnection){
 }
 
-void HttpResponse::send(Connection* curconnection, const char* data){
+void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
   send(curconnection,data,strlen(data));
 }
 
-size_t HttpResponse::printHeader(char **buffer){
+size_t libhttppp::HttpResponse::printHeader(char **buffer){
   char *header=NULL;
   size_t headersize=((getHeaderSize()+_VersionLen+_Statelen)+((4*getElements())+5)); 
   header=new char[(headersize+1)];
@@ -255,7 +253,7 @@ size_t HttpResponse::printHeader(char **buffer){
 }
 
 
-void HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
+void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
   setData("Connection","keep-alive");
   setData("Content-Length",datalen);
   char *header;
@@ -266,16 +264,16 @@ void HttpResponse::send(Connection* curconnection,const char* data, size_t datal
     curconnection->addSendQueue(data,datalen);
 }
 
-HttpResponse::~HttpResponse(){
+libhttppp::HttpResponse::~HttpResponse(){
 }
 
-HttpRequest::HttpRequest(){
+libhttppp::HttpRequest::HttpRequest(){
   _Request=NULL;
   _RequestType=0;
   _RequestSize=0;
 }
 
-void HttpRequest::parse(Connection* curconnection){
+void libhttppp::HttpRequest::parse(Connection* curconnection){
   try{
     ConnectionData *curdat=curconnection->getRecvData();
     if(curdat){
@@ -376,31 +374,31 @@ void HttpRequest::parse(Connection* curconnection){
   }
 }
 
-void HttpRequest::send(ClientConnection *curconnection){
+void libhttppp::HttpRequest::send(ClientConnection *curconnection){
 
 }
 
-int HttpRequest::getRequestType(){
+int libhttppp::HttpRequest::getRequestType(){
   return _RequestType;
 }
 
-const char* HttpRequest::getRequestURL(){
+const char* libhttppp::HttpRequest::getRequestURL(){
   return _RequestURL;
 }
 
-const char* HttpRequest::getRequest(){
+const char* libhttppp::HttpRequest::getRequest(){
   return _Request;  
 }
 
-size_t HttpRequest::getRequestSize(){
+size_t libhttppp::HttpRequest::getRequestSize(){
   return _RequestSize;  
 }
 
-HttpRequest::~HttpRequest(){
+libhttppp::HttpRequest::~HttpRequest(){
   delete[] _Request;
 }
 
-HttpForm::HttpForm(){
+libhttppp::HttpForm::HttpForm(){
   _Boundary=NULL;
 }
 
@@ -431,6 +429,11 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
 const char *libhttppp::HttpForm::getBoundary(){
   return _Boundary;  
 }
+
+size_t libhttppp::HttpForm::getBoundarySize(){
+  return _BoundarySize;
+}
+
 
 void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   size_t ctstartpos=0;

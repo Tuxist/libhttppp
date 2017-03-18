@@ -133,6 +133,7 @@ namespace libhttppp {
     void        clear();
     /*multiform*/
     const char *getBoundary();
+    size_t      getBoundarySize();
   private:
     class FormData {
     private:
