@@ -27,9 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include "httpd.h"
 
-using namespace libhttppp;
-
-HttpD::HttpD(int argc, char** argv){
+libhttppp::HttpD::HttpD(int argc, char** argv){
   int port=0;
   _MaxConnections=MAXDEFAULTCONN;
   _Queue=NULL;
@@ -63,7 +61,7 @@ HttpD::HttpD(int argc, char** argv){
 #endif
 }
 
-void HttpD::_Help(){
+void libhttppp::HttpD::_Help(){
         printf("%s%s%s%s","--httpaddr=0.0.0.0        Address to listen\n"
                          ,"--httpport=80             Port to listen\n" 
                          ,"--rootpath=/tmp           Directory for file content\n"
@@ -71,13 +69,13 @@ void HttpD::_Help(){
 	      );
 }
 
-void HttpD::runDaemon(){
+void libhttppp::HttpD::runDaemon(){
   _ServerSocket->setnonblocking();
   _ServerSocket->listenSocket();
   _Queue = new Queue(_ServerSocket);
 }
 
-HttpD::~HttpD(){
+libhttppp::HttpD::~HttpD(){
   delete _ServerSocket;
   delete _Queue;
 }

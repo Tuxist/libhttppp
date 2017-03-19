@@ -31,11 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <err.h>
 
-#include "../queue.h"
+#include "../event.h"
 
-using namespace libhttppp;
-
-Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
+libhttppp::Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
   struct kevent change;
   struct kevent event;
   pid_t pid;
@@ -131,6 +129,6 @@ Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
   delete evList;
 }
 
-Queue::~Queue(){
+libhttppp::Queue::~Queue(){
 
 }

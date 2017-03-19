@@ -27,9 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../event.h"
 
-using namespace libhttppp;
-
-Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
+libhttppp::Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
   HANDLE iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0); // equals epoll_create
   CreateIoCompletionPort(socket, iocp, 0, 0); // equals epoll_ctl(EPOLL_CTL_ADD)
 

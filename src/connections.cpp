@@ -31,36 +31,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "connections.h"
 
-using namespace libhttppp;
-
-const char* ConnectionData::getData(){
+const char* libhttppp::ConnectionData::getData(){
   return _Data;
 }
 
-size_t ConnectionData::getDataSize(){
+size_t libhttppp::ConnectionData::getDataSize(){
   return _DataSize;
 }
 
-ConnectionData *ConnectionData::nextConnectionData(){
+libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
   return _nextConnectionData;
 }
 
-ConnectionData::ConnectionData(const char*data,size_t datasize){
+libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
   _nextConnectionData=NULL;
   std::copy(data,data+datasize,_Data);
   _DataSize=datasize;
 }
 
-ConnectionData::~ConnectionData(){
+libhttppp::ConnectionData::~ConnectionData(){
   if(_nextConnectionData)
     delete _nextConnectionData;
 }
 
-ClientSocket *Connection::getClientSocket(){
+libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   return _ClientSocket;
 }
 
-Connection *Connection::nextConnection(){
+libhttppp::Connection *libhttppp::Connection::nextConnection(){
   return _nextConnection; 
 }
 
@@ -73,7 +71,7 @@ Connection *Connection::nextConnection(){
   * And returns exceptionally the new connection data block.
   * Use it everyday with good health.
   */
-ConnectionData *Connection::addSendQueue(const char*data,size_t datasize){
+libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,size_t datasize){
   size_t written=0;
   for(size_t cursize=datasize; cursize>0; cursize=datasize-written){
     if(cursize>BLOCKSIZE){
@@ -92,7 +90,7 @@ ConnectionData *Connection::addSendQueue(const char*data,size_t datasize){
   return _SendDataLast;
 }
 
-void Connection::cleanSendData(){
+void libhttppp::Connection::cleanSendData(){
    if(_SendDataFirst)
      delete _SendDataFirst;
    _SendDataFirst=NULL;
@@ -100,20 +98,20 @@ void Connection::cleanSendData(){
    _SendDataSize=0;
 }
 
-ConnectionData *Connection::resizeSendQueue(size_t size){
+libhttppp::ConnectionData *libhttppp::Connection::resizeSendQueue(size_t size){
   return _resizeQueue(&_SendDataFirst,&_SendDataLast,&_SendDataSize,size);
 }
 
-ConnectionData* Connection::getSendData(){
+libhttppp::ConnectionData* libhttppp::Connection::getSendData(){
   return _SendDataFirst;
 }
 
-size_t Connection::getSendSize(){
+size_t libhttppp::Connection::getSendSize(){
   return _SendDataSize;
 }
 
 
-ConnectionData *Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
+libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
   if(!_ReadDataFirst){
     _ReadDataFirst= new ConnectionData(data,datasize);
     _ReadDataLast=_ReadDataFirst;
@@ -125,7 +123,7 @@ ConnectionData *Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datas
   return _ReadDataLast;
 }
 
-void Connection::cleanRecvData(){
+void libhttppp::Connection::cleanRecvData(){
    delete _ReadDataFirst;
   _ReadDataFirst=NULL;
   _ReadDataLast=NULL;
@@ -133,20 +131,19 @@ void Connection::cleanRecvData(){
 }
 
 
-ConnectionData *Connection::resizeRecvQueue(size_t size){
+libhttppp::ConnectionData *libhttppp::Connection::resizeRecvQueue(size_t size){
   return _resizeQueue(&_ReadDataFirst,&_ReadDataLast,&_ReadDataSize,size);
 }
 
-ConnectionData *Connection::getRecvData(){
+libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){
   return _ReadDataFirst;
 }
 
-size_t Connection::getRecvSize(){
+size_t libhttppp::Connection::getRecvSize(){
   return _ReadDataSize;
 }
 
-//buggy here resize not right working in same block
-ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
+libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
 					 size_t *qsize, size_t size){
   ConnectionData *firstdat=*firstdata;
   while(firstdat!=NULL && size!=0){
@@ -172,7 +169,7 @@ ConnectionData *Connection::_resizeQueue(ConnectionData** firstdata, ConnectionD
   return firstdat;
 }
 
-int Connection::copyValue(ConnectionData* startblock, int startpos, 
+int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos, 
                           ConnectionData* endblock, int endpos, char** buffer){
   size_t copysize=0,copypos=0;
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
@@ -206,12 +203,12 @@ int Connection::copyValue(ConnectionData* startblock, int startpos,
   return copysize; //not include termination
 }
 
-int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
+int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
 			    const char* keyword){
   return searchValue(startblock, findblock, keyword,strlen(keyword));
 }
 
-int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
+int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
 			    const char* keyword,size_t keylen){
   size_t fpos=0,fcurpos=0;
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
@@ -234,7 +231,7 @@ int Connection::searchValue(ConnectionData* startblock, ConnectionData** findblo
   return -1;
 }
 
-bool Connection::tryLock(){
+bool libhttppp::Connection::tryLock(){
   try{
     _Locked->try_lock();
     return true;
@@ -243,7 +240,7 @@ bool Connection::tryLock(){
   }
 }
 
-bool Connection::tryUnlock(){
+bool libhttppp::Connection::tryUnlock(){
   try{
     _Locked->unlock();
     return true;
@@ -252,7 +249,7 @@ bool Connection::tryUnlock(){
   }
 }
 
-Connection::Connection(){
+libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket;
   _nextConnection=NULL;
   _ReadDataFirst=NULL;
@@ -263,7 +260,7 @@ Connection::Connection(){
   _SendDataSize=0;
 }
 
-Connection::~Connection(){
+libhttppp::Connection::~Connection(){
   delete _ClientSocket;
   delete _ReadDataFirst;
   delete _SendDataFirst;
@@ -271,7 +268,7 @@ Connection::~Connection(){
 }
 
 
-ConnectionPool::ConnectionPool(ServerSocket *socket){
+libhttppp::ConnectionPool::ConnectionPool(ServerSocket *socket){
   _firstConnection=NULL;
   _lastConnection=NULL;
   _ServerSocket=socket;
@@ -281,11 +278,11 @@ ConnectionPool::ConnectionPool(ServerSocket *socket){
   }
 }
 
-ConnectionPool::~ConnectionPool(){
+libhttppp::ConnectionPool::~ConnectionPool(){
     delete _firstConnection;
 }
 
-Connection* ConnectionPool::addConnection(){
+libhttppp::Connection* libhttppp::ConnectionPool::addConnection(){
   if(!_firstConnection){
     _firstConnection=new Connection;
     _lastConnection=_firstConnection;
@@ -297,20 +294,20 @@ Connection* ConnectionPool::addConnection(){
 }
 
 #ifndef Windows
-Connection* ConnectionPool::delConnection(int socket){
+libhttppp::Connection* libhttppp::ConnectionPool::delConnection(int socket){
   return delConnection(getConnection(socket));
 }
 #else
-Connection* ConnectionPool::delConnection(SOCKET socket){
+libhttppp::Connection* libhttppp::ConnectionPool::delConnection(SOCKET socket){
   return delConnection(getConnection(socket));
 }
 #endif
 
-Connection* ConnectionPool::delConnection(ClientSocket *clientsocket){
+libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *clientsocket){
   return delConnection(getConnection(clientsocket));
 }
 
-Connection* ConnectionPool::delConnection(Connection *delcon){
+libhttppp::Connection* libhttppp::ConnectionPool::delConnection(Connection *delcon){
   Connection *prevcon=NULL;
   for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
     if(curcon==delcon){
@@ -335,7 +332,7 @@ Connection* ConnectionPool::delConnection(Connection *delcon){
     return _firstConnection;
 }
 
-Connection* ConnectionPool::getConnection(ClientSocket *clientsocket){
+libhttppp::Connection* libhttppp::ConnectionPool::getConnection(ClientSocket *clientsocket){
   for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
     if(curcon->getClientSocket()==clientsocket)
       return curcon;
@@ -344,9 +341,9 @@ Connection* ConnectionPool::getConnection(ClientSocket *clientsocket){
 }
 
 #ifndef Windows
-Connection* ConnectionPool::getConnection(int socket){
+libhttppp::Connection* libhttppp::ConnectionPool::getConnection(int socket){
 #else
-Connection* ConnectionPool::getConnection(SOCKET socket){
+libhttppp::Connection* libhttppp::ConnectionPool::getConnection(SOCKET socket){
 #endif
   for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
     if(curcon->getClientSocket()->getSocket()==socket)

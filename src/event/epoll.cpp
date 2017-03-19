@@ -36,9 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../event.h"
 
-using namespace libhttppp;
-
-Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
+libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
   struct epoll_event *events;
   struct epoll_event  event = {0};
   events = new epoll_event[(serversocket->getMaxconnections()*sizeof(struct epoll_event))];
@@ -153,6 +151,6 @@ Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
     
 }
 
-Queue::~Queue(){
+libhttppp::Queue::~Queue(){
 
 }
