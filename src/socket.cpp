@@ -40,15 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include <errno.h>
 
-
-using namespace libhttppp;
-
-ClientSocket::ClientSocket(){
+libhttppp::ClientSocket::ClientSocket(){
   _Socket=0;
   _SSL=0;
 }
 
-ClientSocket::~ClientSocket(){
+libhttppp::ClientSocket::~ClientSocket(){
   shutdown(_Socket,
 #ifndef Windows 
   SHUT_RDWR 
@@ -58,7 +55,7 @@ ClientSocket::~ClientSocket(){
   );
 }
 
-void ClientSocket::setnonblocking(){
+void libhttppp::ClientSocket::setnonblocking(){
 #ifndef Windows
   fcntl(_Socket, F_SETFL, O_NONBLOCK);
 #else
@@ -68,15 +65,15 @@ void ClientSocket::setnonblocking(){
 }
 
 #ifndef Windows
-int ClientSocket::getSocket(){
+int libhttppp::ClientSocket::getSocket(){
 #else
-SOCKET ClientSocket::getSocket(){
+SOCKET libhttppp::ClientSocket::getSocket(){
 #endif
   return _Socket;
 }
 
 #ifndef Windows
-ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
+libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   int optval = 1;
  _Maxconnections=maxconnections;
   _UXSocketAddr.sun_family = AF_UNIX;
@@ -101,7 +98,7 @@ ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 }
 #endif
 
-ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
+libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
   _Maxconnections=maxconnections;
   _SockAddr.sin_family = AF_INET;
   _SockAddr.sin_port = htons(port);
@@ -127,11 +124,11 @@ ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
   }
 }
 
-ServerSocket::~ServerSocket(){
+libhttppp::ServerSocket::~ServerSocket(){
 
 }
 
-void ServerSocket::setnonblocking(){
+void libhttppp::ServerSocket::setnonblocking(){
 #ifndef Windows
   fcntl(_Socket, F_SETFL, O_NONBLOCK);
 #else
@@ -140,7 +137,7 @@ void ServerSocket::setnonblocking(){
 #endif
 }
 
-void ServerSocket::listenSocket(){
+void libhttppp::ServerSocket::listenSocket(){
   if(listen(_Socket, _Maxconnections) < 0){
     _httpexception.Cirtical("Can't create Server Socket");
     throw _httpexception;
@@ -148,23 +145,23 @@ void ServerSocket::listenSocket(){
 }
 
 #ifndef Windows
-int ServerSocket::getSocket(){
+int libhttppp::ServerSocket::getSocket(){
   return _Socket;
 }
 #else
-SOCKET ServerSocket::getSocket(){
+SOCKET libhttppp::ServerSocket::getSocket(){
   return _Socket;
 }
 #endif
 
-int ServerSocket::getMaxconnections(){
+int libhttppp::ServerSocket::getMaxconnections(){
   return _Maxconnections;
 }
 
 #ifndef Windows
-int ServerSocket::acceptEvent(ClientSocket *clientsocket){
+int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
 #else
-SOCKET ServerSocket::acceptEvent(ClientSocket *clientsocket){
+SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
 #endif
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
 #ifndef Windows
@@ -181,11 +178,11 @@ SOCKET ServerSocket::acceptEvent(ClientSocket *clientsocket){
   return socket;
 }
 
-ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
+ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
   return sendData(socket,data,size,0);
 }
 
-ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
+ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
    ssize_t rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
 #else
@@ -206,11 +203,11 @@ ssize_t ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int
   return rval;
 }
 
-ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
+ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
    return recvData(socket,data,size,0);
 }
 
-ssize_t ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
+ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
   ssize_t recvsize=recvfrom(socket->getSocket(),data, size,flags,
 			    &socket->_ClientAddr, &socket->_ClientAddrLen);
