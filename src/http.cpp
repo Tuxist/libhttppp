@@ -400,6 +400,7 @@ libhttppp::HttpRequest::~HttpRequest(){
 
 libhttppp::HttpForm::HttpForm(){
   _Boundary=NULL;
+  _Elements=0;
 }
 
 libhttppp::HttpForm::~HttpForm(){
@@ -469,28 +470,20 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary[(ctendpos-ctstartpos)]='\0';
 }
 
-
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
   const char *req=request->getRequest();
   size_t reqsize=request->getRequestSize();
-  ssize_t bdpos=-1;
+  size_t bpos=0;
   for(size_t cr=0; cr<reqsize; cr++){
-    for(size_t bpos=0; bpos<_BoundarySize; bpos++){
-      if(req[cr]==_Boundary[bpos]){
-	if(bdpos==-1)
-	  bdpos=bpos;
-	cr++;
-      }else{
-	bdpos=-1;
-      }
+    printf("%c: %c\n",req[cr],_Boundary[bpos]);
+    if(req[cr] == _Boundary[bpos]){
+      
+      bpos++;
+    }else{
+      bpos=0;
     }
-    if(bdpos!=-1){
-      printf("bdpos: %zu \n",cr);
-    }
-    printf("%c",req[cr]);
   }
-  
 }
 
 

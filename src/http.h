@@ -143,11 +143,15 @@ namespace libhttppp {
       char     *value;
       FormData *nextFormData;
     };
+    /*urldecoded*/
+    void         _parseUrlDecode(HttpRequest *request);
     /*multiform*/
     void         _parseMulitpart(HttpRequest *request);
     void         _parseBoundary(const char *contenttype);
     char        *_Boundary;
     size_t       _BoundarySize;
+    /*both methods*/
+    size_t       _Elements; 
   };
 
   class HttpCookie {
