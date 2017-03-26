@@ -470,20 +470,52 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary[(ctendpos-ctstartpos)]='\0';
 }
 
-void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
+bool libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
+  char *realboundary;
+  realboundary =new char[_BoundarySize+3];
+  snprintf(realboundary,_BoundarySize+3,"--%s",_Boundary);
   const char *req=request->getRequest();
   size_t reqsize=request->getRequestSize();
-  size_t bpos=0;
-  for(size_t cr=0; cr<reqsize; cr++){
-    printf("%c: %c\n",req[cr],_Boundary[bpos]);
-    if(req[cr] == _Boundary[bpos]){
-      
-      bpos++;
-    }else{
-      bpos=0;
+  size_t boundarypos=0;
+  unsigned int datalength = 0;
+  const char *datastart=0;		
+  for(size_t cr=0; cr < reqsize; cr++){
+    if(req[cr] == realboundary[boundarypos++]){
+      if(realboundary[boundarypos] == 0){
+        if(datastart == (char *)0){
+        }else{
+          datalength -= strlen(realboundary);
+          if(datalength < 0){
+           datalength = 0;
+          }
+          _parseMultiSection(datastart, datalength);
+        }
+        if(cr + 2 > reqsize){
+          return true;
+        }else if(req[cr+1] =='-' && req[cr+2] =='-'){;
+          return true;
+        }
+        while( req[cr+1] == '\n' || req[cr+1] == 0x0a || req[cr+1] == 0x0d){
+          cr++;
+        }
+        boundarypos=0;
+        datastart=&req[cr+1];
+        datalength=0;
+      }else{
+        boundarypos=0;
+      }
+      datalength++;
     }
   }
+  delete[] realboundary; 
+  return true;
 }
+
+void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
+  printf("test\n");
+  printf("%s\n",section);
+}
+
 
 
