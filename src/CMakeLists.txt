@@ -36,21 +36,22 @@ ELSE()
   target_link_libraries(http++-static ${OPENSSL_LIBRARIES})    
 ENDIF()
 
+SET_TARGET_PROPERTIES(http++ PROPERTIES INTERFACE_LINK_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
 SET_TARGET_PROPERTIES(http++ PROPERTIES LINK_INTERFACE_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
+
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 
 install(TARGETS http++  DESTINATION lib EXPORT http++-targets)
 install(TARGETS http++-static DESTINATION lib)
 install(EXPORT  http++-targets DESTINATION lib/cmake/http++)
 
-install(FILES connections.h           
-              httpd.h                 
-              http.h        
+install(FILES connections.h         
+              httpd.h
+              http.h
               httpdefinitions.h
-              socket.h                
+              socket.h
               exception.h
               event.h
-              session.h
               https.h
               mimetypes.h
               libhttp++.cmake
