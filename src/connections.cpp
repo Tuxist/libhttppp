@@ -258,6 +258,7 @@ libhttppp::Connection::Connection(){
   _SendDataFirst=NULL;
   _SendDataLast=NULL;
   _SendDataSize=0;
+  _Locked=new std::mutex;
 }
 
 libhttppp::Connection::~Connection(){
