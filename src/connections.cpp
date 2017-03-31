@@ -266,6 +266,7 @@ libhttppp::Connection::~Connection(){
   delete _ReadDataFirst;
   delete _SendDataFirst;
   delete _nextConnection;
+  delete _Locked;
 }
 
 
