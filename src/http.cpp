@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "http.h"
 #include <algorithm>
+#include <cstring>
 
 #ifdef Windows
   #define strtok_r strtok_s

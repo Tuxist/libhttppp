@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <algorithm>
 #include <mutex>
+#include <cstring>
 #include <config.h>
 
 #include "connections.h"
