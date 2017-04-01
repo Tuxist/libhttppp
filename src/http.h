@@ -146,7 +146,7 @@ namespace libhttppp {
     /*urldecoded*/
     void         _parseUrlDecode(HttpRequest *request);
     /*multiform*/
-    bool         _parseMulitpart(HttpRequest *request);
+    void         _parseMulitpart(HttpRequest *request);
     void         _parseMultiSection(const char *section,size_t sectionsize);
     void         _parseBoundary(const char *contenttype);
     char        *_Boundary;

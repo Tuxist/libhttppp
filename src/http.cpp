@@ -471,46 +471,62 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary[(ctendpos-ctstartpos)]='\0';
 }
 
-bool libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
+void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
   char *realboundary;
   realboundary =new char[_BoundarySize+3];
   snprintf(realboundary,_BoundarySize+3,"--%s",_Boundary);
-  size_t realboundarylen=strlen(realboundary);
+  size_t realboundarylen=_BoundarySize+2;
   const char *req=request->getRequest();
   size_t reqsize=request->getRequestSize();
   size_t realboundarypos=0;
   unsigned int datalength = 0;
   const char *datastart=0;
   size_t oldpos=0; 
-    for(size_t cr=0; cr < reqsize; cr++){
+  for(size_t cr=0; cr < reqsize; cr++){
     //check if boundary
     if(req[cr]==realboundary[realboundarypos]){
       //check if boundary completed
       if((realboundarypos+1)==realboundarylen){
 	//ceck if boundary before found set data end
 	if(datastart!=NULL){
-	  printf("oldpos: %zu newpos: %zu\n",oldpos,realboundarypos);
-	  datalength=realboundarypos-oldpos;
+        //cut boundarylen
+	  datalength=(cr-oldpos)-realboundarylen;
 	  if(datalength>0)
 	    _parseMultiSection(datastart,datalength);
 	}
-	datastart=req+realboundarypos;
-	oldpos=realboundarypos;
+	//set cr one higher to cut boundary
+	cr++;
+	datastart=req+cr;
+        //store pos dor datalength
+	oldpos=cr;
+        //check if boundary finished
+        if(req[cr]=='-' && req[cr+1]=='-'){
+            printf("boundary finished\n");
+            return;
+        }
       }else{
+        //boundary not completed test next sign
 	realboundarypos++;
       }
     }else{
+      //boundary reset if sign not correct
       realboundarypos=0;
     }
   }
-  delete[] realboundary; 
-  return true;
+  delete[] realboundary;
 }
 
 void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
-  printf("test\n");
-  printf("%s\n",section);
+  const char typdata[][]={"Content-Disposition","Content-Type"};
+  char *data=new char[sectionsize];
+  std::copy(section,section+sectionsize,data);
+  printf("print data:\n");
+  for(size_t dp=0; dp<sectionsize; dp++){
+    printf("%c",data[dp]);
+  }
+  printf("\n");
+  delete[] data;
 }
 
 
