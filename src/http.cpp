@@ -419,7 +419,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
     case POSTREQUEST:{
       if(request->getData("Content-Type") && 
          strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
-        _parseMulitpart(request);
+         _parseMulitpart(request);
       }else{
         printf("---=(Debug Console Parse PostRequest)=---\n%s\n",request->getRequest());
       }
@@ -507,6 +507,8 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
         //check if boundary finished
         if(req[cr]=='-' && req[cr+1]=='-'){
             printf("boundary finished\n");
+            realboundarylen=0;
+            delete[] realboundary;
             return;
         }
       }else{

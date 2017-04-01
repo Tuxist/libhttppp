@@ -134,15 +134,18 @@ namespace libhttppp {
     /*multiform*/
     const char *getBoundary();
     size_t      getBoundarySize();
-  private:
-    class FormData {
-    private:
-      FormData();
-      ~FormData();
-      char     *key;
-      char     *value;
-      FormData *nextFormData;
+    class MultipartFormData{
+    public:
+      class ContentDisposition{
+      public:
+          
+      private:
+        char *_Disposition;
+        char *_Name;
+        char *_Filename;
+      };
     };
+  private:
     /*urldecoded*/
     void         _parseUrlDecode(HttpRequest *request);
     /*multiform*/
