@@ -476,11 +476,13 @@ bool libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   char *realboundary;
   realboundary =new char[_BoundarySize+3];
   snprintf(realboundary,_BoundarySize+3,"--%s",_Boundary);
+  size_t realboundarylen=strlen(realboundary);
   const char *req=request->getRequest();
   size_t reqsize=request->getRequestSize();
-  size_t boundarypos=0;
+  size_t realboundarypos=0;
   unsigned int datalength = 0;
-  const char *datastart=0;		
+  const char *datastart=0;
+  size_t oldpos=0; 
     for(size_t cr=0; cr < reqsize; cr++){
     //check if boundary
     if(req[cr]==realboundary[realboundarypos]){
@@ -490,7 +492,7 @@ bool libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 	if(datastart!=NULL){
 	  printf("oldpos: %zu newpos: %zu\n",oldpos,realboundarypos);
 	  datalength=realboundarypos-oldpos;
-	  if(datalength<0)
+	  if(datalength>0)
 	    _parseMultiSection(datastart,datalength);
 	}
 	datastart=req+realboundarypos;
