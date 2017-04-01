@@ -497,6 +497,10 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 	}
 	//set cr one higher to cut boundary
 	cr++;
+        //cut first new line
+        while(req[cr]=='\r' || req[cr]=='\n'){
+          cr++;
+        }
 	datastart=req+cr;
         //store pos dor datalength
 	oldpos=cr;
@@ -518,15 +522,11 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 }
 
 void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
-  const char typdata[][]={"Content-Disposition","Content-Type"};
-  char *data=new char[sectionsize];
-  std::copy(section,section+sectionsize,data);
   printf("print data:\n");
   for(size_t dp=0; dp<sectionsize; dp++){
-    printf("%c",data[dp]);
+    printf("%c",section[dp]);
   }
   printf("\n");
-  delete[] data;
 }
 
 
