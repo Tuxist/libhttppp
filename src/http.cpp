@@ -481,32 +481,25 @@ bool libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   size_t boundarypos=0;
   unsigned int datalength = 0;
   const char *datastart=0;		
-  for(size_t cr=0; cr < reqsize; cr++){
-    if(req[cr] == realboundary[boundarypos++]){
-      if(realboundary[boundarypos] == 0){
-        if(datastart == (char *)0){
-        }else{
-          datalength -= strlen(realboundary);
-          if(datalength < 0){
-           datalength = 0;
-          }
-          _parseMultiSection(datastart, datalength);
-        }
-        if(cr + 2 > reqsize){
-          return true;
-        }else if(req[cr+1] =='-' && req[cr+2] =='-'){;
-          return true;
-        }
-        while( req[cr+1] == '\n' || req[cr+1] == 0x0a || req[cr+1] == 0x0d){
-          cr++;
-        }
-        boundarypos=0;
-        datastart=&req[cr+1];
-        datalength=0;
+    for(size_t cr=0; cr < reqsize; cr++){
+    //check if boundary
+    if(req[cr]==realboundary[realboundarypos]){
+      //check if boundary completed
+      if((realboundarypos+1)==realboundarylen){
+	//ceck if boundary before found set data end
+	if(datastart!=NULL){
+	  printf("oldpos: %zu newpos: %zu\n",oldpos,realboundarypos);
+	  datalength=realboundarypos-oldpos;
+	  if(datalength<0)
+	    _parseMultiSection(datastart,datalength);
+	}
+	datastart=req+realboundarypos;
+	oldpos=realboundarypos;
       }else{
-        boundarypos=0;
+	realboundarypos++;
       }
-      datalength++;
+    }else{
+      realboundarypos=0;
     }
   }
   delete[] realboundary; 
