@@ -402,6 +402,8 @@ libhttppp::HttpRequest::~HttpRequest(){
 libhttppp::HttpForm::HttpForm(){
   _Boundary=NULL;
   _Elements=0;
+  _firstMultipartFormData=NULL;
+  _lastMultipartFormData=NULL;
 }
 
 libhttppp::HttpForm::~HttpForm(){
@@ -411,6 +413,7 @@ libhttppp::HttpForm::~HttpForm(){
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   int rtype = request->getRequestType();
+  _ContentType = request->getData("Content-Type");
   switch(rtype){
     case GETREQUEST:{
       printf("---=(Debug Console Parse GetRequest)=---\n%s\n",request->getRequestURL());
@@ -426,6 +429,10 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
       break;
     }
   }
+}
+
+const char *libhttppp::HttpForm::getContentType(){
+  return _ContentType;;
 }
 
 const char *libhttppp::HttpForm::getBoundary(){
@@ -506,7 +513,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 	oldpos=cr;
         //check if boundary finished
         if(req[cr]=='-' && req[cr+1]=='-'){
-            printf("boundary finished\n");
+            //boundary finished
             realboundarylen=0;
             delete[] realboundary;
             return;
@@ -524,12 +531,108 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 }
 
 void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
+  _Elements++;
   printf("print data:\n");
+  MultipartFormData *curmultipartformdata=addMultipartFormData();
   for(size_t dp=0; dp<sectionsize; dp++){
     printf("%c",section[dp]);
+    curmultipartformdata->getContentDisposition()->setDisposition("placeholder");
+    curmultipartformdata->getContentDisposition()->setName("placeholder");
+    curmultipartformdata->getContentDisposition()->setFilename("placeholder");
   }
   printf("\n");
 }
 
+libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::addMultipartFormData(){
+  if(!_firstMultipartFormData){
+    _firstMultipartFormData= new MultipartFormData;
+    _lastMultipartFormData=_firstMultipartFormData;
+  }else{
+    _lastMultipartFormData->_nextMultipartFormData=new MultipartFormData;
+    _lastMultipartFormData=_lastMultipartFormData->_nextMultipartFormData;
+  }
+  return _lastMultipartFormData;
+}
+
+libhttppp::HttpForm::MultipartFormData::MultipartFormData(){
+  _ContentDisposition=new ContentDisposition;
+  _nextMultipartFormData=NULL;
+  _Data=NULL;
+}
+
+libhttppp::HttpForm::MultipartFormData::~MultipartFormData(){
+  delete _ContentDisposition;
+  delete _nextMultipartFormData;
+}
+
+const char *libhttppp::HttpForm::MultipartFormData::getData(){
+  return _Data;  
+}
+
+size_t libhttppp::HttpForm::MultipartFormData::getDataSize(){
+  return _Datasize;
+}
 
 
+libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm::MultipartFormData::getContentDisposition(){
+  return _ContentDisposition;
+}
+
+
+libhttppp::HttpForm::MultipartFormData::ContentDisposition::ContentDisposition(){
+  _Disposition=NULL;
+  _Name=NULL;
+  _Filename=NULL;
+}
+
+libhttppp::HttpForm::MultipartFormData::ContentDisposition::~ContentDisposition(){
+  delete[] _Disposition;
+  delete[] _Name;
+  delete[] _Filename;  
+}
+
+char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getDisposition(){
+  return _Disposition;    
+}
+
+char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getFilename(){
+  return _Filename;  
+}
+
+char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getName(){
+  return _Name;  
+}
+
+void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setDisposition(const char* disposition){
+  if(_Disposition)
+    delete[] _Disposition;
+  _Disposition=new char[strlen(disposition)+1];
+  std::copy(disposition,disposition+strlen(disposition),_Disposition);
+  _Disposition[strlen(disposition)]='\0';
+}
+
+void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setName(const char* name){
+  if(_Name)
+    delete[] _Name;
+  _Name=new char[strlen(name)+1];
+  std::copy(name,name+strlen(name),_Name);
+  _Name[strlen(name)]='\0';
+}
+
+void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(const char* filename){
+  if(_Filename)
+    delete[] _Filename;
+  _Filename=new char[strlen(filename)+1];
+  std::copy(filename,filename+strlen(filename),_Filename);
+  _Filename[strlen(filename)]='\0';
+}
+
+
+libhttppp::HttpCookie::CookieData::CookieData(){
+}
+
+libhttppp::HttpCookie::CookieData::~CookieData(){
+}
+
+void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
+}

@@ -57,6 +57,14 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "</div></br>"
              
              << "<div style=\"border: thin solid black\">"
+             << "<h2>Post Multiform mutiple File upload</h2>"
+             << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
+             << "File name:<br><input name=\"datei\" type=\"file\" multiple><br>"
+             << "<button type=\"submit\">Submit</button>"
+             << "</form>"
+             << "</div></br>"
+             
+             << "<div style=\"border: thin solid black\">"
              << "<h2>Encoding Test</h2>"
              << "<form action=\"/\" method=\"post\">"
              << "First name:<br> <input type=\"text\" name=\"encoding\" value=\"&=\" readonly><br>"
@@ -64,10 +72,13 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "</form>"
              << "</div></br>";
      libhttppp::HttpForm curform;
-     curform.parse(curreq);
+     curform.parse(curreq); 
+     
      condat  << "<div style=\"border: thin solid black\">"
-             << "<h2>Output</h2>"
-             << "</div></body></html>";
+             << "<h2>Output</h2>";
+      if(curform.getBoundary())
+        condat  << "Boundary: " << curform.getBoundary();
+     condat  << "</div></body></html>";
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());
 };

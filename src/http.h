@@ -125,37 +125,78 @@ namespace libhttppp {
   
   class HttpForm {
   public:
-    HttpForm();
-    ~HttpForm();
-    void        parse(HttpRequest *request);
-    const char *getValue(const char *key);
-    void        addPair(const char *key,const char *value);
-    void        clear();
-    /*multiform*/
-    const char *getBoundary();
-    size_t      getBoundarySize();
     class MultipartFormData{
     public:
       class ContentDisposition{
       public:
-          
+        char *getDisposition();
+        char *getName();
+        char *getFilename();
+        
+        void  setDisposition(const char *disposition);
+        void  setName(const char *name);
+        void  setFilename(const char *filename);
       private:
+        ContentDisposition();
+        ~ContentDisposition();
         char *_Disposition;
         char *_Name;
         char *_Filename;
+        friend class MultipartFormData;
       };
+      ContentDisposition *getContentDisposition();
+      const char         *getData();
+      size_t              getDataSize();
+    private:
+      MultipartFormData();
+      ~MultipartFormData();
+      ContentDisposition *_ContentDisposition;
+      char               *_Data;
+      size_t              _Datasize;
+      MultipartFormData  *_nextMultipartFormData;
+      friend class HttpForm;
     };
+    
+    class UrlcodedFormData{
+    public:
+      const char        *getKey();
+      const char        *getValue();
+      
+      void               setKey(const char *key);
+      void               setValue(const char *value);
+      
+    private:
+      UrlcodedFormData();
+      ~UrlcodedFormData();
+      char              *_Key;
+      char              *_Value;
+      UrlcodedFormData  *_nextUrlcodedFormData;
+    };
+    
+    HttpForm();
+    ~HttpForm();
+    void                parse(HttpRequest *request);
+    const char         *getContentType();
+    /*multiform*/
+    const char         *getBoundary();
+    size_t              getBoundarySize();
+    
+    MultipartFormData  *addMultipartFormData();
   private:
     /*urldecoded*/
-    void         _parseUrlDecode(HttpRequest *request);
+    void               _parseUrlDecode(HttpRequest *request);
     /*multiform*/
-    void         _parseMulitpart(HttpRequest *request);
-    void         _parseMultiSection(const char *section,size_t sectionsize);
-    void         _parseBoundary(const char *contenttype);
-    char        *_Boundary;
-    size_t       _BoundarySize;
+    void               _parseMulitpart(HttpRequest *request);
+    void               _parseMultiSection(const char *section,size_t sectionsize);
+    void               _parseBoundary(const char *contenttype);
+    char              *_Boundary;
+    size_t             _BoundarySize;
+    MultipartFormData *_firstMultipartFormData;
+    MultipartFormData *_lastMultipartFormData;
+    
     /*both methods*/
-    size_t       _Elements; 
+    size_t             _Elements;
+    const char*        _ContentType;
   };
 
   class HttpCookie {
