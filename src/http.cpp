@@ -536,10 +536,10 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   MultipartFormData *curmultipartformdata=addMultipartFormData();
   for(size_t dp=0; dp<sectionsize; dp++){
     printf("%c",section[dp]);
-    curmultipartformdata->getContentDisposition()->setDisposition("placeholder");
-    curmultipartformdata->getContentDisposition()->setName("placeholder");
-    curmultipartformdata->getContentDisposition()->setFilename("placeholder");
+    curmultipartformdata->addContent("key","value");
+
   }
+  curmultipartformdata->_parseContentDisposition(curmultipartformdata->getContent("Content-Disposition"));
   printf("\n");
 }
 
@@ -558,6 +558,8 @@ libhttppp::HttpForm::MultipartFormData::MultipartFormData(){
   _ContentDisposition=new ContentDisposition;
   _nextMultipartFormData=NULL;
   _Data=NULL;
+  _firstContent=NULL;
+  _lastContent=NULL;
 }
 
 libhttppp::HttpForm::MultipartFormData::~MultipartFormData(){
@@ -578,6 +580,50 @@ libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm:
   return _ContentDisposition;
 }
 
+void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
+    getContentDisposition()->setDisposition("placeholder");
+    getContentDisposition()->setName("placeholder");
+    getContentDisposition()->setFilename("placeholder");
+}
+
+void libhttppp::HttpForm::MultipartFormData::addContent(const char *key,const char *value){
+  if(!_firstContent){
+    _firstContent= new Content(key,value);
+    _lastContent=_firstContent;
+  }else{
+    _lastContent->_nextContent=new Content(key,value);
+    _lastContent=_lastContent->_nextContent;
+  }
+}
+
+const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key){
+  for(Content *curcontent=_firstContent; curcontent!=NULL; curcontent=curcontent->_nextContent){
+    if(strncmp(curcontent->getKey(),key,strlen(key))==0){
+      return curcontent->getValue();
+    }
+  }
+  return NULL;
+}
+
+const char  *libhttppp::HttpForm::MultipartFormData::getContentType(){
+  return getContent("Content-Type");
+}
+
+libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const char *value){
+  _nextContent=NULL;
+}
+
+libhttppp::HttpForm::MultipartFormData::Content::~Content(){
+  delete[] _nextContent;
+}
+
+const char *libhttppp::HttpForm::MultipartFormData::Content::getKey(){
+  return _Key;
+}
+
+const char *libhttppp::HttpForm::MultipartFormData::Content::getValue(){
+  return _Value;
+}
 
 libhttppp::HttpForm::MultipartFormData::ContentDisposition::ContentDisposition(){
   _Disposition=NULL;
