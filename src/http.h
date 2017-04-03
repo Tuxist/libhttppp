@@ -174,7 +174,7 @@ namespace libhttppp {
       void                _parseContentDisposition(const char *disposition);
       ContentDisposition *_ContentDisposition;
       
-      char               *_Data;
+      const char         *_Data;
       size_t              _Datasize;
       MultipartFormData  *_nextMultipartFormData;
       friend class HttpForm;
