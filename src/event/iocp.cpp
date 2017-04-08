@@ -39,6 +39,6 @@ libhttppp::Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
   }
 }
 
-Queue::~Queue(){
+libhttppp::Queue::~Queue(){
 
 }
