@@ -109,7 +109,11 @@ namespace libhttppp {
     friend class ConnectionPool;
   };
   
+#ifdef MSVC
+  class __declspec(dllexport) ConnectionPool {
+#else
   class ConnectionPool {
+#endif
   public:
     ConnectionPool(ServerSocket *socket);
     ~ConnectionPool();

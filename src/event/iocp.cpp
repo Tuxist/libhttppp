@@ -42,3 +42,7 @@ libhttppp::Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
 libhttppp::Queue::~Queue(){
 
 }
+
+void libhttppp::Queue::RequestEvent(Connection *curcon) {
+  return;
+}
