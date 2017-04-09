@@ -36,13 +36,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../event.h"
 
-libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
+libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket){
+  _ServerSocket=serversocket;
+}
+
+libhttppp::Queue::~Queue(){
+  
+}
+
+void libhttppp::Queue::runEventloop(){
   struct epoll_event *events;
   struct epoll_event  event = {0};
-  events = new epoll_event[(serversocket->getMaxconnections()*sizeof(struct epoll_event))];
-  for(int i=0; i<serversocket->getMaxconnections(); i++)
+  events = new epoll_event[(_ServerSocket->getMaxconnections()*sizeof(struct epoll_event))];
+  for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
     events[i].data.fd = -1;
-  int epollfd = epoll_create(serversocket->getMaxconnections());
+  int epollfd = epoll_create(_ServerSocket->getMaxconnections());
   
   if (epollfd == -1){
     _httpexception.Cirtical("can't create epoll");
@@ -50,17 +58,17 @@ libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocke
   }
   
   event.events = EPOLLIN | EPOLLOUT;
-  event.data.fd = serversocket->getSocket();
-  if (epoll_ctl(epollfd, EPOLL_CTL_ADD, serversocket->getSocket(), &event) < 0){
+  event.data.fd = _ServerSocket->getSocket();
+  if (epoll_ctl(epollfd, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &event) < 0){
     _httpexception.Cirtical("can't create epoll");
     throw _httpexception;
   }
   
   for(;;){
-    int n = epoll_wait(epollfd, events, serversocket->getMaxconnections(), EPOLLWAIT);
+    int n = epoll_wait(epollfd, events, _ServerSocket->getMaxconnections(), EPOLLWAIT);
     for(int i=0; i<n; i++) {
       Connection *curcon=NULL;
-      if(events[i].data.fd == serversocket->getSocket()) {
+      if(events[i].data.fd == _ServerSocket->getSocket()) {
         try{
           /*will create warning debug mode that normally because the check already connection
            * with this socket if getconnection throw they will be create a new one
@@ -151,6 +159,6 @@ libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocke
     
 }
 
-libhttppp::Queue::~Queue(){
-
+void libhttppp::Queue::RequestEvent(Connection *curcon) {
+  return;
 }

@@ -36,7 +36,7 @@ namespace libhttppp {
   public:
     HttpD(int argc, char** argv);
     ~HttpD();
-    void runDaemon();
+    ServerSocket    *getServerSocket();
   private:
     void            _Help();
     ServerSocket   *_ServerSocket;

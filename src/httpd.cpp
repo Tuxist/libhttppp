@@ -61,6 +61,8 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
   else
     _ServerSocket= new ServerSocket(httpaddr,_MaxConnections);
 #endif
+  _ServerSocket->setnonblocking();
+  _ServerSocket->listenSocket();
 }
 
 void libhttppp::HttpD::_Help(){
@@ -71,10 +73,8 @@ void libhttppp::HttpD::_Help(){
 	      );
 }
 
-void libhttppp::HttpD::runDaemon(){
-  _ServerSocket->setnonblocking();
-  _ServerSocket->listenSocket();
-  _Queue = new Queue(_ServerSocket);
+libhttppp::ServerSocket *libhttppp::HttpD::getServerSocket(){
+  return _ServerSocket;
 }
 
 libhttppp::HttpD::~HttpD(){

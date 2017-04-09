@@ -36,14 +36,16 @@ namespace libhttppp {
 #ifdef MSVC
 	class __declspec(dllexport)  Queue : public ConnectionPool {
 #else
-	class Queue : public ConnectionPool
+	class __attribute__ ((visibility ("default"))) Queue : public ConnectionPool {
 #endif
 	public:
 		Queue(ServerSocket *serversocket);
 		virtual ~Queue();
 		virtual void RequestEvent(Connection *curcon);
+		virtual void runEventloop();
   private:
     HTTPException       _httpexception;
+    ServerSocket       *_ServerSocket;
   };
 }
 

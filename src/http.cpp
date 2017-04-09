@@ -579,7 +579,10 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   curmultipartformdata->_Data=section+fendpos;
   curmultipartformdata->_Datasize=sectionsize-fendpos;
   
+//   printf("Debug size: %zu\n",curmultipartformdata->_Datasize);
+  
   for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
+//     printf("teesting loop: %zu \n",cd);
     printf("%c",curmultipartformdata->_Data[cd]);
   }
   

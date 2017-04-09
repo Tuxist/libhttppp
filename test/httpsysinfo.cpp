@@ -104,9 +104,13 @@ private:
   std::stringstream sysstream;
 };
 
-class Controller{
+class Controller : public libhttppp::Queue {
 public:
-  Controller(libhttppp::Connection *curcon){
+  Controller(libhttppp::ServerSocket* serversocket) : Queue(serversocket){
+    
+  };
+  
+  void IndexController(libhttppp::Connection *curcon){
     try{
       libhttppp::HttpRequest curreq;
       curreq.parse(curcon);
@@ -136,23 +140,28 @@ public:
       throw e;
     }
   }
-};
-
-void libhttppp::Queue::RequestEvent(libhttppp::Connection *curcon){
+  
+  void RequestEvent(libhttppp::Connection *curcon){
    try{
-     Controller cntl(curcon);
-   }catch(HTTPException &e){
+     IndexController(curcon);
+   }catch(libhttppp::HTTPException &e){
      std::cerr << e.what() << "\n";
      throw e;
    }
-}
+  }
+private:
+  
+};
+
+
 
 class HttpConD : public libhttppp::HttpD {
 public:
   HttpConD(int argc, char** argv) : HttpD(argc,argv){
     libhttppp::HTTPException httpexception;
     try {
-      runDaemon();
+      Controller controller(getServerSocket());
+      controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
       std::cerr << e.what() << "\n";
     }

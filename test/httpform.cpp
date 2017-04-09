@@ -83,25 +83,36 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
      curres.send(curcon,buffer.c_str(),buffer.length());
 };
 
-void libhttppp::Queue::RequestEvent(libhttppp::Connection *curcon){
+class Controller : public libhttppp::Queue {
+public:
+  Controller(libhttppp::ServerSocket* serversocket) : Queue(serversocket){
+    
+  };
+  void RequestEvent(libhttppp::Connection *curcon){
    try{
      std::cerr << "Parse Request\n";
      libhttppp::HttpRequest curreq;
      curreq.parse(curcon);
      std::cerr << "Send answer\n";
      sendResponse(curcon,&curreq);
-   }catch(HTTPException &e){
+   }catch(libhttppp::HTTPException &e){
      std::cerr << e.what() << "\n";
      throw e;
    }
-}
+  }
+private:
+  
+};
+
+
 
 class HttpConD : public libhttppp::HttpD {
 public:
   HttpConD(int argc, char** argv) : HttpD(argc,argv){
     libhttppp::HTTPException httpexception;
     try {
-      runDaemon();
+      Controller controller(getServerSocket());
+      controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
       std::cerr << e.what() << "\n";
     }

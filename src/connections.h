@@ -112,7 +112,7 @@ namespace libhttppp {
 #ifdef MSVC
   class __declspec(dllexport) ConnectionPool {
 #else
-  class ConnectionPool {
+  class __attribute__ ((visibility ("default"))) ConnectionPool {
 #endif
   public:
     ConnectionPool(ServerSocket *socket);
