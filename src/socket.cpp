@@ -128,7 +128,6 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,(const char *)&bOptVal, bOptLen);
 #endif
   if (bind(_Socket, (struct sockaddr *)&_SockAddr, sizeof(struct sockaddr)) < 0){
-	printf("%d\n",WSAGetLastError());
     _httpexception.Cirtical("Can't bind Server Socket");
     throw _httpexception;
   }
