@@ -101,6 +101,14 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
   _Maxconnections=maxconnections;
+#ifdef Windows
+  int iResult;
+  WSADATA wsaData;
+  iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+  if (iResult != 0) {
+	  _httpexception.Cirtical("WSAStartup failed");
+  }
+#endif
   _SockAddr.sin_family = AF_INET;
   _SockAddr.sin_port = htons(port);
   if(addr==NULL)
@@ -117,9 +125,10 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 #else
   BOOL bOptVal = TRUE;
   int bOptLen = sizeof (BOOL);
-  setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,(char *)&bOptVal, bOptLen);
+  setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,(const char *)&bOptVal, bOptLen);
 #endif
   if (bind(_Socket, (struct sockaddr *)&_SockAddr, sizeof(struct sockaddr)) < 0){
+	printf("%d\n",WSAGetLastError());
     _httpexception.Cirtical("Can't bind Server Socket");
     throw _httpexception;
   }
