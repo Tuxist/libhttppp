@@ -532,7 +532,6 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 
 void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
   _Elements++;
-  printf("print data:\n");
   MultipartFormData *curmultipartformdata=addMultipartFormData();
   const char *windelimter="\r\n\r\n";
   const char *unixdelimter="\n\n";
@@ -567,27 +566,23 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
     }
     fendpos=fpos+strlen(unixdelimter);
   }
-  if(fpos==0)
+  if(fpos==0 || fendpos==0)
     return;
-  
-  /*content description fields to new buffer for parsing*/
-  char *content=new char[fpos+1];
-  std::copy(section,section+fpos,content);
-  content[fpos]='\0';
-  
+   
   /*change stpartpos for data*/
   curmultipartformdata->_Data=section+fendpos;
-  curmultipartformdata->_Datasize=sectionsize-fendpos;
+  curmultipartformdata->_Datasize=sectionsize-(fendpos+1);
   
-//   printf("Debug size: %zu\n",curmultipartformdata->_Datasize);
+  printf("Debug size: %zu\n",curmultipartformdata->_Datasize);
   
-  for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
-//     printf("teesting loop: %zu \n",cd);
-    printf("%c",curmultipartformdata->_Data[cd]);
-  }
+  /*Debug data in formdata*/
+//   for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
+//     printf("%c",curmultipartformdata->_Data[cd]);
+//     printf(" -> testing loop: %zu \n",cd);
+//   }
   
-   curmultipartformdata->addContent("key","value");
-  printf("content:\n%s\n",content);
+  curmultipartformdata->addContent("key","value");
+  
   curmultipartformdata->_parseContentDisposition(
     curmultipartformdata->getContent("Content-Disposition")
   );
