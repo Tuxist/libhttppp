@@ -131,6 +131,7 @@ namespace libhttppp {
       public:
           const char *getKey();
           const char *getValue();
+          Content    *nextContent();
       private:
          Content(const char *key,const char *value);
          ~Content();

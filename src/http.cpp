@@ -292,13 +292,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
       ConnectionData *endblock;
       int endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
       if(endpos==-1){
-	int endpos=curconnection->searchValue(startblock,&endblock,"\n\n",2);
-	if(endpos==-1){
-          _httpexception.Note("Request not complete termination not found");
-          throw _httpexception;
-	}else{
-          endpos+=2;  
-        }
+	return;
       }else{
         endpos+=4;  
       }
@@ -534,7 +528,6 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   _Elements++;
   MultipartFormData *curmultipartformdata=addMultipartFormData();
   const char *windelimter="\r\n\r\n";
-  const char *unixdelimter="\n\n";
   size_t fpos=0,fendpos=0,fcurpos=0;
   for(size_t dp=0; dp<sectionsize; dp++){
     if(windelimter[fcurpos]==section[dp]){
@@ -550,22 +543,6 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
         break;
   }
   fendpos=fpos+strlen(windelimter);
-  if(fpos==0){
-    for(size_t dp=0; dp<sectionsize; dp++){
-      if(unixdelimter[fcurpos]==section[dp]){
-        if(fcurpos==0){
-          fpos=dp;
-        }
-        fcurpos++;
-      }else{
-        fcurpos=0;
-        fpos=0;
-      }
-      if(fcurpos==strlen(unixdelimter))
-        break;
-    }
-    fendpos=fpos+strlen(unixdelimter);
-  }
   if(fpos==0 || fendpos==0)
     return;
    
@@ -581,7 +558,41 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
 //     printf(" -> testing loop: %zu \n",cd);
 //   }
   
-  curmultipartformdata->addContent("key","value");
+  /*content parameter parsing*/
+  size_t lrow=0;
+  size_t delimeter=0;
+  for(size_t pos=0; pos<fpos; pos++){
+    if(delimeter==0 && section[pos]==':'){
+      delimeter=pos; 
+    }
+    if(section[pos]=='\r'){
+      if(delimeter>lrow){
+        size_t keylen=delimeter-lrow;
+	if(keylen>0 && keylen <=sectionsize){
+	  char *key=new char[keylen+1];
+	  std::copy(section+lrow,section+(lrow+keylen),key);
+          key[keylen]='\0';
+	  size_t valuelen=pos-delimeter;
+	  if(pos > 0 && valuelen <= sectionsize){
+	    char *value=new char[valuelen+1];
+	    std::copy(section+delimeter,section+(delimeter+valuelen),value);
+	    value[valuelen]='\0';
+	    printf("addedpair\n");
+ 	    curmultipartformdata->addContent(key+2,value+2);
+	    delete[] value;
+	  }
+	  delete[] key;
+	}
+      }
+      delimeter=0;
+      lrow=pos;
+    }
+  }
+  
+  for(libhttppp::HttpForm::MultipartFormData::Content *curcnt=curmultipartformdata->_firstContent; curcnt; curcnt=curcnt->nextContent()){
+      printf("%s -> %s",curcnt->getKey(),curcnt->getValue());
+      
+  }
   
   curmultipartformdata->_parseContentDisposition(
     curmultipartformdata->getContent("Content-Disposition")
@@ -681,6 +692,10 @@ const char *libhttppp::HttpForm::MultipartFormData::Content::getKey(){
 
 const char *libhttppp::HttpForm::MultipartFormData::Content::getValue(){
   return _Value;
+}
+
+libhttppp::HttpForm::MultipartFormData::Content * libhttppp::HttpForm::MultipartFormData::Content::nextContent(){
+  return _nextContent;
 }
 
 libhttppp::HttpForm::MultipartFormData::ContentDisposition::ContentDisposition(){
