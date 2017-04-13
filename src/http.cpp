@@ -321,7 +321,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
 		char *key=new char[keylen+1];
 		std::copy(header+startkeypos,header+(startkeypos+keylen),key);
 		key[keylen]='\0';
-		size_t valuelen=pos-delimeter;
+		size_t valuelen=(pos-delimeter)-2;
 		if(pos > 0 && valuelen <= headersize){
 		  char *value=new char[valuelen+1];
                   size_t vstart=delimeter+2;
@@ -560,10 +560,10 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   curmultipartformdata->_Datasize=sectionsize-(fendpos+1);
   
   /*Debug data in formdata*/
-  for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
-    printf("%c",curmultipartformdata->_Data[cd]);
-    printf(" -> testing loop: %zu \n",cd);
-  }
+//   for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
+//     printf("%c",curmultipartformdata->_Data[cd]);
+//     printf(" -> testing loop: %zu \n",cd);
+//   }
   
   /*content parameter parsing*/
   size_t lrow=0,delimeter=0,startkeypos=0;
@@ -578,7 +578,7 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
           char *key=new char[keylen+1];
           std::copy(section+startkeypos,section+(startkeypos+keylen),key);
           key[keylen]='\0';
-          size_t valuelen=((pos-delimeter)-1);
+          size_t valuelen=((pos-delimeter)-2);
           if(pos > 0 && valuelen <= sectionsize){
             char *value=new char[valuelen+1];
             size_t vstart=delimeter+2;
@@ -595,11 +595,11 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
       startkeypos=lrow+2;
     }
   }
-  
-  for(libhttppp::HttpForm::MultipartFormData::Content *curcnt=curmultipartformdata->_firstContent; curcnt; curcnt=curcnt->nextContent()){
-      printf("%s -> %s\n",curcnt->getKey(),curcnt->getValue());
-      
-  }
+  //Debug content headerdata
+//   for(libhttppp::HttpForm::MultipartFormData::Content *curcnt=curmultipartformdata->_firstContent; curcnt; curcnt=curcnt->nextContent()){
+//       printf("%s -> %s\n",curcnt->getKey(),curcnt->getValue());
+//       
+//   }
   
   curmultipartformdata->_parseContentDisposition(
     curmultipartformdata->getContent("Content-Disposition")
@@ -615,6 +615,10 @@ libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::addMultipartFormDa
     _lastMultipartFormData=_lastMultipartFormData->_nextMultipartFormData;
   }
   return _lastMultipartFormData;
+}
+
+libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::getMultipartFormData(){
+  return _firstMultipartFormData;
 }
 
 libhttppp::HttpForm::MultipartFormData::MultipartFormData(){
@@ -648,31 +652,28 @@ libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm:
 void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
   size_t dislen=strlen(disposition);
   for(size_t dpos=0; dpos<dislen; dpos++){
-    if(dpos==';'){
-      char *ctype = new char[dpos];
+    if(disposition[dpos]==';'){
+      char *ctype = new char[dpos+1];
       std::copy(disposition,disposition+dpos,ctype);
-      ctype[dpos-1]='\0';
-      printf("disposition %s",disposition);
+      ctype[dpos]='\0';
       getContentDisposition()->setDisposition(ctype);
       delete[] ctype;
       break;
     }
   }
   
-  printf("ctype: %s \n",getContentDisposition()->getDisposition());
-  
   for(size_t dpos=0; dpos<dislen; dpos++){
       
   }
   getContentDisposition()->setName("placeholder");
-  printf("ctype: %s \n",getContentDisposition()->getName());
+  printf("cname: %s \n",getContentDisposition()->getName());
   
   
   for(size_t dpos=0; dpos<dislen; dpos++){
       
   }
   getContentDisposition()->setFilename("placeholder");
-  printf("ctype: %s \n",getContentDisposition()->getFilename());
+  printf("cfilename: %s \n",getContentDisposition()->getFilename());
   
     
     
@@ -693,7 +694,6 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
     return NULL;
   for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
     if(strncmp(curcontent->getKey(),key,strlen(key))==0){
-        printf("value: %s \n",curcontent->getValue());
       return curcontent->getValue();
     }
   }
@@ -702,6 +702,10 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
 
 const char  *libhttppp::HttpForm::MultipartFormData::getContentType(){
   return getContent("Content-Type");
+}
+
+libhttppp::HttpForm::MultipartFormData *libhttppp::HttpForm::MultipartFormData::nextMultipartFormData(){
+   return _nextMultipartFormData; 
 }
 
 libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const char *value){

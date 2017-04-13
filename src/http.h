@@ -165,6 +165,8 @@ namespace libhttppp {
       void                addContent(const char *key,const char *value);
       const char         *getContent(const char *key);
       const char         *getContentType();
+      
+      MultipartFormData  *nextMultipartFormData();
     private:
       MultipartFormData();
       ~MultipartFormData();
@@ -205,6 +207,7 @@ namespace libhttppp {
     const char         *getBoundary();
     size_t              getBoundarySize();
     
+    MultipartFormData  *getMultipartFormData();
     MultipartFormData  *addMultipartFormData();
   private:
     /*urldecoded*/

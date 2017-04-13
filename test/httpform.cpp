@@ -5,6 +5,37 @@
 #include "http.h"
 #include "httpd.h"
 
+std::string Multiform(libhttppp::HttpRequest *curreq){
+  libhttppp::HttpForm curform;
+  curform.parse(curreq); 
+  std::stringstream condat;
+  if(curform.getBoundary()){
+     condat  << "Boundary: " << curform.getBoundary() << "<br>";
+     for(libhttppp::HttpForm::MultipartFormData *curformdat=curform.getMultipartFormData(); curformdat; curformdat=curformdat->nextMultipartFormData()){
+        condat << "Content-Disposition: <br>";
+        libhttppp::HttpForm::MultipartFormData::ContentDisposition *curctdisp=curformdat->getContentDisposition();
+        if(curctdisp->getDisposition())
+          condat << "Disposition: " << curctdisp->getDisposition() << "<br>";
+        if(curctdisp->getName())
+          condat << "Name: " << curctdisp->getName() << "<br>";
+        if(curctdisp->getFilename())
+          condat << "Filename" << curctdisp->getFilename() << "<br>";
+        condat << "Multiform Section Data<br>"
+               << "<div style=\"border: thin solid black\">";
+        if(curformdat->getContentType())
+          condat << "ContentType: " << curformdat->getContentType() << "<br>\r\n";
+        condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
+        for(size_t datapos=0; datapos<curformdat->getDataSize(); datapos++){
+         condat << curformdat->getData()[datapos];
+         if(curformdat->getData()[datapos]=='\n')
+           condat << "<br>";
+        }
+        condat << "\r\n<br></div>";
+     }
+  }
+  return condat.str();
+}
+
 void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) {
      libhttppp::HttpResponse curres;
      curres.setState(HTTP200);
@@ -71,14 +102,12 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "<button type=\"submit\">Submit</button>"
              << "</form>"
              << "</div></br>";
-     libhttppp::HttpForm curform;
-     curform.parse(curreq); 
+
      
      condat  << "<div style=\"border: thin solid black\">"
-             << "<h2>Output</h2>";
-      if(curform.getBoundary())
-        condat  << "Boundary: " << curform.getBoundary();
-     condat  << "</div></body></html>";
+             << "<h2>Output</h2>"
+             <<  Multiform(curreq)
+             << "</div></body></html>";
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());
 };
