@@ -43,9 +43,11 @@ namespace libhttppp {
 		virtual ~Queue();
 		virtual void RequestEvent(Connection *curcon);
 		virtual void runEventloop();
+                static  void exitEventLoop(int signum);
   private:
     HTTPException       _httpexception;
     ServerSocket       *_ServerSocket;
+    bool                _Eventloop;
   };
 }
 

@@ -92,8 +92,7 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
 }
 
 void libhttppp::Connection::cleanSendData(){
-   if(_SendDataFirst)
-     delete _SendDataFirst;
+   delete _SendDataFirst;
    _SendDataFirst=NULL;
    _SendDataLast=NULL;
    _SendDataSize=0;

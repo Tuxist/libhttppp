@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <config.h>
 #include <errno.h>
+#include <signal.h>
 
 #define READEVENT 0
 #define SENDEVENT 1
@@ -38,11 +39,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket){
   _ServerSocket=serversocket;
+  _Eventloop=true;
 }
 
 libhttppp::Queue::~Queue(){
   
 }
+
+libhttppp::Queue* _QueueIns;
+
+void libhttppp::Queue::exitEventLoop(int signum){
+  _QueueIns->_Eventloop=false;
+}
+
 
 void libhttppp::Queue::runEventloop(){
   struct epoll_event *events;
@@ -64,7 +73,7 @@ void libhttppp::Queue::runEventloop(){
     throw _httpexception;
   }
   
-  for(;;){
+  while(_Eventloop){
     int n = epoll_wait(epollfd, events, _ServerSocket->getMaxconnections(), EPOLLWAIT);
     for(int i=0; i<n; i++) {
       Connection *curcon=NULL;
@@ -154,9 +163,10 @@ void libhttppp::Queue::runEventloop(){
         }
       }
     }
+    _QueueIns=this;
+    signal(SIGINT,exitEventLoop);
   }
-  delete events;
-    
+  delete[] events;
 }
 
 void libhttppp::Queue::RequestEvent(Connection *curcon) {
