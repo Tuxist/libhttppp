@@ -342,7 +342,6 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
         size_t csize=getDataSizet("Content-Length");
         size_t rsize=curconnection->getRecvSize()-headersize;
         if(csize<=rsize){
-          printf("testing block resize %zu \n",csize);
           curconnection->resizeRecvQueue(headersize);
           size_t dlocksize=curconnection->getRecvSize();
           ConnectionData *dblock=NULL;
@@ -556,43 +555,45 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   curmultipartformdata->_Datasize=sectionsize-(fendpos+1);
   
   /*Debug data in formdata*/
-  for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
-    printf("%c",curmultipartformdata->_Data[cd]);
-    printf(" -> testing loop: %zu \n",cd);
-  }
+//   for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
+//     printf("%c",curmultipartformdata->_Data[cd]);
+//     printf(" -> testing loop: %zu \n",cd);
+//   }
   
   /*content parameter parsing*/
-  size_t lrow=0;
-  size_t delimeter=0;
+  size_t lrow=0,delimeter=0,startkeypos=0;
   for(size_t pos=0; pos<fendpos; pos++){
     if(delimeter==0 && section[pos]==':'){
       delimeter=pos;
     }
     if(section[pos]=='\r' && delimeter!=0){
       if(delimeter>lrow){
-        size_t keylen=delimeter-lrow;
-	if(keylen>0 && keylen <=sectionsize){
-	  char *key=new char[keylen+1];
-	  std::copy(section+lrow,section+(lrow+keylen),key);
+        size_t keylen=delimeter-startkeypos;
+        if(keylen>0 && keylen <=sectionsize){
+          char *key=new char[keylen+1];
+          std::copy(section+startkeypos,section+(startkeypos+keylen),key);
           key[keylen]='\0';
-	  size_t valuelen=pos-delimeter;
-	  if(pos > 0 && valuelen <= sectionsize){
-	    char *value=new char[valuelen+1];
-	    std::copy(section+delimeter,section+(delimeter+valuelen),value);
-	    value[valuelen]='\0';
- 	    curmultipartformdata->addContent(key+2,value+2);
-	    delete[] value;
-	  }
-	  delete[] key;
+          printf("Key: %s\n",key);
+          size_t valuelen=pos-delimeter;
+          if(pos > 0 && valuelen <= sectionsize){
+            char *value=new char[valuelen+1];
+            delimeter+=2;
+            std::copy(section+delimeter,section+(delimeter+valuelen),value);
+            value[valuelen]='\0';
+            curmultipartformdata->addContent(key,value);
+            delete[] value;
+          }
+          delete[] key;
 	}
       }
       delimeter=0;
       lrow=pos;
+      startkeypos=lrow+2;
     }
   }
   
   for(libhttppp::HttpForm::MultipartFormData::Content *curcnt=curmultipartformdata->_firstContent; curcnt; curcnt=curcnt->nextContent()){
-      printf("%s -> %s\r\n",curcnt->getKey(),curcnt->getValue());
+//       printf("%s -> %s ",curcnt->getKey(),curcnt->getValue());
       
   }
   
