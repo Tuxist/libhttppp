@@ -277,9 +277,11 @@ libhttppp::HttpRequest::HttpRequest(){
 void libhttppp::HttpRequest::parse(Connection* curconnection){
   try{
     ConnectionData *curdat=curconnection->getRecvData();
+    
     if(curdat){
       ConnectionData *startblock;
       int startpos=0;
+      
       if((startpos=curconnection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
         _RequestType=GETREQUEST;
       }else if((startpos=curconnection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
@@ -290,12 +292,13 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
         throw _httpexception;
       }
       ConnectionData *endblock;
-      int endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
+      ssize_t endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
       if(endpos==-1){
-	return;
-      }else{
-        endpos+=4;  
+	 _httpexception.Error("can't find newline headerend");
+         throw _httpexception;
       }
+      endpos+=4;  
+      
           
       char *header;
       size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&header);
@@ -311,7 +314,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
 	    delimeter=pos; 
 	  }
 	  if(header[pos]=='\r'){
-	    if(delimeter>lrow){
+	    if(delimeter>lrow && delimeter!=0){
 	      size_t keylen=delimeter-lrow;
 	      if(keylen>0 && keylen <=headersize){
 		char *key=new char[keylen+1];
@@ -339,6 +342,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
         size_t csize=getDataSizet("Content-Length");
         size_t rsize=curconnection->getRecvSize()-headersize;
         if(csize<=rsize){
+          printf("testing block resize %zu \n",csize);
           curconnection->resizeRecvQueue(headersize);
           size_t dlocksize=curconnection->getRecvSize();
           ConnectionData *dblock=NULL;
@@ -528,6 +532,7 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   _Elements++;
   MultipartFormData *curmultipartformdata=addMultipartFormData();
   const char *windelimter="\r\n\r\n";
+  size_t windelimtersize=strlen(windelimter);
   size_t fpos=0,fendpos=0,fcurpos=0;
   for(size_t dp=0; dp<sectionsize; dp++){
     if(windelimter[fcurpos]==section[dp]){
@@ -539,10 +544,10 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
         fcurpos=0;
         fpos=0;
       }
-      if(fcurpos==strlen(windelimter))
+      if(fcurpos==windelimtersize)
         break;
   }
-  fendpos=fpos+strlen(windelimter);
+  fendpos=fpos+windelimtersize;
   if(fpos==0 || fendpos==0)
     return;
    
@@ -550,22 +555,20 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   curmultipartformdata->_Data=section+fendpos;
   curmultipartformdata->_Datasize=sectionsize-(fendpos+1);
   
-  printf("Debug size: %zu\n",curmultipartformdata->_Datasize);
-  
   /*Debug data in formdata*/
-//   for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
-//     printf("%c",curmultipartformdata->_Data[cd]);
-//     printf(" -> testing loop: %zu \n",cd);
-//   }
+  for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
+    printf("%c",curmultipartformdata->_Data[cd]);
+    printf(" -> testing loop: %zu \n",cd);
+  }
   
   /*content parameter parsing*/
   size_t lrow=0;
   size_t delimeter=0;
-  for(size_t pos=0; pos<fpos; pos++){
+  for(size_t pos=0; pos<fendpos; pos++){
     if(delimeter==0 && section[pos]==':'){
-      delimeter=pos; 
+      delimeter=pos;
     }
-    if(section[pos]=='\r'){
+    if(section[pos]=='\r' && delimeter!=0){
       if(delimeter>lrow){
         size_t keylen=delimeter-lrow;
 	if(keylen>0 && keylen <=sectionsize){
@@ -577,7 +580,6 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
 	    char *value=new char[valuelen+1];
 	    std::copy(section+delimeter,section+(delimeter+valuelen),value);
 	    value[valuelen]='\0';
-	    printf("addedpair\n");
  	    curmultipartformdata->addContent(key+2,value+2);
 	    delete[] value;
 	  }
@@ -590,14 +592,13 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   }
   
   for(libhttppp::HttpForm::MultipartFormData::Content *curcnt=curmultipartformdata->_firstContent; curcnt; curcnt=curcnt->nextContent()){
-      printf("%s -> %s",curcnt->getKey(),curcnt->getValue());
+      printf("%s -> %s\r\n",curcnt->getKey(),curcnt->getValue());
       
   }
   
   curmultipartformdata->_parseContentDisposition(
     curmultipartformdata->getContent("Content-Disposition")
   );
-  printf("\n");
 }
 
 libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::addMultipartFormData(){

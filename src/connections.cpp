@@ -161,7 +161,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
        delsize=size;
        firstdat->_DataSize-=size;
        std::copy(firstdat->_Data+delsize,firstdat->_Data+BLOCKSIZE,firstdat->_Data);
-       memset(firstdat->_Data+firstdat->_DataSize,(BLOCKSIZE-firstdat->_DataSize),'\0');
+       firstdat->_Data[firstdat->_DataSize]='\0';
     }
     size-=delsize;
     *qsize-=delsize;

@@ -10,7 +10,7 @@
 
 #define ${CMAKE_SYSTEM_NAME}
 
-#define BLOCKSIZE 128
+#define BLOCKSIZE 16384
 
 #define PATHSIZE 1024
 
