@@ -650,7 +650,6 @@ libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm:
 }
 
 void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
-  printf("%s\n",disposition);
   size_t dislen=strlen(disposition);
   
   for(size_t dpos=0; dpos<dislen; dpos++){
@@ -728,7 +727,6 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
     filename[filenamesize]='\0';
     getContentDisposition()->setFilename(filename);
     delete[] filename;
-    printf("cfilename: %s \n",getContentDisposition()->getFilename());
   }
 }
 
