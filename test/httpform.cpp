@@ -19,7 +19,7 @@ std::string Multiform(libhttppp::HttpRequest *curreq){
         if(curctdisp->getName())
           condat << "Name: " << curctdisp->getName() << "<br>";
         if(curctdisp->getFilename())
-          condat << "Filename" << curctdisp->getFilename() << "<br>";
+          condat << "Filename: " << curctdisp->getFilename() << "<br>";
         condat << "Multiform Section Data<br>"
                << "<div style=\"border: thin solid black\">";
         if(curformdat->getContentType())

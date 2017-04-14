@@ -650,9 +650,11 @@ libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm:
 }
 
 void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
+  printf("%s\n",disposition);
   size_t dislen=strlen(disposition);
+  
   for(size_t dpos=0; dpos<dislen; dpos++){
-    if(disposition[dpos]==';'){
+    if(disposition[dpos]==';' || disposition[dpos]=='\r'){
       char *ctype = new char[dpos+1];
       std::copy(disposition,disposition+dpos,ctype);
       ctype[dpos]='\0';
@@ -662,21 +664,72 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
     }
   }
   
-  for(size_t dpos=0; dpos<dislen; dpos++){
-      
+  const char *namedelimter="name=\"";
+  ssize_t namedelimtersize=strlen(namedelimter);
+  ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
+  for(size_t dp=0; dp<dislen; dp++){
+    if(namedelimter[fcurpos]==disposition[dp]){
+        if(fcurpos==0){
+          fpos=dp;
+        }
+        fcurpos++;
+      }else{
+        fcurpos=0;
+        fpos=-1;
+      }
+      if(fcurpos==namedelimtersize)
+        break;
   }
-  getContentDisposition()->setName("placeholder");
-  printf("cname: %s \n",getContentDisposition()->getName());
+  if(fpos!=-1){
+    fendpos=fpos+namedelimtersize;
+    for(size_t dp=fendpos; dp<dislen; dp++){
+      if(disposition[dp]=='\"'){
+        fterm=dp;
+        break;
+      }
+    }
   
-  
-  for(size_t dpos=0; dpos<dislen; dpos++){
-      
+    size_t namesize=(fterm-fendpos);
+    char *name=new char[namesize+1];
+    std::copy(disposition+fendpos,disposition+(fendpos+namesize),name);
+    name[namesize]='\0';
+    getContentDisposition()->setName(name);
+    delete[] name;
   }
-  getContentDisposition()->setFilename("placeholder");
-  printf("cfilename: %s \n",getContentDisposition()->getFilename());
   
-    
-    
+  const char *filenamedelimter="filename=\"";
+  ssize_t filenamedelimtersize=strlen(filenamedelimter);
+  ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
+  for(size_t dp=0; dp<dislen; dp++){
+    if(filenamedelimter[filecurpos]==disposition[dp]){
+        if(filecurpos==0){
+          filepos=dp;
+        }
+        filecurpos++;
+      }else{
+        filecurpos=0;
+        filepos=-1;
+      }
+      if(filecurpos==filenamedelimtersize)
+        break;
+  }
+  if(filepos!=-1){
+    fileendpos=filepos+filenamedelimtersize;
+    for(size_t dp=fileendpos; dp<dislen; dp++){
+      if(disposition[dp]=='\"'){
+        fileterm=dp;
+        break;
+      }
+    }
+  
+    size_t filenamesize=(fileterm-fileendpos);
+    char *filename=new char[filenamesize+1];
+    std::copy(disposition+fileendpos,disposition+(fileendpos+filenamesize),filename);
+    filename[filenamesize]='\0';
+    getContentDisposition()->setFilename(filename);
+    delete[] filename;
+    printf("cfilename: %s \n",getContentDisposition()->getFilename());
+  }
 }
 
 void libhttppp::HttpForm::MultipartFormData::addContent(const char *key,const char *value){
