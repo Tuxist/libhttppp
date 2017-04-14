@@ -55,6 +55,5 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
-              libhttppp.cmake
               ${CMAKE_BINARY_DIR}/config.h
         DESTINATION include/httppp)
