@@ -25,25 +25,26 @@ include_directories(
   ${OPENSSL_INCLUDE_DIR}
 )
 
-add_library(http++        SHARED ${libhttpSrcs} )
-add_library(http++-static STATIC ${libhttpSrcs} )
+add_library(httppp        SHARED ${libhttpSrcs} )
+add_library(httppp-static STATIC ${libhttpSrcs} )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(http++ ${OPENSSL_LIBRARIES} wsock32 ws2_32)
-  target_link_libraries(http++-static ${OPENSSL_LIBRARIES} wsock32 ws2_32)
+  target_link_libraries(httppp ${OPENSSL_LIBRARIES} wsock32 ws2_32)
+  target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} wsock32 ws2_32)
 ELSE()
-  target_link_libraries(http++ ${OPENSSL_LIBRARIES})
-  target_link_libraries(http++-static ${OPENSSL_LIBRARIES})    
+  target_link_libraries(httppp ${OPENSSL_LIBRARIES})
+  target_link_libraries(httppp-static ${OPENSSL_LIBRARIES})    
 ENDIF()
 
-SET_TARGET_PROPERTIES(http++ PROPERTIES INTERFACE_LINK_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
-SET_TARGET_PROPERTIES(http++ PROPERTIES LINK_INTERFACE_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
+SET_TARGET_PROPERTIES(httppp PROPERTIES INTERFACE_LINK_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
+SET_TARGET_PROPERTIES(httppp PROPERTIES LINK_INTERFACE_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 
-install(TARGETS http++  DESTINATION lib EXPORT http++-targets)
-install(TARGETS http++-static DESTINATION lib)
-install(EXPORT  http++-targets DESTINATION lib/cmake/http++)
+install(TARGETS httppp  DESTINATION lib EXPORT httppp-targets)
+install(TARGETS httppp-static DESTINATION lib)
+install(EXPORT  httppp-targets DESTINATION lib/cmake/httppp)
+export(PACKAGE httppp)
 
 install(FILES connections.h         
               httpd.h
@@ -54,6 +55,6 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
-              libhttp++.cmake
+              libhttppp.cmake
               ${CMAKE_BINARY_DIR}/config.h
-        DESTINATION include/http++)
+        DESTINATION include/httppp)
