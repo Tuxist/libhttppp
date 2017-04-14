@@ -418,7 +418,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   _ContentType = request->getData("Content-Type");
   switch(rtype){
     case GETREQUEST:{
-      printf("---=(Debug Console Parse GetRequest)=---\n%s\n",request->getRequestURL());
+      _parseUrlDecode(request);
       break;
     }
     case POSTREQUEST:{
@@ -426,7 +426,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
          strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
          _parseMulitpart(request);
       }else{
-        printf("---=(Debug Console Parse PostRequest)=---\n%s\n",request->getRequest());
+         _parseUrlDecode(request);
       }
       break;
     }
@@ -834,6 +834,48 @@ void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(con
   _Filename=new char[strlen(filename)+1];
   std::copy(filename,filename+strlen(filename),_Filename);
   _Filename[strlen(filename)]='\0';
+}
+
+void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
+  char *formdat=NULL;
+  if(request->getRequestType()==POSTREQUEST){
+      size_t rsize=request->getRequestSize();
+      formdat = new char[rsize+1];
+      std::copy(request->getRequest(),request->getRequest()+rsize,formdat);
+      formdat[rsize]='\0';
+  }else if(request->getRequestType()==GETREQUEST){
+      const char *rurl=request->getRequestURL();
+      size_t rurlsize=strlen(rurl);
+      ssize_t rdelimter=-1;
+      for(size_t cpos=0; cpos<rurlsize; cpos++){
+        if(rurl[cpos]=='?'){
+          rdelimter=cpos;
+          rdelimter++;
+          break;
+        }
+      }
+      if(rdelimter==-1){
+        _httpexception.Note("Get Request include no data");
+        throw _httpexception;
+      }
+      size_t rsize=rurlsize-rdelimter;
+      formdat = new char[rsize+1];
+      std::copy(rurl+rdelimter,rurl+(rdelimter+rsize),formdat);
+      formdat[rsize]='\0';
+  }else{
+    _httpexception.Error("HttpForm unknown Requestype");
+    throw _httpexception;
+  }
+
+  char *subptr = NULL,*subptr2=NULL;
+  for(char *substr = strtok_r(formdat,"&",&subptr); substr; substr=strtok_r(NULL,"&",&subptr)){
+    char *key = strtok_r(substr,"=",&subptr2);
+    char *value = strtok_r(NULL,"=",&subptr2);
+    printf("%s -> %s\n",key,value);
+  }
+  
+  printf("formdat: %s \n",formdat);
+  delete[] formdat;
 }
 
 

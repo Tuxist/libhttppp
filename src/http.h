@@ -224,6 +224,7 @@ namespace libhttppp {
     /*both methods*/
     size_t             _Elements;
     const char*        _ContentType;
+    HTTPException      _httpexception;
   };
 
   class HttpCookie {
