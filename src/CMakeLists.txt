@@ -44,7 +44,6 @@ SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 install(TARGETS httppp  DESTINATION lib EXPORT httppp-targets)
 install(TARGETS httppp-static DESTINATION lib)
 install(EXPORT  httppp-targets DESTINATION lib/cmake/httppp)
-export(PACKAGE httppp)
 
 install(FILES connections.h         
               httpd.h
