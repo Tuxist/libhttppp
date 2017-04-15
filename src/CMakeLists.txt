@@ -36,14 +36,26 @@ ELSE()
   target_link_libraries(httppp-static ${OPENSSL_LIBRARIES})    
 ENDIF()
 
-SET_TARGET_PROPERTIES(httppp PROPERTIES INTERFACE_LINK_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
-SET_TARGET_PROPERTIES(httppp PROPERTIES LINK_INTERFACE_LIBRARIES "" VERSION ${LIBV} SOVERSION 1)
-
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 
-install(TARGETS httppp  DESTINATION lib EXPORT httppp-targets)
-install(TARGETS httppp-static DESTINATION lib)
-install(EXPORT  httppp-targets DESTINATION lib/cmake/httppp)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
+
+include(GenerateExportHeader)
+
+generate_export_header(httppp)
+
+set_property(TARGET httppp PROPERTY VERSION ${Upstream_VERSION})
+set_property(TARGET httppp PROPERTY SOVERSION ${LIBV})
+set_property(TARGET httppp PROPERTY INTERFACE_httppp_MAJOR_VERSION ${LIBV})
+set_property(TARGET httppp APPEND PROPERTY COMPATIBLE_INTERFACE_STRING httppp_MAJOR_VERSION)
+
+install(TARGETS httppp EXPORT httpppTargets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
 
 install(FILES connections.h         
               httpd.h
@@ -55,5 +67,42 @@ install(FILES connections.h
               https.h
               mimetypes.h
               ${CMAKE_BINARY_DIR}/config.h
-        DESTINATION include/httppp)
+        DESTINATION include/httppp
+        COMPONENT Devel
+)
 
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppConfigVersion.cmake"
+  VERSION ${Upstream_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+export(EXPORT httpppTargets
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppTargets.cmake"
+  NAMESPACE Upstream::
+)
+configure_file(cmake/httpppConfig.cmake
+  "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppConfig.cmake"
+  COPYONLY
+)
+
+set(ConfigPackageLocation lib/cmake/httppp)
+install(EXPORT httpppTargets
+  FILE
+    httpppTargets.cmake
+  NAMESPACE
+    Upstream::
+  DESTINATION
+    ${ConfigPackageLocation}
+)
+
+install(
+  FILES
+    cmake/httpppConfig.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppConfigVersion.cmake"
+  DESTINATION
+    ${ConfigPackageLocation}
+  COMPONENT
+    Devel
+)

@@ -2,6 +2,9 @@ project(libhttppp)
 cmake_minimum_required(VERSION 2.6)
 enable_testing ()
 
+set(LIBV "1.0.0")
+set(Upstream_VERSION 1.0.0)
+
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
   if( CMAKE_CXX_COMPILER_ID MATCHES GNU )
      SET(CMAKE_CXX_FLAGS "-g -Wall -std=c++11")
@@ -21,8 +24,6 @@ if( CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 endif( CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)
-
-set(LIBV "1.0.0")
 
 IF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
   list(APPEND ${CMAKE_CXX_FLAGS} "-msse2")
