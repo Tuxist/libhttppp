@@ -66,7 +66,8 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
-              ${CMAKE_BINARY_DIR}/config.h
+              "${CMAKE_BINARY_DIR}/config.h"
+              "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp
         COMPONENT Devel
 )
