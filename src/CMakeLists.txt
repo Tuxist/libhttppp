@@ -1,5 +1,10 @@
 find_package(OpenSSL REQUIRED)
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
+
+include(GenerateExportHeader)
+
 set(libhttpSrcs
   connections.cpp
   socket.cpp
@@ -28,6 +33,8 @@ include_directories(
 add_library(httppp        SHARED ${libhttpSrcs} )
 add_library(httppp-static STATIC ${libhttpSrcs} )
 
+generate_export_header(httppp)
+
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   target_link_libraries(httppp ${OPENSSL_LIBRARIES} wsock32 ws2_32)
   target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} wsock32 ws2_32)
@@ -37,13 +44,6 @@ ELSE()
 ENDIF()
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
-
-include(GenerateExportHeader)
-
-generate_export_header(httppp)
 
 set_property(TARGET httppp PROPERTY VERSION ${Upstream_VERSION})
 set_property(TARGET httppp PROPERTY SOVERSION ${LIBV})
