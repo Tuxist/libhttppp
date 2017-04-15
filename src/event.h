@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 #include "socket.h"
 #include "connections.h"
+#include "config.h"
 
 #ifndef QUEUE_H
 #define QUEUE_H

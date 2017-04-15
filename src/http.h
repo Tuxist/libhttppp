@@ -26,9 +26,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "socket.h"
-#include "event.h"
 #include "httpdefinitions.h"
 #include "exception.h"
+#include "config.h"
+#include "event.h"
 
 #ifndef HTTP_H
 #define HTTP_H
