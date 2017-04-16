@@ -84,7 +84,7 @@ namespace libhttppp {
     void   setConnection(const char *type);
     void   setVersion(const char* version);
     void   send(Connection *curconnection,const char* data);
-    void   send(Connection *curconnection,const char* data, size_t datalen); //only use as server
+    void   send(Connection *curconnection,const char* data, ssize_t datalen); //only use as server
     void   parse(ClientConnection *curconnection); //only use as client
     size_t printHeader(char **buffer);
   private:

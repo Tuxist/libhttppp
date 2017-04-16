@@ -254,14 +254,15 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 }
 
 
-void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, size_t datalen){
+void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, ssize_t datalen){
   setData("Connection","keep-alive");
-  setData("Content-Length",datalen);
+  if(datalen!=-1)
+    setData("Content-Length",datalen);
   char *header;
   size_t headersize = printHeader(&header);
   curconnection->addSendQueue(header,headersize);
   delete[] header;
-  if(datalen!=0)
+  if(datalen>=0)
     curconnection->addSendQueue(data,datalen);
 }
 
