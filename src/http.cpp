@@ -115,9 +115,8 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     std::copy(value,value+(pos->_Valuelen+1),pos->_Value);
     return pos;
   }else{
-    pos=setData(key,value);
+    return setData(key,value);
   }
-  return pos;
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, size_t value,
