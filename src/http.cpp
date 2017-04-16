@@ -115,7 +115,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     std::copy(value,value+(pos->_Valuelen+1),pos->_Value);
     return pos;
   }else{
-    setData(key,value);
+    pos=setData(key,value);
   }
   return pos;
 }
@@ -210,15 +210,15 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
-  setData("Content-Length",len,_ContentLength);
+  _ContentLength=setData("Content-Length",len,_ContentLength);
 }
 
 void libhttppp::HttpResponse::setContentType(const char* type){
-  setData("Content-Type",type,_ContentType);
+  _ContentType=setData("Content-Type",type,_ContentType);
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  setData("Connection",type,_ContentType);
+  _ContentLength=setData("Connection",type,_ContentType);
 }
 
 void libhttppp::HttpResponse::setVersion(const char* version){
