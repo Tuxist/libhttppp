@@ -189,8 +189,6 @@ libhttppp::HttpHeader::~HttpHeader(){
 libhttppp::HttpResponse::HttpResponse(){
   setState(HTTP200);
   setVersion(HTTPVERSION("1.1"));
-  _ContentType=setData("Content-Type","text/plain");
-  _ContentLength=setData("Content-Length",(size_t)0);
   _Connection=setData("Connection","Keep-Alive");
 }
 

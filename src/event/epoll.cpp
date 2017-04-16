@@ -101,6 +101,7 @@ void libhttppp::Queue::runEventloop(){
       
       if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR) {
           CloseConnection:
+          DisconnectEvent(curcon);
             try{
               delConnection(curcon);
               epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
@@ -119,11 +120,12 @@ void libhttppp::Queue::runEventloop(){
 	    int rcvsize=0;
 	    try{
               rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-	      if(rcvsize>0)
+	      if(rcvsize>0){
 		curcon->addRecvQueue(buf,rcvsize);
+              }
 	    }catch(HTTPException &e){
 		
-	    }       
+	    }
             RequestEvent(curcon);
           }catch(HTTPException &e){
             if(e.isCritical()){
@@ -170,5 +172,9 @@ void libhttppp::Queue::runEventloop(){
 }
 
 void libhttppp::Queue::RequestEvent(Connection *curcon) {
+  return;
+}
+
+void libhttppp::Queue::DisconnectEvent(Connection *curcon) {
   return;
 }

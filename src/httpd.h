@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "event.h"
-#include <config.h>
 
 #ifndef HTTPD_H
 #define HTTPD_H

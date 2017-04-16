@@ -26,9 +26,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "exception.h"
-#include "socket.h"
 #include "connections.h"
-#include "config.h"
+#include "socket.h"
+#include <config.h>
 
 #ifndef QUEUE_H
 #define QUEUE_H
@@ -43,6 +43,7 @@ namespace libhttppp {
 		Queue(ServerSocket *serversocket);
 		virtual ~Queue();
 		virtual void RequestEvent(Connection *curcon);
+                virtual void DisconnectEvent(Connection *curcon);
 		virtual void runEventloop();
                 static  void exitEventLoop(int signum);
   private:
