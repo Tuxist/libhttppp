@@ -87,9 +87,9 @@ void libhttppp::Queue::runEventloop(){
           event.data.fd =_ServerSocket->acceptEvent(clientsocket);
 	  clientsocket->setnonblocking();
           event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
-          
           if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+	  ConnectEvent(curcon);
         }catch(HTTPException &e){
           if(e.isCritical())
             throw e;
@@ -160,6 +160,7 @@ void libhttppp::Queue::runEventloop(){
           }else{
 // 	    usleep(2000);
 	  }
+	  ResponseEvent(curcon);
         }catch(HTTPException &e){
            goto CloseConnection;
         }
@@ -175,6 +176,14 @@ void libhttppp::Queue::RequestEvent(Connection *curcon) {
   return;
 }
 
+void libhttppp::Queue::ResponseEvent(libhttppp::Connection *curcon){
+  return;    
+};
+    
+void libhttppp::Queue::ConnectEvent(libhttppp::Connection *curcon){
+  return;    
+};
+    
 void libhttppp::Queue::DisconnectEvent(Connection *curcon) {
   return;
 }

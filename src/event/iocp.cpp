@@ -52,6 +52,14 @@ void libhttppp::Queue::RequestEvent(Connection *curcon) {
   return;
 }
 
+void libhttppp::Queue::ResponseEvent(libhttppp::Connection *curcon){
+  return;    
+};
+    
+void libhttppp::Queue::ConnectEvent(libhttppp::Connection *curcon){
+  return;    
+};
+
 void libhttppp::Queue::DisconnectEvent(libhttppp::Connection* curcon){
   return;
 }
