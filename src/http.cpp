@@ -865,11 +865,30 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
     _httpexception.Error("HttpForm unknown Requestype");
     throw _httpexception;
   }
-
-  for(size_t fdatpos=0; fdatpos<strlen(formdat); fdatpos++){
-    printf("%c",formdat[fdatpos]);  
+  size_t fdatstpos=0;
+  size_t keyendpos=0;
+  for(size_t fdatpos=0; fdatpos<strlen(formdat)+1; fdatpos++){
+    switch(formdat[fdatpos]){
+        case '&': case '\0':{
+          if(keyendpos >fdatstpos && keyendpos<fdatpos){
+            char *key=new char[(keyendpos-fdatstpos)+1];
+            size_t vlstpos=keyendpos+1;
+            char *value=new char[(fdatpos-vlstpos)+1];
+            std::copy(formdat+fdatstpos,formdat+keyendpos,key);
+            std::copy(formdat+vlstpos,formdat+fdatpos,value);
+            key[(keyendpos-fdatstpos)]='\0';
+            value[(fdatpos-vlstpos)]='\0';
+            printf("Key: %s Value: %s\n",key,value);
+            delete[] key;
+            delete[] value;
+          }
+          fdatstpos=fdatpos+1;
+        };
+        case '=':{
+          keyendpos=fdatpos;  
+        };
+    }
   }
-  
   delete[] formdat;
 }
 
