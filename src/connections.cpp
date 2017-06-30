@@ -51,8 +51,7 @@ libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
 }
 
 libhttppp::ConnectionData::~ConnectionData(){
-  if(_nextConnectionData)
-    delete _nextConnectionData;
+  delete _nextConnectionData;
 }
 
 libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){

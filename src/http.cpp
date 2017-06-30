@@ -855,8 +855,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
         }
       }
       if(rdelimter==-1){
-        _httpexception.Note("Get Request include no data");
-        throw _httpexception;
+        return;
       }
       size_t rsize=rurlsize-rdelimter;
       formdat = new char[rsize+1];
@@ -867,14 +866,10 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
     throw _httpexception;
   }
 
-  char *subptr = NULL,*subptr2=NULL;
-  for(char *substr = strtok_r(formdat,"&",&subptr); substr; substr=strtok_r(NULL,"&",&subptr)){
-    char *key = strtok_r(substr,"=",&subptr2);
-    char *value = strtok_r(NULL,"=",&subptr2);
-    printf("%s -> %s\n",key,value);
+  for(size_t fdatpos=0; fdatpos<strlen(formdat); fdatpos++){
+    printf("%c",formdat[fdatpos]);  
   }
   
-  printf("formdat: %s \n",formdat);
   delete[] formdat;
 }
 

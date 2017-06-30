@@ -104,6 +104,7 @@ void libhttppp::Queue::runEventloop(){
           DisconnectEvent(curcon);
             try{
               delConnection(curcon);
+	      curcon=NULL;
               epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
 	      _httpexception.Note("Connection shutdown!");
 	      continue;
