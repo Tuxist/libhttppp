@@ -204,6 +204,8 @@ namespace libhttppp {
     ~HttpForm();
     void                parse(HttpRequest *request);
     const char         *getContentType();
+    /*urldecoded form*/
+    ssize_t             urlDecode(const char *urlin,size_t urlinsize,char **urlout);
     /*multiform*/
     const char         *getBoundary();
     size_t              getBoundarySize();
@@ -223,6 +225,7 @@ namespace libhttppp {
     MultipartFormData *_lastMultipartFormData;
     
     /*both methods*/
+    inline int         _ishex(int x);
     size_t             _Elements;
     const char*        _ContentType;
     HTTPException      _httpexception;

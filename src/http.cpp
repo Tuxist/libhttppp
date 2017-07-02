@@ -437,6 +437,33 @@ const char *libhttppp::HttpForm::getContentType(){
   return _ContentType;;
 }
 
+inline int libhttppp::HttpForm::_ishex(int x){
+  return  (x >= '0' && x <= '9')  ||
+          (x >= 'a' && x <= 'f')  ||
+          (x >= 'A' && x <= 'F');
+}
+
+ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,char **urlout){
+  char *o;
+  char *dec = new char[urlinsize+1];
+  *urlout=dec;
+  const char *end = urlin + urlinsize;
+  int c;
+  for (o = dec; urlin <= end; o++) {
+    c = *urlin++;
+    if (c == '+'){
+      c = ' ';
+    }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	||
+             !sscanf(urlin - 2, "%2x", &c))){
+      return -1;
+    }
+    if (dec){
+      *o = c;
+    }
+  }
+  return o - dec;
+}
+
 const char *libhttppp::HttpForm::getBoundary(){
   return _Boundary;  
 }
@@ -878,9 +905,15 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
             std::copy(formdat+vlstpos,formdat+fdatpos,value);
             key[(keyendpos-fdatstpos)]='\0';
             value[(fdatpos-vlstpos)]='\0';
-            printf("Key: %s Value: %s\n",key,value);
+            char *urldecdValue;
+            char *urldecdKey;
+            urlDecode(value,strlen(value),&urldecdValue);
+            urlDecode(key,strlen(key),&urldecdKey);
+            printf("Key: %s Value: %s\n",urldecdKey,urldecdValue);
             delete[] key;
+            delete[] urldecdKey;
             delete[] value;
+            delete[] urldecdValue;
           }
           fdatstpos=fdatpos+1;
         };
