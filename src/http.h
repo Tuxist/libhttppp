@@ -191,13 +191,14 @@ namespace libhttppp {
       
       void               setKey(const char *key);
       void               setValue(const char *value);
-      
+      UrlcodedFormData  *nextUrlcodedFormData();
     private:
       UrlcodedFormData();
       ~UrlcodedFormData();
       char              *_Key;
       char              *_Value;
       UrlcodedFormData  *_nextUrlcodedFormData;
+      friend class HttpForm;
     };
     
     HttpForm();
@@ -206,6 +207,8 @@ namespace libhttppp {
     const char         *getContentType();
     /*urldecoded form*/
     ssize_t             urlDecode(const char *urlin,size_t urlinsize,char **urlout);
+    UrlcodedFormData   *addUrlcodedFormData();
+    UrlcodedFormData   *getUrlcodedFormData();
     /*multiform*/
     const char         *getBoundary();
     size_t              getBoundarySize();
@@ -215,6 +218,8 @@ namespace libhttppp {
   private:
     /*urldecoded*/
     void               _parseUrlDecode(HttpRequest *request);
+    UrlcodedFormData  *_firstUrlcodedFormData;
+    UrlcodedFormData  *_lastUrlcodedFormData;
     /*multiform*/
     void               _parseMulitpart(HttpRequest *request);
     void               _parseMultiSection(const char *section,size_t sectionsize);

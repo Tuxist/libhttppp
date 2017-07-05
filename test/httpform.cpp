@@ -36,6 +36,22 @@ std::string Multiform(libhttppp::HttpRequest *curreq){
   return condat.str();
 }
 
+std::string URlform(libhttppp::HttpRequest *curreq){
+  libhttppp::HttpForm curform;
+  curform.parse(curreq); 
+  std::stringstream condat;
+  if(curform.getUrlcodedFormData()){
+    for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
+        cururlform=cururlform->nextUrlcodedFormData()){
+      condat << "<span>"
+             << "Key: " << cururlform->getKey()
+             << " Value: " << cururlform->getValue()
+             << "</span><br/>";
+    }
+  }
+  return condat.str();
+}
+
 void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) {
      libhttppp::HttpResponse curres;
      curres.setState(HTTP200);
@@ -107,6 +123,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
      condat  << "<div style=\"border: thin solid black\">"
              << "<h2>Output</h2>"
              <<  Multiform(curreq)
+             <<  URlform(curreq)
              << "</div></body></html>";
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());

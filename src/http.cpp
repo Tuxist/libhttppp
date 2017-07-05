@@ -402,6 +402,8 @@ libhttppp::HttpRequest::~HttpRequest(){
 libhttppp::HttpForm::HttpForm(){
   _Boundary=NULL;
   _Elements=0;
+  _firstUrlcodedFormData=NULL;
+  _lastUrlcodedFormData=NULL;
   _firstMultipartFormData=NULL;
   _lastMultipartFormData=NULL;
 }
@@ -905,11 +907,16 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
             std::copy(formdat+vlstpos,formdat+fdatpos,value);
             key[(keyendpos-fdatstpos)]='\0';
             value[(fdatpos-vlstpos)]='\0';
+
             char *urldecdValue;
             char *urldecdKey;
             urlDecode(value,strlen(value),&urldecdValue);
             urlDecode(key,strlen(key),&urldecdKey);
-            printf("Key: %s Value: %s\n",urldecdKey,urldecdValue);
+
+            UrlcodedFormData *newenrty;
+            newenrty=addUrlcodedFormData();
+            newenrty->setKey(urldecdKey);
+            newenrty->setValue(urldecdValue);
             delete[] key;
             delete[] urldecdKey;
             delete[] value;
@@ -925,6 +932,60 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   delete[] formdat;
 }
 
+void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
+  if(_Key)
+    delete[] _Key;
+  _Key=new char [strlen(key)+1];
+  std::copy(key,key+strlen(key),_Key);
+  _Key[strlen(key)]='\0';  
+}
+
+void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
+  if(_Value)
+    delete[] _Value;
+  _Value=new char [strlen(value)+1];
+  std::copy(value,value+strlen(value),_Value);
+  _Value[strlen(value)]='\0'; 
+}
+
+const char *libhttppp::HttpForm::UrlcodedFormData::getKey(){
+  return _Key;
+}
+
+const char *libhttppp::HttpForm::UrlcodedFormData::getValue(){
+  return _Value;
+}
+
+libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::UrlcodedFormData::nextUrlcodedFormData(){
+  return _nextUrlcodedFormData;  
+}
+
+libhttppp::HttpForm::UrlcodedFormData::UrlcodedFormData(){
+  _Key=NULL;
+  _Value=NULL;
+  _nextUrlcodedFormData=NULL;
+}
+
+libhttppp::HttpForm::UrlcodedFormData::~UrlcodedFormData(){
+  delete[] _Key;
+  delete[] _Value;
+  delete _nextUrlcodedFormData;
+}
+
+libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::addUrlcodedFormData(){
+  if(!_firstUrlcodedFormData){
+    _firstUrlcodedFormData= new UrlcodedFormData;
+    _lastUrlcodedFormData=_firstUrlcodedFormData;
+  }else{
+    _lastUrlcodedFormData->_nextUrlcodedFormData=new UrlcodedFormData;
+    _lastUrlcodedFormData=_lastUrlcodedFormData->_nextUrlcodedFormData;
+  }
+  return _lastUrlcodedFormData;
+}
+
+libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::getUrlcodedFormData(){
+  return _firstUrlcodedFormData;
+}
 
 libhttppp::HttpCookie::CookieData::CookieData(){
 }
