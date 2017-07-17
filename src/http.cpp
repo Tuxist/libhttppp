@@ -87,11 +87,6 @@ int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **p
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value){
-  for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(strncmp(curdat->_Key,key,curdat->_Keylen)==0){
-       return setData(key,value,curdat);
-    }
-  }
   if(!_firstHeaderData){
     _firstHeaderData=new HeaderData(key,value);
     _lastHeaderData=_firstHeaderData;
@@ -988,10 +983,28 @@ libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::getUrlcodedFormData
 }
 
 libhttppp::HttpCookie::CookieData::CookieData(){
+  _Key=NULL;
+  _Value=NULL;
+  _MaxAge=-1;
+  _CookiePath=NULL;
+  _nextCookieData=NULL;
 }
 
 libhttppp::HttpCookie::CookieData::~CookieData(){
+  delete[] _Key;
+  delete[] _Value;
+  delete[] _CookiePath;
+  delete[] _nextCookieData;
 }
 
+void libhttppp::HttpCookie::CookieData::setKey(const char* key){
+}
+
+void libhttppp::HttpCookie::CookieData::setValue(const char* value){
+}
+
+
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
+  const char *cdat=curreq->getData("Cookie");
+  printf("%s\n",cdat);
 }

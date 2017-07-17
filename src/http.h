@@ -237,17 +237,25 @@ namespace libhttppp {
   };
 
   class HttpCookie {
-  private:
-    void parse(HttpRequest *curreq);
+  public:
     class CookieData {
-    private:
+    public:
       CookieData();
       ~CookieData();
-      char       *key;
-      char       *value;
-      CookieData *nextCookieData;
+      void        setKey(const char *key);
+      void        setValue(const char *value);
+      void        setMaxAge(int maxage);
+      void        setCookiePath(const char *path);
+    private:
+      char       *_Key;
+      char       *_Value;
+      int         _MaxAge;
+      char       *_CookiePath;
+      CookieData *_nextCookieData;
     };
-    HttpHeader::HeaderData *_CookiePos;
+    void parse(HttpRequest *curreq);
+    void setcookie(CookieData *cookiadata);
+  private:
   };
 
   

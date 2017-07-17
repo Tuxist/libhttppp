@@ -13,3 +13,7 @@ target_link_libraries(httpform httppp-static)
 add_executable (httpsysinfo httpsysinfo.cpp)
 
 target_link_libraries(httpsysinfo httppp-static)
+
+add_executable (httpcookie httpcookie.cpp)
+
+target_link_libraries(httpcookie httppp-static)
