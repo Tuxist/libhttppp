@@ -20,13 +20,10 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "    <style></style>"
              << "  </head>"
              << "<body>";
-     for(libhttppp::HttpHeader::HeaderData *preq = curreq->getfirstHeaderData(); preq; preq=curreq->nextHeaderData(preq)){
-       condat  << curreq->getKey(preq) 
-               << ": "
-               << curreq->getValue(preq)
-               << "<br/>";
-     }
      condat  << "</body></html>";
+     libhttppp::HttpCookie cookie;
+     cookie.setcookie("test","test");
+     cookie.setcookie("test2","test2");
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());
 };

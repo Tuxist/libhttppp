@@ -64,6 +64,7 @@ namespace libhttppp {
     size_t      getDataSizet(const char *key,HeaderData **pos=NULL);
     int         getDataInt(const char *key,HeaderData **pos=NULL);
     void        deldata(const char *key);
+    void        deldata(HeaderData *pos);
     
     size_t      getElements();
     size_t      getHeaderSize();
@@ -240,22 +241,31 @@ namespace libhttppp {
   public:
     class CookieData {
     public:
+      CookieData *nextCookieData();
+    private:
       CookieData();
       ~CookieData();
-      void        setKey(const char *key);
-      void        setValue(const char *value);
-      void        setMaxAge(int maxage);
-      void        setCookiePath(const char *path);
-    private:
       char       *_Key;
       char       *_Value;
+      char       *_Comment;
+      char       *_Domain;
       int         _MaxAge;
       char       *_CookiePath;
+      bool        _Secure;
+      char       *_Version;
       CookieData *_nextCookieData;
+
+      friend class HttpCookie;
     };
+    HttpCookie();
+    ~HttpCookie();
     void parse(HttpRequest *curreq);
-    void setcookie(CookieData *cookiadata);
+    void setcookie(const char *key,const char *value,
+                   const char *comment=NULL,const char *domain=NULL, 
+                   int maxage=-1,const char *path=NULL,
+                   bool secure=false,const char *version="1");
   private:
+    HTTPException  _httpexception;
   };
 
   

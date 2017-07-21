@@ -122,9 +122,17 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 }
 
 void libhttppp::HttpHeader::deldata(const char* key){
-  HeaderData *prevdat=NULL;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(strncmp(curdat->_Key,key,curdat->_Keylen)==0){
+      deldata(curdat);  
+    }
+  }
+}
+
+void libhttppp::HttpHeader::deldata(libhttppp::HttpHeader::HeaderData* pos){
+  HeaderData *prevdat=NULL;
+  for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
+    if(curdat==pos){
       if(prevdat){
         prevdat->_nextHeaderData=curdat->_nextHeaderData;
         if(_lastHeaderData==curdat)
@@ -139,8 +147,9 @@ void libhttppp::HttpHeader::deldata(const char* key){
       return;
     }
     prevdat=curdat;
-  }
+  }    
 }
+
 
 size_t libhttppp::HttpHeader::getElements(){
   size_t elements=0;
@@ -994,17 +1003,30 @@ libhttppp::HttpCookie::CookieData::~CookieData(){
   delete[] _Key;
   delete[] _Value;
   delete[] _CookiePath;
-  delete[] _nextCookieData;
+  delete   _nextCookieData;
 }
 
-void libhttppp::HttpCookie::CookieData::setKey(const char* key){
+libhttppp::HttpCookie::CookieData * libhttppp::HttpCookie::CookieData::nextCookieData(){
+  return _nextCookieData;
 }
 
-void libhttppp::HttpCookie::CookieData::setValue(const char* value){
+
+libhttppp::HttpCookie::HttpCookie(){
+}
+
+libhttppp::HttpCookie::~HttpCookie(){
+}
+
+
+void libhttppp::HttpCookie::setcookie(const char* key, const char* value,
+                                      const char *comment,const char *domain,  
+                                      int maxage, const char* path,
+                                      bool secure,const char *version){
+ 
 }
 
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   const char *cdat=curreq->getData("Cookie");
-  printf("%s\n",cdat);
+  printf("cdat: %s\n",cdat);
 }
