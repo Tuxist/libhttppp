@@ -1018,15 +1018,28 @@ libhttppp::HttpCookie::~HttpCookie(){
 }
 
 
-void libhttppp::HttpCookie::setcookie(const char* key, const char* value,
+void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
+                                      const char* key, const char* value,
                                       const char *comment,const char *domain,  
                                       int maxage, const char* path,
                                       bool secure,const char *version){
   if(!key || !value)
     throw _httpexception.Note("no key or value set in cookie!");
   std::stringstream cookiestream;
-  cookiestream << "Set-Cookie: " << key << "=" << value;
-  
+  cookiestream   << key << "=" << value;
+  if(comment)
+    cookiestream << "; Comment=" << comment;
+  if(domain)
+    cookiestream << "; Domain=" << domain;
+  if(maxage>=0)
+    cookiestream << "; Max-Age=" << maxage;
+  if(path)
+    cookiestream << "; Path=" << path;
+  if(secure)
+    cookiestream << "; Secure";
+  if(version)
+    cookiestream << "; Version=" << version;
+  curresp->setData("Set-Cookie",cookiestream.str().c_str());
 }
 
 

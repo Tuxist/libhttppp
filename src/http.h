@@ -260,7 +260,8 @@ namespace libhttppp {
     HttpCookie();
     ~HttpCookie();
     void parse(HttpRequest *curreq);
-    void setcookie(const char *key,const char *value,
+    void setcookie(HttpResponse *curresp,
+                   const char *key,const char *value,
                    const char *comment=NULL,const char *domain=NULL, 
                    int maxage=-1,const char *path=NULL,
                    bool secure=false,const char *version="1");

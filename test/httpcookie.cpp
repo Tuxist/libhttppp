@@ -22,8 +22,8 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "<body>";
      condat  << "</body></html>";
      libhttppp::HttpCookie cookie;
-     cookie.setcookie("test","test");
-     cookie.setcookie("test2","test2");
+     cookie.setcookie(&curres,"test","test");
+     cookie.setcookie(&curres,"test2","test2");
      std::string buffer=condat.str();
      curres.send(curcon,buffer.c_str(),buffer.length());
 };
