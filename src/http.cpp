@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include <algorithm>
 #include <cstring>
+#include <sstream>
 
 #ifdef Windows
   #define strtok_r strtok_s
@@ -243,17 +244,16 @@ void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
 }
 
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
-  char *header=NULL;
-  size_t headersize=((getHeaderSize()+_VersionLen+_Statelen)+((4*getElements())+5)); 
-  header=new char[(headersize+1)];
-  size_t pos=snprintf(header,headersize,"%s %s\r\n",_Version,_State);
+  std::stringstream hstream;
+  hstream << _Version << " " << _State <<"\r\n";
   for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-    pos+=(snprintf(header+pos,(headersize-pos), 
-           "%s: %s\r\n",getKey(curdat),getValue(curdat)));
+          hstream << getKey(curdat) << ": " << getValue(curdat) <<"\r\n";
   } 
-  pos+=snprintf(header+pos,headersize+1,"\r\n");
-  *buffer=header;
-  return headersize;
+  hstream << "\r\n";
+  std::string buf=hstream.str();
+  *buffer=new char[buf.size()];
+  std::copy(buf.c_str(),buf.c_str()+buf.size(),*buffer);
+  return buf.size();
 }
 
 
@@ -1022,7 +1022,11 @@ void libhttppp::HttpCookie::setcookie(const char* key, const char* value,
                                       const char *comment,const char *domain,  
                                       int maxage, const char* path,
                                       bool secure,const char *version){
- 
+  if(!key || !value)
+    throw _httpexception.Note("no key or value set in cookie!");
+  std::stringstream cookiestream;
+  cookiestream << "Set-Cookie: " << key << "=" << value;
+  
 }
 
 
