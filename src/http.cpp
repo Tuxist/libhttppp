@@ -515,8 +515,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
-  char *realboundary;
-  realboundary =new char[_BoundarySize+3];
+  char *realboundary = new char[_BoundarySize+3];
   snprintf(realboundary,_BoundarySize+3,"--%s",_Boundary);
   size_t realboundarylen=_BoundarySize+2;
   const char *req=request->getRequest();
@@ -1039,11 +1038,32 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
     cookiestream << "; Secure";
   if(version)
     cookiestream << "; Version=" << version;
-  curresp->setData("Set-Cookie",cookiestream.str().c_str());
+  std::string buf=cookiestream.str();
+  curresp->setData("Set-Cookie",buf.c_str());
 }
 
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   const char *cdat=curreq->getData("Cookie");
-  printf("cdat: %s\n",cdat);
+  if(!cdat)
+    return;
+  
+  size_t delimeter=0;
+  size_t keyendpos=0;
+  size_t startpos=0;
+  
+  for(size_t cpos=0; cpos < strlen(cdat)+1; cpos++){
+    if(cdat[cpos]=='='){
+      keyendpos=cpos;  
+    }
+    if(cdat[cpos]==';' || cdat[cpos]=='\0'){
+      delimeter=cpos;  
+    }
+    if(keyendpos!=0 && delimeter!=0){
+      printf("%s",cdat+startpos);
+      startpos=delimeter+1;
+      keyendpos=0;
+      delimeter=0;
+    }
+  }
 }

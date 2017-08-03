@@ -14,7 +14,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
      condat  << "<!DOCTYPE HTML>"
              << " <html>"
              << "  <head>"
-             << "    <title>ConnectionTest</title>"
+             << "    <title>CookieTest</title>"
              << "    <meta content=\"\">"
              << "    <meta charset=\"utf-8\">"
              << "    <style></style>"
@@ -22,6 +22,9 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
              << "<body>";
      condat  << "</body></html>";
      libhttppp::HttpCookie cookie;
+     
+     cookie.parse(curreq);
+     
      cookie.setcookie(&curres,"test","test");
      cookie.setcookie(&curres,"test2","test2");
      std::string buffer=condat.str();
