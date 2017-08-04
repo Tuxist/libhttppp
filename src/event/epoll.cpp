@@ -128,6 +128,8 @@ void libhttppp::Queue::runEventloop(){
 		
 	    }
             RequestEvent(curcon);
+            event.events = EPOLLIN | EPOLLOUT |EPOLLRDHUP;
+            epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
           }catch(HTTPException &e){
             if(e.isCritical()){
               throw e;
@@ -159,8 +161,9 @@ void libhttppp::Queue::runEventloop(){
                 curcon->resizeSendQueue(sended); 
               }
           }else{
-// 	    usleep(2000);
-	  }
+            event.events = EPOLLIN |EPOLLRDHUP;
+            epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+	      }
 	  ResponseEvent(curcon);
         }catch(HTTPException &e){
            goto CloseConnection;

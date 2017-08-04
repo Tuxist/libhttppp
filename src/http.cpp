@@ -1061,6 +1061,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
     }
     if(keyendpos!=0 && delimeter!=0){
       printf("%s",cdat+startpos);
+      
       startpos=delimeter+1;
       keyendpos=0;
       delimeter=0;
