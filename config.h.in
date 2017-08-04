@@ -1,8 +1,10 @@
 #if defined(_MSC_VER)
   #include <BaseTsd.h> 
-  typedef SSIZE_T ssize_t;
   #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
-  #define ssize_t ptrdiff_t
+  #ifndef ssize_t  
+    typedef SSIZE_T ssize_t;
+    #define ssize_t ptrdiff_t
+  #endif
   #define MSVC
 #else
   #include <sys/types.h>
