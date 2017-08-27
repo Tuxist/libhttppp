@@ -36,18 +36,8 @@ libhttppp::HTTPS::HTTPS(){
 }
 
 libhttppp::HTTPS::~HTTPS(){
+  SSL_CTX_free(_CTX);
   EVP_cleanup();
-}
-
-void libhttppp::HTTPS::createContext(){
-  const SSL_METHOD *method;
-  method = SSLv23_server_method();
-  _CTX = SSL_CTX_new(method);
-  if (!_CTX) {
-    perror("Unable to create SSL context");
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
 }
 
 void libhttppp::HTTPS::setCert(const unsigned char* crt,size_t crtlen){
@@ -59,3 +49,30 @@ void libhttppp::HTTPS::setKey(const unsigned char* key,size_t keylen){
   _PKey = d2i_RSAPrivateKey(NULL, &key, keylen);
   SSL_CTX_use_RSAPrivateKey(_CTX, _PKey);
 }
+
+void libhttppp::HTTPS::loadCertfile(const char* crtpath){
+  if (SSL_CTX_use_certificate_file(_CTX, crtpath, SSL_FILETYPE_PEM) <= 0) {
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void libhttppp::HTTPS::loadKeyfile(const char* keyfile){
+  if (SSL_CTX_use_PrivateKey_file(_CTX, keyfile, SSL_FILETYPE_PEM) <= 0 ) {
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void libhttppp::HTTPS::createContext(){
+  const SSL_METHOD *method;
+  method = SSLv23_server_method();
+  _CTX = SSL_CTX_new(method);
+  if (!_CTX) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+  SSL_CTX_set_ecdh_auto(_CTX, 1);
+}
+
