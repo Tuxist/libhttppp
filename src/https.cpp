@@ -33,6 +33,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::HTTPS::HTTPS(){
   SSL_load_error_strings();	
   OpenSSL_add_ssl_algorithms();
+  const SSL_METHOD *method;
+  method = SSLv23_server_method();
+  _CTX = SSL_CTX_new(method);
+  if (!_CTX) {
+    perror("Unable to create SSL context");
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+  SSL_CTX_set_ecdh_auto(_CTX, 1);
 }
 
 libhttppp::HTTPS::~HTTPS(){
@@ -63,16 +72,3 @@ void libhttppp::HTTPS::loadKeyfile(const char* keyfile){
     exit(EXIT_FAILURE);
   }
 }
-
-void libhttppp::HTTPS::createContext(){
-  const SSL_METHOD *method;
-  method = SSLv23_server_method();
-  _CTX = SSL_CTX_new(method);
-  if (!_CTX) {
-    perror("Unable to create SSL context");
-    ERR_print_errors_fp(stderr);
-    exit(EXIT_FAILURE);
-  }
-  SSL_CTX_set_ecdh_auto(_CTX, 1);
-}
-

@@ -39,10 +39,9 @@ namespace libhttppp {
     void loadKeyfile(const char *keyfile);
     void setCert(const unsigned char *crt,size_t crtlen);
     void setKey(const unsigned char *key,size_t keylen);
-    void createContext();
-    void configureContext();
   private:
     SSL_CTX *_CTX;
+    bool     _SSLUsed;
   };
 }
 #endif
