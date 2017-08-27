@@ -35,14 +35,16 @@ namespace libhttppp {
   public:
     HTTPS();
     ~HTTPS();
-    void loadCertfile();
-    void loadKeyfile();
-    void setCert(const char *crt);
-    void setKey(const char *key);
-    SSL_CTX *createContext();
+    void loadCertfile(const char *crtpath);
+    void loadKeyfile(const char *keyfile);
+    void setCert(const unsigned char *crt,size_t crtlen);
+    void setKey(const unsigned char *key,size_t keylen);
+    void createContext();
+    void configureContext();
   private:
-    char *cert;
-    char *key;
+    SSL_CTX *_CTX;
+    X509    *_CERT;
+    RSA     *_PKey;
   };
 }
 #endif
