@@ -41,13 +41,13 @@ libhttppp::HTTPS::~HTTPS(){
 }
 
 void libhttppp::HTTPS::setCert(const unsigned char* crt,size_t crtlen){
-  _CERT = d2i_X509(NULL, &crt, crtlen);
-  SSL_CTX_use_certificate(_CTX, _CERT);
+  X509 *cert = d2i_X509(NULL, &crt, crtlen);
+  SSL_CTX_use_certificate(_CTX, cert);
 }
 
 void libhttppp::HTTPS::setKey(const unsigned char* key,size_t keylen){
-  _PKey = d2i_RSAPrivateKey(NULL, &key, keylen);
-  SSL_CTX_use_RSAPrivateKey(_CTX, _PKey);
+  RSA *pkey = d2i_RSAPrivateKey(NULL, &key, keylen);
+  SSL_CTX_use_RSAPrivateKey(_CTX, pkey);
 }
 
 void libhttppp::HTTPS::loadCertfile(const char* crtpath){

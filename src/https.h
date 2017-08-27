@@ -43,8 +43,6 @@ namespace libhttppp {
     void configureContext();
   private:
     SSL_CTX *_CTX;
-    X509    *_CERT;
-    RSA     *_PKey;
   };
 }
 #endif
