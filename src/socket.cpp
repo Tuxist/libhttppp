@@ -206,7 +206,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
     int rval=0;
 #endif
   if(isSSLTrue()){
-    SSL_write(socket->_SSL,data,size);   
+    rval=SSL_write(socket->_SSL,data,size);
   }else{
 #ifndef Windows
     rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
