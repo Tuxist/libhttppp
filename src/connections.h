@@ -99,13 +99,12 @@ namespace libhttppp {
     ConnectionData *_ReadDataFirst;
     ConnectionData *_ReadDataLast;
     size_t          _ReadDataSize;
+    /*needs for thread safty implemented later*/
     std::mutex     *_Locked;   
     /*Helper functions*/
     Connection();
     ~Connection();
     HTTPException   _httpexception;
-    
-    /*needs for thread safty implemented later*/
     friend class ConnectionPool;
   };
   

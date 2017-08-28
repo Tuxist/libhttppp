@@ -25,26 +25,60 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <openssl/x509.h>
+
 #include "https.h"
 
+
 libhttppp::HTTPS::HTTPS(){
-  SSL_load_error_strings();	
-  OpenSSL_add_ssl_algorithms();
+  _CTX=NULL;
 }
 
 libhttppp::HTTPS::~HTTPS(){
+  SSL_CTX_free(_CTX);
   EVP_cleanup();
 }
 
-SSL_CTX *libhttppp::HTTPS::createContext(){
+void libhttppp::HTTPS::createContext(){
+  SSL_load_error_strings();	
+  OpenSSL_add_ssl_algorithms();
   const SSL_METHOD *method;
-  SSL_CTX *ctx;
   method = SSLv23_server_method();
-  ctx = SSL_CTX_new(method);
-  if (!ctx) {
+  _CTX = SSL_CTX_new(method);
+  if (!_CTX) {
     perror("Unable to create SSL context");
     ERR_print_errors_fp(stderr);
     exit(EXIT_FAILURE);
   }
-  return ctx;
+  SSL_CTX_set_ecdh_auto(_CTX, 1);
+}
+
+void libhttppp::HTTPS::setCert(const unsigned char* crt,size_t crtlen){
+  X509 *cert = d2i_X509(NULL, &crt, crtlen);
+  SSL_CTX_use_certificate(_CTX, cert);
+}
+
+void libhttppp::HTTPS::setKey(const unsigned char* key,size_t keylen){
+  RSA *pkey = d2i_RSAPrivateKey(NULL, &key, keylen);
+  SSL_CTX_use_RSAPrivateKey(_CTX, pkey);
+}
+
+void libhttppp::HTTPS::loadCertfile(const char* crtpath){
+  if (SSL_CTX_use_certificate_file(_CTX, crtpath, SSL_FILETYPE_PEM) <= 0) {
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+}
+
+void libhttppp::HTTPS::loadKeyfile(const char* keyfile){
+  if (SSL_CTX_use_PrivateKey_file(_CTX, keyfile, SSL_FILETYPE_PEM) <= 0 ) {
+    ERR_print_errors_fp(stderr);
+    exit(EXIT_FAILURE);
+  }
+}
+
+bool libhttppp::HTTPS::isSSLTrue(){
+  if(_CTX)
+    return true;
+  return false;
 }

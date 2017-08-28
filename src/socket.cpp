@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::ClientSocket::ClientSocket(){
   _Socket=0;
-  _SSL=0;
+  _SSL=NULL;
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
@@ -54,6 +54,7 @@ libhttppp::ClientSocket::~ClientSocket(){
   SD_BOTH
 #endif
   );
+  SSL_free(_SSL);
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
@@ -184,6 +185,13 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
     _httpexception.Error(errbuf);
   }
   clientsocket->_Socket=socket;
+  if(isSSLTrue()){
+     clientsocket->_SSL = SSL_new(_CTX);
+     SSL_set_fd(clientsocket->_SSL, socket);
+     if (SSL_accept(clientsocket->_SSL) <= 0) {
+       ERR_print_errors_fp(stderr);
+     }
+  }
   return socket;
 }
 
@@ -193,10 +201,20 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
 #ifndef Windows
-   ssize_t rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
+    ssize_t rval=0;
 #else
-  int rval=sendto(socket->getSocket(),(const char*) data, (int)size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
+    int rval=0;
 #endif
+  if(isSSLTrue()){
+    rval=SSL_write(socket->_SSL,data,size);
+  }else{
+#ifndef Windows
+    rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
+#else
+    rval=sendto(socket->getSocket(),(const char*) data, (int)size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
+#endif
+  }
+
   if(rval==-1){
 #ifdef Linux
     char errbuf[255];
@@ -217,13 +235,18 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 }
 
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
+  ssize_t recvsize=0;
+  if(isSSLTrue()){
+    recvsize=SSL_read(socket->_SSL,data,size);
+  }else{
 #ifndef Windows
-  ssize_t recvsize=recvfrom(socket->getSocket(),data, size,flags,
-			    &socket->_ClientAddr, &socket->_ClientAddrLen);
+    recvsize=recvfrom(socket->getSocket(),data, size,flags,
+                              &socket->_ClientAddr, &socket->_ClientAddrLen);
 #else
-  ssize_t recvsize=recvfrom(socket->getSocket(), (char*)data,(int)size,flags,
-			    &socket->_ClientAddr, &socket->_ClientAddrLen);
+    recvsize=recvfrom(socket->getSocket(), (char*)data,(int)size,flags,
+                              &socket->_ClientAddr, &socket->_ClientAddrLen);
 #endif
+  }
   if(recvsize==-1){
 #ifdef Linux 
     char errbuf[255];
