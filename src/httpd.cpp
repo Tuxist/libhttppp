@@ -33,7 +33,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
   int port=0;
   _MaxConnections=MAXDEFAULTCONN;
   _Queue=NULL;
-  char *httpaddr=NULL,*rootpath=NULL;
+  char *httpaddr=NULL,*rootpath=NULL,*sslcertpath=NULL,*sslkeypath=NULL;
   for(int args=1; args<argc; args++){
     if(strncmp(argv[args],"--httpaddr=",11)==0){
       httpaddr=argv[args]+11;
@@ -46,6 +46,10 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
         std::copy(rootpath,rootpath+_RootPathLen,_RootPath);
     }else if(strncmp(argv[args],"--maxconnections=",17)==0){
       _MaxConnections=atoi(argv[args]+17);
+    }else if(strncmp(argv[args],"--httpscert=",11) || strncmp(argv[args],"-h",2)){
+      sslcertpath=argv[args]+11;
+    }else if(strncmp(argv[args],"--httpskey=",10) || strncmp(argv[args],"-h",2)){
+      sslkeypath=argv[args]+10;
     }else if(strncmp(argv[args],"--help",6) || strncmp(argv[args],"-h",2)){
       _Help();
     }
@@ -63,6 +67,11 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 #endif
   _ServerSocket->setnonblocking();
   _ServerSocket->listenSocket();
+  if(sslcertpath && sslkeypath){
+    _ServerSocket->createContext();
+    _ServerSocket->loadCertfile(sslcertpath);
+    _ServerSocket->loadKeyfile(sslkeypath);
+  }
 }
 
 void libhttppp::HttpD::_Help(){

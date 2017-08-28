@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::ClientSocket::ClientSocket(){
   _Socket=0;
-  _SSL=0;
+  _SSL=NULL;
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
@@ -54,6 +54,7 @@ libhttppp::ClientSocket::~ClientSocket(){
   SD_BOTH
 #endif
   );
+  SSL_free(_SSL);
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
@@ -184,6 +185,13 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
     _httpexception.Error(errbuf);
   }
   clientsocket->_Socket=socket;
+  if(isSSLTrue()){
+     clientsocket->_SSL = SSL_new(_CTX);
+     SSL_set_fd(clientsocket->_SSL, socket);
+     if (SSL_accept(clientsocket->_SSL) <= 0) {
+       ERR_print_errors_fp(stderr);
+     }
+  }
   return socket;
 }
 

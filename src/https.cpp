@@ -31,6 +31,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 libhttppp::HTTPS::HTTPS(){
+  _CTX=NULL;
+}
+
+libhttppp::HTTPS::~HTTPS(){
+  SSL_CTX_free(_CTX);
+  EVP_cleanup();
+}
+
+void libhttppp::HTTPS::createContext(){
   SSL_load_error_strings();	
   OpenSSL_add_ssl_algorithms();
   const SSL_METHOD *method;
@@ -42,11 +51,6 @@ libhttppp::HTTPS::HTTPS(){
     exit(EXIT_FAILURE);
   }
   SSL_CTX_set_ecdh_auto(_CTX, 1);
-}
-
-libhttppp::HTTPS::~HTTPS(){
-  SSL_CTX_free(_CTX);
-  EVP_cleanup();
 }
 
 void libhttppp::HTTPS::setCert(const unsigned char* crt,size_t crtlen){
@@ -71,4 +75,10 @@ void libhttppp::HTTPS::loadKeyfile(const char* keyfile){
     ERR_print_errors_fp(stderr);
     exit(EXIT_FAILURE);
   }
+}
+
+bool libhttppp::HTTPS::isSSLTrue(){
+  if(_CTX)
+    return true;
+  return false;
 }

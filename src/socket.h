@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <cstdio>
 #endif
 
+#include "https.h"
 #include "exception.h"
 
 #ifndef SOCKET_H
@@ -62,13 +63,13 @@ namespace libhttppp {
 #else
     SOCKET           _Socket;
 #endif
-    int              _SSL;
+    SSL             *_SSL;
     struct sockaddr  _ClientAddr;
     socklen_t        _ClientAddrLen;
     friend class ServerSocket;
   };
 
-  class ServerSocket {
+  class ServerSocket : public HTTPS{
   public:
 #ifndef WIN32
     ServerSocket(const char *uxsocket,int maxconnections);
