@@ -46,10 +46,12 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
         std::copy(rootpath,rootpath+_RootPathLen,_RootPath);
     }else if(strncmp(argv[args],"--maxconnections=",17)==0){
       _MaxConnections=atoi(argv[args]+17);
-    }else if(strncmp(argv[args],"--httpscert=",11) || strncmp(argv[args],"-h",2)){
-      sslcertpath=argv[args]+11;
-    }else if(strncmp(argv[args],"--httpskey=",10) || strncmp(argv[args],"-h",2)){
-      sslkeypath=argv[args]+10;
+    }else if(strncmp(argv[args],"--httpscert=",strlen("--httpscert="))==0){
+      sslcertpath=argv[args]+strlen("--httpscert=");
+      printf("%s\n",sslcertpath);
+    }else if(strncmp(argv[args],"--httpskey=",strlen("--httpskey="))==0){
+      sslkeypath=argv[args]+strlen("--httpskey=");
+      printf("%s\n",sslkeypath);
     }else if(strncmp(argv[args],"--help",6) || strncmp(argv[args],"-h",2)){
       _Help();
     }
