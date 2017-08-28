@@ -231,21 +231,11 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 }
 
 bool libhttppp::Connection::tryLock(){
-  try{
-    _Locked->try_lock();
-    return true;
-  }catch(HTTPException &e){
-    return false;
-  }
+  return _Locked->try_lock();
 }
 
-bool libhttppp::Connection::tryUnlock(){
-  try{
-    _Locked->unlock();
-    return true;
-  }catch(HTTPException &e){
-    return false;
-  }
+void libhttppp::Connection::Unlock(){
+  _Locked->unlock();
 }
 
 libhttppp::Connection::Connection(){

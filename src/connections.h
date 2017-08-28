@@ -85,7 +85,7 @@ namespace libhttppp {
     int             pollState;
     /*Helping function for multithreaded apps*/
     bool            tryLock();
-    bool            tryUnlock();
+    void            Unlock();
   private:
     ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
 				 size_t *qsize,size_t size);

@@ -993,15 +993,12 @@ libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::getUrlcodedFormData
 libhttppp::HttpCookie::CookieData::CookieData(){
   _Key=NULL;
   _Value=NULL;
-  _MaxAge=-1;
-  _CookiePath=NULL;
   _nextCookieData=NULL;
 }
 
 libhttppp::HttpCookie::CookieData::~CookieData(){
   delete[] _Key;
   delete[] _Value;
-  delete[] _CookiePath;
   delete   _nextCookieData;
 }
 
@@ -1009,11 +1006,23 @@ libhttppp::HttpCookie::CookieData * libhttppp::HttpCookie::CookieData::nextCooki
   return _nextCookieData;
 }
 
+const char * libhttppp::HttpCookie::CookieData::getKey(){
+  return _Key;
+}
+
+const char * libhttppp::HttpCookie::CookieData::getValue(){
+  return _Value;
+}
+
+
 
 libhttppp::HttpCookie::HttpCookie(){
+  _firstCookieData=NULL;
+  _lastCookieData=NULL;
 }
 
 libhttppp::HttpCookie::~HttpCookie(){
+  delete _firstCookieData;
 }
 
 
@@ -1022,8 +1031,10 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
                                       const char *comment,const char *domain,  
                                       int maxage, const char* path,
                                       bool secure,const char *version){
-  if(!key || !value)
-    throw _httpexception.Note("no key or value set in cookie!");
+  if(!key || !value){
+    _httpexception.Note("no key or value set in cookie!");
+    return;
+  }
   std::stringstream cookiestream;
   cookiestream   << key << "=" << value;
   if(comment)
@@ -1060,11 +1071,40 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
       delimeter=cpos;  
     }
     if(keyendpos!=0 && delimeter!=0){
-      printf("%s",cdat+startpos);
+      CookieData *curcookie=addCookieData();
+        
+      curcookie->_Key=new char[(keyendpos-startpos)+1];
+      std::copy(cdat+startpos,cdat+keyendpos,curcookie->_Key);
+      curcookie->_Key[(keyendpos-startpos)]='\0';
       
-      startpos=delimeter+1;
+      size_t valuestartpos=keyendpos+1;
+      curcookie->_Value=new char[(delimeter-valuestartpos)+1];
+      std::copy(cdat+valuestartpos,cdat+delimeter,curcookie->_Value);
+      curcookie->_Value[(delimeter-valuestartpos)]='\0';
+      
+      startpos=delimeter+2;
       keyendpos=0;
       delimeter=0;
     }
   }
+}
+
+libhttppp::HttpCookie::CookieData *libhttppp::HttpCookie::getfirstCookieData(){
+  return _firstCookieData;
+}
+
+libhttppp::HttpCookie::CookieData *libhttppp::HttpCookie::getlastCookieData(){
+  return _lastCookieData;
+}
+
+
+libhttppp::HttpCookie::CookieData  *libhttppp::HttpCookie::addCookieData(){
+  if(!_firstCookieData){
+    _firstCookieData= new CookieData;
+    _lastCookieData=_firstCookieData;
+  }else{
+    _lastCookieData->_nextCookieData=new CookieData;
+    _lastCookieData=_lastCookieData->_nextCookieData;
+  }
+  return _lastCookieData;
 }

@@ -210,6 +210,7 @@ namespace libhttppp {
     ssize_t             urlDecode(const char *urlin,size_t urlinsize,char **urlout);
     UrlcodedFormData   *addUrlcodedFormData();
     UrlcodedFormData   *getUrlcodedFormData();
+    
     /*multiform*/
     const char         *getBoundary();
     size_t              getBoundarySize();
@@ -242,17 +243,13 @@ namespace libhttppp {
     class CookieData {
     public:
       CookieData *nextCookieData();
+      const char *getKey();
+      const char *getValue();
     private:
       CookieData();
       ~CookieData();
       char       *_Key;
       char       *_Value;
-      char       *_Comment;
-      char       *_Domain;
-      int         _MaxAge;
-      char       *_CookiePath;
-      bool        _Secure;
-      char       *_Version;
       CookieData *_nextCookieData;
 
       friend class HttpCookie;
@@ -265,7 +262,12 @@ namespace libhttppp {
                    const char *comment=NULL,const char *domain=NULL, 
                    int maxage=-1,const char *path=NULL,
                    bool secure=false,const char *version="1");
+    CookieData    *getfirstCookieData();
+    CookieData    *getlastCookieData();
+    CookieData    *addCookieData();
   private:
+    CookieData     *_firstCookieData;
+    CookieData     *_lastCookieData;
     HTTPException  _httpexception;
   };
 

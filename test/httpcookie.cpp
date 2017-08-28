@@ -1,3 +1,30 @@
+/*******************************************************************************
+Copyright (c) 2014, Jan Koester jan.koester@gmx.net
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*******************************************************************************/
+
 #include <iostream>
 #include <sstream>
 #include "../src/exception.h"
@@ -5,30 +32,92 @@
 #include "http.h"
 #include "httpd.h"
 
-void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) {
-     libhttppp::HttpResponse curres;
-     curres.setState(HTTP200);
-     curres.setVersion(HTTPVERSION(1.1));
-     curres.setContentType("text/html");
-     std::stringstream condat;
-     condat  << "<!DOCTYPE HTML>"
-             << " <html>"
-             << "  <head>"
-             << "    <title>CookieTest</title>"
-             << "    <meta content=\"\">"
-             << "    <meta charset=\"utf-8\">"
-             << "    <style></style>"
-             << "  </head>"
-             << "<body>";
-     condat  << "</body></html>";
-     libhttppp::HttpCookie cookie;
+class CookieTest {
+public:
+  CookieTest(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq){
+     _Curcon=curcon;
+     _Curreq=curreq;
      
-     cookie.parse(curreq);
-     
-     cookie.setcookie(&curres,"test","test");
-     cookie.setcookie(&curres,"test2","test2");
-     std::string buffer=condat.str();
-     curres.send(curcon,buffer.c_str(),buffer.length());
+     _Curres.setState(HTTP200);
+     _Curres.setVersion(HTTPVERSION(1.1));
+     _Curres.setContentType("text/html"); 
+     _HTMLDat  << "<!DOCTYPE HTML>"
+               << " <html>"
+               << "  <head>"
+               << "    <title>CookieTest</title>"
+               << "    <meta content=\"\">"
+               << "    <meta charset=\"utf-8\">"
+               << "    <style></style>"
+               << "  </head>"
+               << "<body>";
+     setCookieForm();
+     parseCookie();
+     _HTMLDat  << "</body></html>";
+     std::string buffer=_HTMLDat.str();
+     _Curres.send(_Curcon,buffer.c_str(),buffer.length());
+  };
+  
+  const char *getData(const char *key){
+    libhttppp::HttpForm curform;
+    curform.parse(_Curreq);
+    if(curform.getUrlcodedFormData()){
+       for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
+           cururlform=cururlform->nextUrlcodedFormData()){
+         if(strncmp(key,cururlform->getKey(),strlen(key))==0)
+           return cururlform->getValue();
+       }
+     }
+     return NULL;
+  }
+  
+  int getDataInt(const char *key){
+    libhttppp::HttpForm curform;
+    curform.parse(_Curreq);
+    if(curform.getUrlcodedFormData()){
+       for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
+           cururlform=cururlform->nextUrlcodedFormData()){
+         if(strncmp(key,cururlform->getKey(),strlen(key))==0)
+           return atoi(cururlform->getValue());
+       }
+     }
+     return 0;
+  }
+  
+  void setCookieForm(){
+     _HTMLDat << "<div style=\"border: thin solid black\"><span>Set Httpcookie</span></br>"
+              << "<form action=\"/\" method=\"post\">"
+              << "Key:<br> <input type=\"text\" name=\"key\" value=\"key\"><br>"
+              << "Value:<br> <input type=\"text\" name=\"value\" value=\"value\"><br>"
+              << "Comment:<br> <input type=\"text\" name=\"comment\" value=\"\"><br>"
+              << "Domain:<br> <input type=\"text\" name=\"domain\" value=\"\"><br>"
+              << "Max-Age:<br> <input type=\"text\" name=\"max-age\" value=\"-1\"><br>"
+              << "Path:<br> <input type=\"text\" name=\"path\" value=\"\"><br>"
+              << "Secure:<br> <input type=\"text\" name=\"secure\" value=\"\"><br>"
+              << "Version:<br> <input type=\"text\" name=\"version\" value=\"1\"><br>"
+              << "<button type=\"submit\">Submit</button>"
+              << "</form>";
+
+     _HTMLDat << "</div></br>";
+      _Cookie.setcookie(&_Curres,getData("key"),getData("value"),getData("comment"),getData("domain"),getDataInt("max-age"),getData("path"),false,getData("version"));
+  };
+
+  void parseCookie() {   
+     _Cookie.parse(_Curreq);
+     _HTMLDat  << "<div style=\"border: thin solid black\"><span>Httpcookie's</span></br>";
+     for(libhttppp::HttpCookie::CookieData *curcookie=_Cookie.getfirstCookieData(); 
+         curcookie; curcookie=curcookie->nextCookieData()){
+       _HTMLDat  << "key: " << curcookie->getKey() << " ";
+       _HTMLDat  << "value: " << curcookie->getValue() << "</br>";
+     }
+     _HTMLDat << "</div></br>";
+  };
+  
+private:
+  std::stringstream       _HTMLDat;
+  libhttppp::HttpCookie   _Cookie;
+  libhttppp::HttpResponse _Curres;
+  libhttppp::Connection  *_Curcon;
+  libhttppp::HttpRequest *_Curreq;
 };
 
 class Controller : public libhttppp::Queue {
@@ -42,7 +131,7 @@ public:
      libhttppp::HttpRequest curreq;
      curreq.parse(curcon);
      std::cerr << "Send answer\n";
-     sendResponse(curcon,&curreq);
+     CookieTest(curcon,&curreq);
    }catch(libhttppp::HTTPException &e){
      std::cerr << e.what() << "\n";
      throw e;

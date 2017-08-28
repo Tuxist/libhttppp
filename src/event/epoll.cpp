@@ -31,6 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include <errno.h>
 #include <signal.h>
+#include <thread>
+#include <mutex>
 
 #define READEVENT 0
 #define SENDEVENT 1
@@ -99,6 +101,9 @@ void libhttppp::Queue::runEventloop(){
 	curcon=getConnection(events[i].data.fd);
       }
       
+      if(curcon && !curcon->tryLock())
+        continue;
+
       if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR) {
           CloseConnection:
           DisconnectEvent(curcon);
@@ -142,7 +147,7 @@ void libhttppp::Queue::runEventloop(){
       if(events[i].events & EPOLLOUT) {
         try{
           if(curcon && curcon->getSendData()){
-	    ssize_t sended=0;
+	          ssize_t sended=0;
 
               sended=_ServerSocket->sendData(curcon->getClientSocket(),
                                                     (void*)curcon->getSendData()->getData(),
@@ -154,9 +159,9 @@ void libhttppp::Queue::runEventloop(){
                 if (errno == EAGAIN || EWOULDBLOCK){
                   continue;
                 }else{
-		  curcon->cleanSendData();
+                  curcon->cleanSendData();
                   goto CloseConnection;
-	        }
+	            }
               }else{
                 curcon->resizeSendQueue(sended); 
               }
@@ -164,11 +169,13 @@ void libhttppp::Queue::runEventloop(){
             event.events = EPOLLIN |EPOLLRDHUP;
             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
 	      }
-	  ResponseEvent(curcon);
+	      ResponseEvent(curcon);
         }catch(HTTPException &e){
            goto CloseConnection;
         }
       }
+      if(curcon)
+        curcon->Unlock();
     }
     _QueueIns=this;
     signal(SIGINT,exitEventLoop);

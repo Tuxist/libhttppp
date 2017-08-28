@@ -45,9 +45,9 @@ namespace libhttppp {
 		virtual void RequestEvent(Connection *curcon);
 		virtual void ResponseEvent(libhttppp::Connection *curcon);
 		virtual void ConnectEvent(libhttppp::Connection *curcon);
-                virtual void DisconnectEvent(Connection *curcon);
+        virtual void DisconnectEvent(Connection *curcon);
 		virtual void runEventloop();
-                static  void exitEventLoop(int signum);
+        static  void exitEventLoop(int signum);
   private:
     HTTPException       _httpexception;
     ServerSocket       *_ServerSocket;
