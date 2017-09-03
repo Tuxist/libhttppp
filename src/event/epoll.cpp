@@ -86,12 +86,17 @@ void libhttppp::Queue::runEventloop(){
            */
 	  curcon=addConnection();
 	  ClientSocket *clientsocket=curcon->getClientSocket();
-          event.data.fd =_ServerSocket->acceptEvent(clientsocket);
-	  clientsocket->setnonblocking();
-          event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
-          if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
-            epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
-	  ConnectEvent(curcon);
+          int fd=_ServerSocket->acceptEvent(clientsocket);
+          if(fd>0){
+            event.data.fd = fd;
+	    clientsocket->setnonblocking();
+            event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
+            if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
+              epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+	    ConnectEvent(curcon);
+          }else{
+            delConnection(curcon);  
+          }
         }catch(HTTPException &e){
           if(e.isCritical())
             throw e;
