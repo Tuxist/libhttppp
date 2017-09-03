@@ -190,6 +190,7 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
      SSL_set_fd(clientsocket->_SSL, socket);
      if (SSL_accept(clientsocket->_SSL) <= 0) {
        ERR_print_errors_fp(stderr);
+       return -1;
      }
   }
   return socket;
