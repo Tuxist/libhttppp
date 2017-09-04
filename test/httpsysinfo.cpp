@@ -98,6 +98,7 @@ public:
       sysstream << "<h2>KernelInfo:</h2>" << htmltable.getTable();
 #endif
   }
+  
   void CPUInfo(){
 #ifndef Windows
     sysstream << "<h2>CPUInfo:</h2>";

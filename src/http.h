@@ -271,7 +271,21 @@ namespace libhttppp {
     HTTPException  _httpexception;
   };
 
+#define BASE64AUTH 0
+#define NTMLAUTH 1
   
+  class HttpAuth {
+  public:
+    void        parse(HttpRequest *curreq);
+    void        setAuth(HttpResponse *curresp,int authtype);
+    const char *getUsername();
+    const char *getPassword();
+    int         getAuthType();
+  private:
+    int         _Authtype;
+    char       *_Username;
+    char       *_Password;
+  };
 };
 
 #endif

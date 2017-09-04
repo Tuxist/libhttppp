@@ -17,3 +17,7 @@ target_link_libraries(httpsysinfo httppp-static)
 add_executable (httpcookie httpcookie.cpp)
 
 target_link_libraries(httpcookie httppp-static)
+
+add_executable (httpauth httpauth.cpp)
+
+target_link_libraries(httpauth httppp-static)

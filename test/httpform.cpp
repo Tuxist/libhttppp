@@ -88,7 +88,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
      condat  << "<!DOCTYPE HTML>"
              << " <html>"
              << "  <head>"
-             << "    <title>ConnectionTest</title>"
+             << "    <title>FormTest</title>"
              << "    <meta content=\"\">"
              << "    <meta charset=\"utf-8\">"
              << "    <style></style>"
