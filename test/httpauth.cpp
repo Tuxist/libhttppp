@@ -32,26 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include "httpd.h"
 
-void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) {
-     libhttppp::HttpResponse curres;
-     curres.setState(HTTP200);
-     curres.setVersion(HTTPVERSION(1.1));
-     curres.setContentType("text/html");
-     std::stringstream condat;
-     condat  << "<!DOCTYPE HTML>"
-             << " <html>"
-             << "  <head>"
-             << "    <title>AuthTest</title>"
-             << "    <meta content=\"\">"
-             << "    <meta charset=\"utf-8\">"
-             << "    <style></style>"
-             << "  </head>"
-             << "<body>";
-     condat  << "</body></html>";
-     std::string buffer=condat.str();
-     curres.send(curcon,buffer.c_str(),buffer.length());
-};
-
 class Controller : public libhttppp::Queue {
 public:
   Controller(libhttppp::ServerSocket* serversocket) : Queue(serversocket){
@@ -62,8 +42,35 @@ public:
      std::cerr << "Parse Request\n";
      libhttppp::HttpRequest curreq;
      curreq.parse(curcon);
-     std::cerr << "Send answer\n";
-     sendResponse(curcon,&curreq);
+     const char *cururl=curreq.getRequestURL();
+     if(strncmp(cururl,"/",strlen(cururl))==0){
+       libhttppp::HttpResponse curres;
+       curres.setState(HTTP200);
+       curres.setVersion(HTTPVERSION(1.1));
+       curres.setContentType("text/html");
+       std::stringstream condat;
+       condat  << "<!DOCTYPE HTML>"
+               << " <html>"
+               << "  <head>"
+               << "    <title>AuthTest</title>"
+               << "    <meta content=\"\">"
+               << "    <meta charset=\"utf-8\">"
+               << "    <style></style>"
+               << "  </head>"
+               << "<body>";
+       condat  << "</body></html>";
+       std::string buffer=condat.str();
+       curres.send(curcon,buffer.c_str(),buffer.length());
+     }else if(strncmp(cururl,"/httpauth",strlen(cururl))==0){
+       libhttppp::HttpResponse curres;
+       curres.setState(HTTP401);
+       curres.setVersion(HTTPVERSION(1.1));
+       curres.setContentType(NULL);
+       libhttppp::HttpAuth httpauth;
+       httpauth.setAuth(&curres,BASE64AUTH);
+       curres.send(curcon,NULL,0);
+     }
+
    }catch(libhttppp::HTTPException &e){
      std::cerr << e.what() << "\n";
      throw e;

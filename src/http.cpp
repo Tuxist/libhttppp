@@ -100,15 +100,21 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value,
 								  libhttppp::HttpHeader::HeaderData *pos){
+  if(!key){
+    _httpexception.Error("no headerdata key set can't do this");
+    throw _httpexception;
+  }
   if(pos){
     delete[] pos->_Key;
     delete[] pos->_Value;
     pos->_Keylen=strlen(key);
-    pos->_Valuelen=strlen(value);
     pos->_Key=new char[pos->_Keylen+1];
-    pos->_Value=new char[pos->_Valuelen+1];
     std::copy(key,key+(pos->_Keylen+1),pos->_Key);
-    std::copy(value,value+(pos->_Valuelen+1),pos->_Value);
+    if(value){
+      pos->_Valuelen=strlen(value);
+      pos->_Value=new char[pos->_Valuelen+1];
+      std::copy(value,value+(pos->_Valuelen+1),pos->_Value);
+    }
     return pos;
   }else{
     return setData(key,value);
@@ -171,13 +177,21 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 
 
 libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
+  if(!key){
+    _httpexception.Error("no headerdata key set can't do this");
+    throw _httpexception;
+  }
   _nextHeaderData=NULL;
   _Keylen=strlen(key);
-  _Valuelen=strlen(value);
   _Key=new char[_Keylen+1];
-  _Value=new char[_Valuelen+1];
   std::copy(key,key+(_Keylen+1),_Key);
-  std::copy(value,value+(_Valuelen+1),_Value);
+  if(value){
+    _Valuelen=strlen(value);
+    _Value=new char[_Valuelen+1];
+    std::copy(value,value+(_Valuelen+1),_Value);
+  }else{
+    _Value=NULL;  
+  }
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
@@ -247,7 +261,10 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
   std::stringstream hstream;
   hstream << _Version << " " << _State <<"\r\n";
   for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-          hstream << getKey(curdat) << ": " << getValue(curdat) <<"\r\n";
+          hstream << getKey(curdat) << ": ";
+          if(getValue(curdat))
+            hstream << getValue(curdat);
+          hstream <<"\r\n";
   } 
   hstream << "\r\n";
   std::string buf=hstream.str();
@@ -1107,4 +1124,16 @@ libhttppp::HttpCookie::CookieData  *libhttppp::HttpCookie::addCookieData(){
     _lastCookieData=_lastCookieData->_nextCookieData;
   }
   return _lastCookieData;
+}
+
+void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
+}
+
+void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp, int authtype){
+
+    
+}
+
+int libhttppp::HttpAuth::getAuthType(){
+  return _Authtype;
 }

@@ -42,11 +42,12 @@ namespace libhttppp {
     private:
       HeaderData(const char *key,const char*value);
       ~HeaderData();
-      char       *_Key;
-      size_t      _Keylen;
-      char       *_Value;
-      size_t      _Valuelen;
-      HeaderData *_nextHeaderData;
+      char         *_Key;
+      size_t        _Keylen;
+      char         *_Value;
+      size_t        _Valuelen;
+      HeaderData   *_nextHeaderData;
+      HTTPException _httpexception;
       friend class HttpHeader;
     };
     
@@ -73,6 +74,7 @@ namespace libhttppp {
     ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
+    HTTPException  _httpexception;
   };
   
   class HttpResponse : public HttpHeader {
@@ -285,6 +287,8 @@ namespace libhttppp {
     int         _Authtype;
     char       *_Username;
     char       *_Password;
+    char       *_Realm;
+    
   };
 };
 
