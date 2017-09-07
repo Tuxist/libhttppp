@@ -57,17 +57,41 @@ public:
                << "    <meta charset=\"utf-8\">"
                << "    <style></style>"
                << "  </head>"
-               << "<body>";
+               << "<body>"
+               << "<a href=\"/httpbasicauth\"> Basicauth </<a>"
+               << "<a href=\"/httpdigestauth\"> Digestauth </<a>";
        condat  << "</body></html>";
        std::string buffer=condat.str();
        curres.send(curcon,buffer.c_str(),buffer.length());
-     }else if(strncmp(cururl,"/httpauth",strlen(cururl))==0){
-       libhttppp::HttpResponse curres;
-       curres.setState(HTTP401);
-       curres.setVersion(HTTPVERSION(1.1));
-       curres.setContentType(NULL);
+     }else if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0 ||
+              strncmp(cururl,"/httpdigestauth",strlen(cururl))==0){
        libhttppp::HttpAuth httpauth;
-       httpauth.setAuth(&curres,BASE64AUTH);
+       httpauth.parse(&curreq);
+       const char *username=httpauth.getUsername();
+       const char *password=httpauth.getPassword();
+       if(username && password){
+           
+          return;
+       }else{
+         libhttppp::HttpResponse curres;
+         curres.setState(HTTP401);
+         curres.setVersion(HTTPVERSION(1.1));
+         curres.setContentType(NULL);
+         if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0){
+           httpauth.setAuthType(BASICAUTH);
+         }else if(strncmp(cururl,"/httpdigestauth",strlen(cururl))==0){
+           httpauth.setAuthType(DIGESTAUTH);
+         }
+         httpauth.setRealm("httpauthtest");
+         httpauth.setAuth(&curres);
+         curres.send(curcon,NULL,0);
+         return;
+       }
+     }else{
+       libhttppp::HttpResponse curres;
+       curres.setState(HTTP404);
+       curres.setVersion(HTTPVERSION(1.1));
+       curres.setContentType("text/html");
        curres.send(curcon,NULL,0);
      }
 

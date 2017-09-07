@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <algorithm>
 #include <cstring>
 #include <sstream>
+#include <openssl/rand.h>
 
 #ifdef Windows
   #define strtok_r strtok_s
@@ -1126,12 +1127,103 @@ libhttppp::HttpCookie::CookieData  *libhttppp::HttpCookie::addCookieData(){
   return _lastCookieData;
 }
 
-void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
+libhttppp::HttpAuth::HttpAuth(){
+  _Authtype=BASICAUTH;
+  _Username=NULL;
+  _Password=NULL;
+  _Realm=NULL;
 }
 
-void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp, int authtype){
+libhttppp::HttpAuth::~HttpAuth(){
+  delete[] _Username;
+  delete[] _Password;
+  delete[] _Realm;
+}
 
-    
+
+void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
+  const char *authstr=curreq->getData("Authorization");
+  if(!authstr)
+    return;
+  if(strncmp(authstr,"Basic",5)==0)
+    _Authtype=BASICAUTH;
+  else if(strncmp(authstr,"Digest",6)==0)
+    _Authtype=DIGESTAUTH;
+  switch(_Authtype){
+    case BASICAUTH:{
+      size_t base64strsize=strlen(authstr+6)+1;
+      char *base64str=new char[base64strsize];
+      std::copy(authstr+6,authstr+(strlen(authstr)+1),base64str);
+      printf("%s\n%s\n",authstr,base64str);
+      delete[] base64str;
+    };
+    case DIGESTAUTH:{
+      for(size_t authstrpos=7; authstrpos<strlen(authstr)+1; authstrpos++){
+        switch(authstr[authstrpos]){
+          case '\0':{
+        
+            break;    
+          }
+          case ' ':{
+          
+          };
+        }
+      }
+    };
+  }
+}
+
+void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
+  switch(_Authtype){
+    case BASICAUTH:{
+      if(_Realm){
+        std::stringstream curauthstrs;
+        curauthstrs << "Basic realm=\"" << _Realm << "\"";
+        std::string curauthstr =curauthstrs.str();
+        curresp->setData("WWW-Authenticate",curauthstr.c_str());
+      }else{
+        curresp->setData("WWW-Authenticate","Basic");
+      }
+    };
+    case DIGESTAUTH:{
+      std::stringstream curauthstrs;
+      curauthstrs << "Digest";
+      if(_Realm){
+        curauthstrs << " realm=\"" << _Realm <<"\"";
+      }
+      unsigned char nonce[16];
+      int rc = RAND_bytes(nonce, sizeof(nonce));
+      unsigned long err = ERR_get_error();
+      if(rc != 1 || err!=0) {
+        return;
+      }
+      std::string curauthstr =curauthstrs.str();
+      curresp->setData("WWW-Authenticate",curauthstr.c_str());
+    };
+  }
+}
+
+void libhttppp::HttpAuth::setAuthType(int authtype){
+  _Authtype=authtype;
+}
+
+void libhttppp::HttpAuth::setRealm(const char* realm){
+  if(realm){
+    size_t realmsize=strlen(realm);
+    _Realm=new char [realmsize+1];
+    std::copy(realm,realm+realmsize,_Realm);
+    _Realm[realmsize]='\0';
+  }else{
+    _Realm=NULL;  
+  }
+}
+
+const char *libhttppp::HttpAuth::getUsername(){
+  return _Username;
+}
+
+const char *libhttppp::HttpAuth::getPassword(){
+  return _Password;
 }
 
 int libhttppp::HttpAuth::getAuthType(){
