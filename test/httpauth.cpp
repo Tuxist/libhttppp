@@ -57,10 +57,10 @@ public:
                << "    <meta charset=\"utf-8\">"
                << "    <style></style>"
                << "  </head>"
-               << "<body>"
-               << "<a href=\"/httpbasicauth\"> Basicauth </<a>"
-               << "<a href=\"/httpdigestauth\"> Digestauth </<a>";
-       condat  << "</body></html>";
+               << "<body><ul>"
+               << "<li><a href=\"/httpbasicauth\"> Basicauth </<a></li>"
+               << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
+       condat  << "</ul></body></html>";
        std::string buffer=condat.str();
        curres.send(curcon,buffer.c_str(),buffer.length());
      }else if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0 ||
