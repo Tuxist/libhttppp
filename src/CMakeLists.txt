@@ -11,6 +11,7 @@ set(libhttpSrcs
   http.cpp
   httpd.cpp
   https.cpp
+  base64.cpp
 )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")

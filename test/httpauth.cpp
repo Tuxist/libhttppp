@@ -70,7 +70,11 @@ public:
        const char *username=httpauth.getUsername();
        const char *password=httpauth.getPassword();
        if(username && password){
-           
+         libhttppp::HttpResponse curres;
+         curres.setState(HTTP401);
+         curres.setVersion(HTTPVERSION(1.1));
+         curres.setContentType(NULL);
+         curres.send(curcon,NULL,0);
           return;
        }else{
          libhttppp::HttpResponse curres;

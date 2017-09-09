@@ -26,6 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "http.h"
+#include "base64.h"
+
 #include <algorithm>
 #include <cstring>
 #include <sstream>
@@ -1151,11 +1153,24 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
     _Authtype=DIGESTAUTH;
   switch(_Authtype){
     case BASICAUTH:{
-      size_t base64strsize=strlen(authstr+6)+1;
-      char *base64str=new char[base64strsize];
+      size_t base64strsize=strlen(authstr+6);
+      char *base64str=new char[base64strsize+1];
       std::copy(authstr+6,authstr+(strlen(authstr)+1),base64str);
-      printf("%s\n%s\n",authstr,base64str);
+      Base64 base64;
+      char *clearstr=new char[base64.Decodelen(base64str)];
+      size_t clearstrlen=base64.Decode(clearstr,base64str);
       delete[] base64str;
+      for(size_t clearpos=0; clearpos<clearstrlen; clearpos++){
+         if(clearstr[clearpos]==':'){
+            char *usernm=new char[clearpos+1];
+            std::copy(clearstr,clearstr+clearpos,usernm);
+            usernm[clearpos]='\0';
+            printf("%s\n",usernm);
+            printf("%s\n",clearstr+(clearpos+1));
+            setUsername(usernm);
+           setPassword(clearstr+(clearpos+1));
+         }
+      }
     };
     case DIGESTAUTH:{
       for(size_t authstrpos=7; authstrpos<strlen(authstr)+1; authstrpos++){
@@ -1208,6 +1223,8 @@ void libhttppp::HttpAuth::setAuthType(int authtype){
 }
 
 void libhttppp::HttpAuth::setRealm(const char* realm){
+  if(_Realm)
+    delete[] _Realm;
   if(realm){
     size_t realmsize=strlen(realm);
     _Realm=new char [realmsize+1];
@@ -1217,6 +1234,23 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
     _Realm=NULL;  
   }
 }
+
+void libhttppp::HttpAuth::setUsername(const char* username){
+  if(_Username)
+    delete[] _Username;
+  size_t usernamelen=strlen(username);
+  _Username=new char[usernamelen+1];
+  std::copy(username,username+(usernamelen+1),_Username);
+}
+
+void libhttppp::HttpAuth::setPassword(const char* password){
+  if(_Password)
+    delete[] _Password;
+  size_t passwordlen=strlen(password);
+  _Password=new char[passwordlen+1];
+  std::copy(password,password+(passwordlen+1),_Password);
+}
+
 
 const char *libhttppp::HttpAuth::getUsername(){
   return _Username;

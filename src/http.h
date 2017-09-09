@@ -285,6 +285,8 @@ namespace libhttppp {
     
     void        setAuthType(int authtype);
     void        setRealm(const char *realm);
+    void        setUsername(const char *username);
+    void        setPassword(const char *password);
     
     const char *getUsername();
     const char *getPassword();
