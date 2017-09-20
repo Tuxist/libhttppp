@@ -273,8 +273,9 @@ namespace libhttppp {
     HTTPException  _httpexception;
   };
 
-#define BASICAUTH 0
+#define BASICAUTH  0
 #define DIGESTAUTH 1
+#define NTLMAUTH   2
   
   class HttpAuth {
   public:

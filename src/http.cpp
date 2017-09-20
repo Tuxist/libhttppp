@@ -1165,10 +1165,9 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
             char *usernm=new char[clearpos+1];
             std::copy(clearstr,clearstr+clearpos,usernm);
             usernm[clearpos]='\0';
-            printf("%s\n",usernm);
-            printf("%s\n",clearstr+(clearpos+1));
             setUsername(usernm);
-           setPassword(clearstr+(clearpos+1));
+            setPassword(clearstr+(clearpos+1));
+            delete[] usernm;
          }
       }
     };
@@ -1212,6 +1211,7 @@ void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
       if(rc != 1 || err!=0) {
         return;
       }
+      
       std::string curauthstr =curauthstrs.str();
       curresp->setData("WWW-Authenticate",curauthstr.c_str());
     };
