@@ -37,9 +37,9 @@ void libhttppp::Queue::runEventloop() {
   CreateIoCompletionPort(_ServerSocket, iocp, 0, 0); // equals epoll_ctl(EPOLL_CTL_ADD)
 
   for(;;){
-//         if(GetQueuedCompletionStatus(iocp, &number_bytes, &key, &o, INFINITE)) // equals epoll_wait()
+//	  if(GetQueuedCompletionStatus(iocp, &number_bytes, &key, &o, INFINITE)) // equals epoll_wait()
 //         do_something();
-	  Connection *curcon;
+	  Connection *curcon=NULL;
 	  RequestEvent(curcon);
   }
 }
