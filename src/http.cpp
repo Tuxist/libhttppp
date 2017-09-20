@@ -1170,6 +1170,7 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
             delete[] usernm;
          }
       }
+      delete[] clearstr;
     };
     case DIGESTAUTH:{
       for(size_t authstrpos=7; authstrpos<strlen(authstr)+1; authstrpos++){
