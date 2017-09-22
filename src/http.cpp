@@ -1205,14 +1205,7 @@ void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
       curauthstrs << "Digest";
       if(_Realm){
         curauthstrs << " realm=\"" << _Realm <<"\"";
-      }
-      unsigned char nonce[16];
-      int rc = RAND_bytes(nonce, sizeof(nonce));
-      unsigned long err = ERR_get_error();
-      if(rc != 1 || err!=0) {
-        return;
-      }
-      
+      }  
       std::string curauthstr =curauthstrs.str();
       curresp->setData("WWW-Authenticate",curauthstr.c_str());
     };

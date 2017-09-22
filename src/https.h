@@ -25,8 +25,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <openssl/ssl.h>
-#include <openssl/err.h>
+extern "C" {
+	struct ssl_st;
+	typedef struct ssl_st SSL;
+	struct ssl_ctx_st;
+	typedef struct ssl_ctx_st SSL_CTX;
+};
 
 #ifndef SSL_H
 #define SSL_H

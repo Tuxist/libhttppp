@@ -30,10 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "httpd.h"
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
-  int port=0;
+  int port=8080;
   _MaxConnections=MAXDEFAULTCONN;
   _Queue=NULL;
-  char *httpaddr=NULL,*rootpath=NULL,*sslcertpath=NULL,*sslkeypath=NULL;
+  char *httpaddr="0.0.0.0",*rootpath=NULL,*sslcertpath=NULL,*sslkeypath=NULL;
   for(int args=1; args<argc; args++){
     if(strncmp(argv[args],"--httpaddr=",11)==0){
       httpaddr=argv[args]+11;
