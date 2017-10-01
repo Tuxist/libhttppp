@@ -31,7 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "https.h"
 
-
 libhttppp::HTTPS::HTTPS(){
   _CTX=NULL;
 }

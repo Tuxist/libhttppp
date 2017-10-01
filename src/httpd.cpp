@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::HTTPDCmd::HTTPDCmd() {
 	_Key = NULL;
-	_SKey = NULL;
+	_SKey = '\0';
 	_Value = NULL;
 	_Help = NULL;
 	_Found = false;
@@ -245,7 +245,7 @@ libhttppp::HTTPDCmdController::~HTTPDCmdController() {
 
 libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdController(){
 	/*Register Parameters*/
-	registerCmd("help", 'h', false, NULL, "Helpmenu");
+	registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
     registerCmd("httpaddr",'a', true,"0.0.0.0","Address to listen");
 #ifndef Windows
     registerCmd("httpport", 'p', false, 0, "Port to listen");
@@ -253,8 +253,8 @@ libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdCon
     registerCmd("httpport", 'p', true,0, "Port to listen");
 #endif
     registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
-    registerCmd("httpscert", 'c',false, NULL, "HTTPS Certfile");
-    registerCmd("httpskey", 'k',false, NULL, "HTTPS Keyfile");
+    registerCmd("httpscert", 'c',false,(const char*) NULL, "HTTPS Certfile");
+    registerCmd("httpskey", 'k',false, (const char*) NULL, "HTTPS Keyfile");
   /*Parse Parameters*/
     parseCmd(argc,argv);
 	if (!checkRequired()) {
@@ -305,7 +305,9 @@ libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdCon
 	  }
 	  _ServerSocket->setnonblocking();
 	  _ServerSocket->listenSocket();
+	  
 	  if (sslcertpath && sslkeypath) {
+		  printf("%s : %s", sslcertpath, sslkeypath);
 		  _ServerSocket->createContext();
 		  _ServerSocket->loadCertfile(sslcertpath);
 		  _ServerSocket->loadKeyfile(sslkeypath);
