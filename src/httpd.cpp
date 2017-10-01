@@ -193,6 +193,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
 					curhttpdcmd->_Found = true;
 					int valuesize = (strlen(argv[args]) - (kendpos+1));
 					if (valuesize > 0) {
+						delete[] curhttpdcmd->_Value;
 						curhttpdcmd->_Value = new char[valuesize+1];
 						std::copy(argv[args]+(kendpos+1), argv[args] + strlen(argv[args]),curhttpdcmd->_Value);
 						curhttpdcmd->_Value[valuesize] = '\0';
@@ -203,6 +204,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
 					curhttpdcmd->_Found = true;
 					int valuesize = (strlen(argv[args]) - (kendpos + 1));
 					if (valuesize > 0) {
+						delete[] curhttpdcmd->_Value;
 						curhttpdcmd->_Value = new char[valuesize + 1];
 						std::copy(argv[args] + (kendpos + 1), argv[args] + strlen(argv[args]), curhttpdcmd->_Value);
 						curhttpdcmd->_Value[valuesize] = '\0';
