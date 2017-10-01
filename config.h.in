@@ -25,3 +25,7 @@
 #define NEWLINE "\r\n"
 
 #define DEBUG
+
+#ifdef Windows
+  #define MAX_WORKER_THREAD 16
+#endif

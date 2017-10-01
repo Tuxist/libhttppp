@@ -29,59 +29,290 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "httpd.h"
 
-libhttppp::HttpD::HttpD(int argc, char** argv){
-  int port=8080;
-  _MaxConnections=MAXDEFAULTCONN;
-  _Queue=NULL;
-  char *httpaddr="0.0.0.0",*rootpath=NULL,*sslcertpath=NULL,*sslkeypath=NULL;
-  for(int args=1; args<argc; args++){
-    if(strncmp(argv[args],"--httpaddr=",11)==0){
-      httpaddr=argv[args]+11;
-    }else if(strncmp(argv[args],"--httpport=",11)==0){
-      port=atoi(argv[args]+11);
-    }else if(strncmp(argv[args],"--rootpath=",11)==0){
-      rootpath=argv[args]+11;
-      _RootPathLen=strlen(rootpath);
-      if(_RootPathLen<=PATHSIZE)
-        std::copy(rootpath,rootpath+_RootPathLen,_RootPath);
-    }else if(strncmp(argv[args],"--maxconnections=",17)==0){
-      _MaxConnections=atoi(argv[args]+17);
-    }else if(strncmp(argv[args],"--httpscert=",strlen("--httpscert="))==0){
-      sslcertpath=argv[args]+strlen("--httpscert=");
-      printf("%s\n",sslcertpath);
-    }else if(strncmp(argv[args],"--httpskey=",strlen("--httpskey="))==0){
-      sslkeypath=argv[args]+strlen("--httpskey=");
-      printf("%s\n",sslkeypath);
-    }else if(strncmp(argv[args],"--help",6) || strncmp(argv[args],"-h",2)){
-      _Help();
-    }
-  }
-  if(!httpaddr || port==0){
-    _httpexception.Cirtical("not enough arguments given");
-    _Help();
-    throw _httpexception;
-  }
-  if(port!=0)
-    _ServerSocket= new ServerSocket(httpaddr,port,_MaxConnections);
-#ifndef WIN32
-  else
-    _ServerSocket= new ServerSocket(httpaddr,_MaxConnections);
-#endif
-  _ServerSocket->setnonblocking();
-  _ServerSocket->listenSocket();
-  if(sslcertpath && sslkeypath){
-    _ServerSocket->createContext();
-    _ServerSocket->loadCertfile(sslcertpath);
-    _ServerSocket->loadKeyfile(sslkeypath);
-  }
+#define KTKEY 0
+#define KTSKEY 1
+
+libhttppp::HTTPDCmd::HTTPDCmd() {
+	_Key = NULL;
+	_SKey = NULL;
+	_Value = NULL;
+	_Help = NULL;
+	_Found = false;
+	_Required = false;
+	_nextHTTPDCmd = NULL;
 }
 
-void libhttppp::HttpD::_Help(){
-        printf("%s%s%s%s","--httpaddr=0.0.0.0        Address to listen\n"
-                         ,"--httpport=80             Port to listen\n" 
-                         ,"--rootpath=/tmp           Directory for file content\n"
-                         ,"--maxconnections=         Max conncetoins thy can connect\n\n"          
-	      );
+const char *libhttppp::HTTPDCmd::getKey() {
+	return _Key;
+}
+
+const char libhttppp::HTTPDCmd::getShortkey() {
+	return _SKey;
+}
+
+const char *libhttppp::HTTPDCmd::getValue() {
+	return _Value;
+}
+
+size_t libhttppp::HTTPDCmd::getValueSize_t() {
+	return atoi(_Value);
+}
+
+int libhttppp::HTTPDCmd::getValueInt() {
+	return atoi(_Value);
+}
+
+const char *libhttppp::HTTPDCmd::getHelp() {
+	return _Help;
+}
+
+bool libhttppp::HTTPDCmd::getFound() {
+	return _Found;
+}
+
+bool libhttppp::HTTPDCmd::getRequired() {
+	return _Required;
+}
+
+libhttppp::HTTPDCmd *libhttppp::HTTPDCmd::nextHTTPDCmd() {
+	return _nextHTTPDCmd;
+}
+
+libhttppp::HTTPDCmd::~HTTPDCmd() {
+	delete[] _Key;
+	delete[] _Value;
+	delete[] _Help;
+	delete _nextHTTPDCmd;
+}
+
+libhttppp::HTTPDCmdController::HTTPDCmdController() {
+	_firstHTTPDCmd = NULL;
+	_lastHTTPDCmd = NULL;
+}
+
+void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey,bool required, const char *defaultvalue, const char *help) {
+	if (!key || !skey || !help) {
+		_httpexception.Cirtical("cmd parser key,skey or help not set!");
+		throw _httpexception;
+	}
+	/*if key exist overwriting options*/
+	for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd=curhttpdcmd->nextHTTPDCmd()) {
+		if (strncmp(curhttpdcmd->getKey(), key, strlen(curhttpdcmd->getKey())) == 0) {
+			/*set new shortkey*/
+			curhttpdcmd->_SKey = skey;
+			/*set reqirement flag*/
+			curhttpdcmd->_Required = required;
+			/*set new value*/
+			delete[] curhttpdcmd->_Value;
+			curhttpdcmd->_Value = new char[strlen(defaultvalue)+1];
+			std::copy(defaultvalue, defaultvalue+strlen(defaultvalue),curhttpdcmd->_Value);
+			curhttpdcmd->_Value[strlen(defaultvalue)] = '\0';
+			/*set new help*/
+			delete[] curhttpdcmd->_Help;
+			curhttpdcmd->_Help = new char[strlen(help) + 1];
+			std::copy(help, help + strlen(help), curhttpdcmd->_Help);
+			curhttpdcmd->_Help[strlen(help)] = '\0';
+			return;
+		}
+	}
+	/*create new key value store*/
+	if (!_firstHTTPDCmd) {
+		_firstHTTPDCmd = new HTTPDCmd;
+		_lastHTTPDCmd = _firstHTTPDCmd;
+	}
+	else {
+		_lastHTTPDCmd->_nextHTTPDCmd = new HTTPDCmd;
+		_lastHTTPDCmd = _lastHTTPDCmd->_nextHTTPDCmd;
+	}
+	/*set new key*/
+	_lastHTTPDCmd->_Key = new char[strlen(key) + 1];
+	std::copy(key,key+strlen(key),_lastHTTPDCmd->_Key);
+	_lastHTTPDCmd->_Key[strlen(key)] = '\0';
+	/*set new shortkey*/
+	_lastHTTPDCmd->_SKey = skey;
+	/*set reqirement flag*/
+	_lastHTTPDCmd->_Required = required;
+	/*set new value*/
+	_lastHTTPDCmd->_Value = new char[strlen(defaultvalue) + 1];
+	std::copy(defaultvalue, defaultvalue + strlen(defaultvalue), _lastHTTPDCmd->_Value);
+	_lastHTTPDCmd->_Value[strlen(defaultvalue)] = '\0';
+	/*set new help*/
+	_lastHTTPDCmd->_Help = new char[strlen(help) + 1];
+	std::copy(help, help + strlen(help), _lastHTTPDCmd->_Help);
+	_lastHTTPDCmd->_Help[strlen(help)] = '\0';
+
+}
+
+void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, size_t defaultvalue, const char *help) {
+	char buf[255];
+	snprintf(buf, sizeof(buf), "%zu", defaultvalue);
+	registerCmd(key,skey,required,buf,help);
+}
+
+void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, int defaultvalue, const char *help) {
+	char buf[255];
+	snprintf(buf, sizeof(buf), "%d", defaultvalue);
+	registerCmd(key, skey, required, buf, help);
+}
+
+void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
+	for (int args = 1; args < argc; args++) {
+		int keytype = -1;
+		if (argv[args][0]=='-' && argv[args][1] == '-') {
+			keytype = KTKEY;
+		}else if (argv[args][0] == '-'){
+			keytype = KTSKEY;
+		}else {
+			break;
+		}
+
+		size_t kendpos = strlen(argv[args]);
+		for (size_t cmdpos = 0; cmdpos < strlen(argv[args])+1; cmdpos++) {	
+			switch (argv[args][cmdpos]) {
+			  case '=': {
+				  kendpos = cmdpos;
+			  };
+			}
+		}
+
+		char *key = NULL;
+		char skey = '0';
+		if (keytype == KTKEY) {
+			key = new char[kendpos-1];
+			std::copy(argv[args] +2, argv[args] +kendpos, key);
+			key[kendpos - 2] = '\0';
+		} else if (keytype == KTSKEY){
+			skey = argv[args][1];
+		}
+
+		for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
+			if (keytype == KTKEY) {
+				if (strncmp(curhttpdcmd->getKey(), key, strlen(curhttpdcmd->getKey())) == 0) {
+					curhttpdcmd->_Found = true;
+					int valuesize = (strlen(argv[args]) - (kendpos+1));
+					if (valuesize > 0) {
+						curhttpdcmd->_Value = new char[valuesize+1];
+						std::copy(argv[args]+(kendpos+1), argv[args] + strlen(argv[args]),curhttpdcmd->_Value);
+						curhttpdcmd->_Value[valuesize] = '\0';
+					}
+				}
+			} else if (keytype == KTSKEY) {
+				if (curhttpdcmd->getShortkey()== skey) {
+					curhttpdcmd->_Found = true;
+					int valuesize = (strlen(argv[args]) - (kendpos + 1));
+					if (valuesize > 0) {
+						curhttpdcmd->_Value = new char[valuesize + 1];
+						std::copy(argv[args] + (kendpos + 1), argv[args] + strlen(argv[args]), curhttpdcmd->_Value);
+						curhttpdcmd->_Value[valuesize] = '\0';
+					}
+				}
+			}
+		}
+
+		delete[] key;
+	}
+}
+
+bool libhttppp::HTTPDCmdController::checkRequired() {
+	for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
+		if (curhttpdcmd->getRequired() && !curhttpdcmd->_Found) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void libhttppp::HTTPDCmdController::printHelp() {
+	for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
+		printf("--%s -%c %s\n",curhttpdcmd->getKey(),curhttpdcmd->getShortkey(),curhttpdcmd->getHelp());
+	}
+}
+
+libhttppp::HTTPDCmd *libhttppp::HTTPDCmdController::getHTTPDCmdbyKey(const char *key) {
+	for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
+		if (strncmp(curhttpdcmd->getKey(), key, strlen(curhttpdcmd->getKey())) == 0) {
+			return curhttpdcmd;
+		}
+	}
+	return NULL;
+}
+
+libhttppp::HTTPDCmdController::~HTTPDCmdController() {
+	delete _firstHTTPDCmd;
+	_lastHTTPDCmd = NULL;
+}
+
+
+libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdController(){
+	/*Register Parameters*/
+	registerCmd("help", 'h', false, NULL, "Helpmenu");
+    registerCmd("httpaddr",'a', true,"0.0.0.0","Address to listen");
+#ifndef Windows
+    registerCmd("httpport", 'p', false, 0, "Port to listen");
+#else
+    registerCmd("httpport", 'p', true,0, "Port to listen");
+#endif
+    registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
+    registerCmd("httpscert", 'c',false, NULL, "HTTPS Certfile");
+    registerCmd("httpskey", 'k',false, NULL, "HTTPS Keyfile");
+  /*Parse Parameters*/
+    parseCmd(argc,argv);
+	if (!checkRequired()) {
+		printHelp();
+		_httpexception.Cirtical("cmd parser not enough arguments given");
+		throw _httpexception;
+	}
+
+	if (getHTTPDCmdbyKey("help") && getHTTPDCmdbyKey("help")->getFound()) {
+		printHelp();
+		return;
+	}
+
+	/*get port from console paramter*/
+	int port = 0;
+	if(getHTTPDCmdbyKey("httpport"))
+	    port = getHTTPDCmdbyKey("httpport")->getValueInt();
+
+	/*get httpaddress from console paramter*/
+	const char *httpaddr = NULL;
+	if (getHTTPDCmdbyKey("httpaddr"))
+		httpaddr = getHTTPDCmdbyKey("httpaddr")->getValue();
+
+	/*get max connections from console paramter*/
+	int maxconnections = 0;
+	if (getHTTPDCmdbyKey("maxconnections"))
+		maxconnections = getHTTPDCmdbyKey("maxconnections")->getValueInt();
+
+	/*get httpaddress from console paramter*/
+	const char *sslcertpath = NULL;
+	if (getHTTPDCmdbyKey("httpscert"))
+		sslcertpath = getHTTPDCmdbyKey("httpscert")->getValue();
+
+	/*get httpaddress from console paramter*/
+	const char *sslkeypath = NULL;
+	if (getHTTPDCmdbyKey("httpskey"))
+		sslkeypath = getHTTPDCmdbyKey("httpskey")->getValue();
+
+  try {
+	  if (port != 0)
+		  _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
+#ifndef Windows
+	  else
+		  _ServerSocket = new ServerSocket(httpaddr, maxconnections);
+#endif
+	  if (!_ServerSocket) {
+		  throw _httpexception;
+	  }
+	  _ServerSocket->setnonblocking();
+	  _ServerSocket->listenSocket();
+	  if (sslcertpath && sslkeypath) {
+		  _ServerSocket->createContext();
+		  _ServerSocket->loadCertfile(sslcertpath);
+		  _ServerSocket->loadKeyfile(sslkeypath);
+	  }
+  }catch (HTTPException &e) {
+
+  }
 }
 
 libhttppp::ServerSocket *libhttppp::HttpD::getServerSocket(){
@@ -90,5 +321,4 @@ libhttppp::ServerSocket *libhttppp::HttpD::getServerSocket(){
 
 libhttppp::HttpD::~HttpD(){
   delete _ServerSocket;
-  delete _Queue;
 }

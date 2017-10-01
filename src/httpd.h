@@ -26,23 +26,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "event.h"
+#include "exception.h"
 
 #ifndef HTTPD_H
 #define HTTPD_H
 
 namespace libhttppp {
-  class HttpD {
+  class HTTPDCmd {
+  public:
+	  const char *getKey();
+	  const char  getShortkey();
+	  const char *getValue();
+	  size_t      getValueSize_t();
+	  int         getValueInt();
+	  const char *getHelp();
+	  bool        getFound();
+	  bool        getRequired();
+	  HTTPDCmd   *nextHTTPDCmd();
+  private:
+	  HTTPDCmd();
+	  ~HTTPDCmd();
+	  char         *_Key;
+	  char          _SKey;
+	  char         *_Value;
+	  char         *_Help;
+	  bool          _Found;
+	  bool          _Required;
+	  HTTPDCmd     *_nextHTTPDCmd;
+	  friend class HTTPDCmdController;
+  };
+
+  class HTTPDCmdController {
+  public:
+	  HTTPDCmdController();
+	  ~HTTPDCmdController();
+	  void registerCmd(const char *key,char skey,bool required,const char *defaultvalue,const char *help);
+	  void registerCmd(const char *key,char skey,bool required,size_t defaultvalue, const char *help);
+	  void registerCmd(const char *key,char skey,bool required,int defaultvalue, const char *help);
+	  void printHelp();
+	  void parseCmd(int argc, char** argv);
+	  bool checkRequired();
+	  HTTPDCmd        *getHTTPDCmdbyKey(const char *key);
+  private:
+	  HTTPDCmd        *_firstHTTPDCmd;
+	  HTTPDCmd        *_lastHTTPDCmd;
+	  HTTPException   _httpexception;
+  };
+
+  class HttpD : public HTTPDCmdController {
   public:
     HttpD(int argc, char** argv);
     ~HttpD();
     ServerSocket    *getServerSocket();
   private:
-    void            _Help();
     ServerSocket   *_ServerSocket;
-    Queue          *_Queue;
-    char            _RootPath[PATHSIZE];
-    size_t          _RootPathLen;
-    int             _MaxConnections;
     HTTPException   _httpexception;
   };
 };

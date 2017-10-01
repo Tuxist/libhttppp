@@ -30,6 +30,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "socket.h"
 #include <config.h>
 
+#ifdef Windows
+  #include <Windows.h>
+#endif
+
 #ifndef QUEUE_H
 #define QUEUE_H
 
@@ -42,13 +46,23 @@ namespace libhttppp {
 	public:
 		Queue(ServerSocket *serversocket);
 		virtual ~Queue();
+
+		/*API Events*/
 		virtual void RequestEvent(Connection *curcon);
 		virtual void ResponseEvent(libhttppp::Connection *curcon);
 		virtual void ConnectEvent(libhttppp::Connection *curcon);
         virtual void DisconnectEvent(Connection *curcon);
+
 		virtual void runEventloop();
         static  void exitEventLoop(int signum);
   private:
+#ifdef Windows
+	static DWORD WINAPI       _WorkerThread(LPVOID WorkThreadContext);
+	DWORD              _g_dwThreadCount;
+	HANDLE             _g_ThreadHandles[MAX_WORKER_THREAD];
+	CRITICAL_SECTION   _g_CriticalSection;
+	HANDLE             _g_hIOCP;
+#endif
     HTTPException       _httpexception;
     ServerSocket       *_ServerSocket;
     bool                _Eventloop;
