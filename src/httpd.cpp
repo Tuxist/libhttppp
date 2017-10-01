@@ -133,9 +133,11 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
 	/*set reqirement flag*/
 	_lastHTTPDCmd->_Required = required;
 	/*set new value*/
-	_lastHTTPDCmd->_Value = new char[strlen(defaultvalue) + 1];
-	std::copy(defaultvalue, defaultvalue + strlen(defaultvalue), _lastHTTPDCmd->_Value);
-	_lastHTTPDCmd->_Value[strlen(defaultvalue)] = '\0';
+	if (defaultvalue) {
+		_lastHTTPDCmd->_Value = new char[strlen(defaultvalue) + 1];
+		std::copy(defaultvalue, defaultvalue + strlen(defaultvalue), _lastHTTPDCmd->_Value);
+		_lastHTTPDCmd->_Value[strlen(defaultvalue)] = '\0';
+	}
 	/*set new help*/
 	_lastHTTPDCmd->_Help = new char[strlen(help) + 1];
 	std::copy(help, help + strlen(help), _lastHTTPDCmd->_Help);
