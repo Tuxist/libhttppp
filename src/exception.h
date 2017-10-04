@@ -72,35 +72,39 @@ namespace libhttppp {
       return _Critical;
     }
     
-    virtual const char* Note(const char *msg){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Note: %s\r\n",msg);
+    virtual const char* Note(const char *desc,const char *msg=NULL){
+      return ErrorTemplate(&_Note,_Buffer,"HTTP Note: %s %s\r\n", desc,msg);
     }
 
-    virtual const char* Note(size_t msg){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Note: %zu\r\n",msg);
+    virtual const char* Note(const char *desc,size_t msg){
+      return ErrorTemplate(&_Note,_Buffer,"HTTP Note: %zu\r\n",desc, msg);
     }
     
-    virtual const char* Warning(const char *msg){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Warning: %s\r\n",msg);
+    virtual const char* Warning(const char *desc,const char *msg=NULL){
+      return ErrorTemplate(&_Note,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
     }
   
-    virtual const char* Error(const char *msg){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Error: %s\r\n",msg);
+    virtual const char* Error(const char *desc,const char *msg = NULL){
+      return ErrorTemplate(&_Note,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
     }
   
-    virtual const char* Cirtical(const char *msg){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Cirtical: %s\r\n",msg);
+    virtual const char* Cirtical(const char *desc,const char *msg = NULL){
+      return ErrorTemplate(&_Note,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
     }
   
+	virtual const char* Cirtical(const char *desc, int msg) {
+		return ErrorTemplate(&_Note, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
+	}
+
     virtual const char* what() const throw(){
       return _Buffer;
     }
   protected:
-    template <typename Arg1,typename Arg2>
-    const char *ErrorTemplate(bool *type,char *buffer,Arg1 printstyle,Arg2 message){
+    template <typename Arg1,typename Arg2, typename Arg3>
+    const char *ErrorTemplate(bool *type,char *buffer,Arg1 printstyle,Arg2 description, Arg3 message){
       *type=true;
 //      std::fill(buffer,buffer+MSGLEN,NULL);
-      snprintf(buffer,MSGLEN,printstyle,message);
+      snprintf(buffer,MSGLEN,printstyle,description,message);
 #ifdef DEBUG
       printf("%s",buffer);
 #endif

@@ -307,8 +307,6 @@ libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdCon
 	  if (!_ServerSocket) {
 		  throw _httpexception;
 	  }
-	  _ServerSocket->setnonblocking();
-	  _ServerSocket->listenSocket();
 	  
 	  if (sslcertpath && sslkeypath) {
 		  printf("%s : %s", sslcertpath, sslkeypath);

@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <sys/fcntl.h>
 #else
   #include <Windows.h>
+
 #endif
 
 #include <sys/types.h>
@@ -46,7 +47,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/x509.h>
 
 libhttppp::ClientSocket::ClientSocket(){
-  _Socket=0;
+#ifdef Windows
+  _Socket= INVALID_SOCKET;
+#else
+  _Socket = 0;
+#endif
   _SSL=NULL;
 }
 
@@ -86,23 +91,41 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   try {
     std::copy(uxsocket,uxsocket+strlen(uxsocket),_UXSocketAddr.sun_path);
   }catch(...){
-     _httpexception.Cirtical("Can't create Server Socket");
+     _httpexception.Cirtical("Can't copy Server UnixSocket");
      throw _httpexception;
   }
 
   if ((_Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
-    _httpexception.Cirtical("Can't create Server Socket");
+    _httpexception.Cirtical("Can't create Socket UnixSocket");
     throw _httpexception;
   }
 
   setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
   
   if (bind(_Socket, (struct sockaddr *)&_UXSocketAddr, sizeof(struct sockaddr)) < 0){
-    _httpexception.Cirtical("Can't create Server Socket");
+#ifdef Linux
+	  char errbuf[255];
+	  _httpexception.Error("Can't bind Server UnixSocket",
+		                    strerror_r(errno, errbuf, 255));
+#else
+	  char errbuf[255];
+	  strerror_r(errno, errbuf, 255);
+	  _httpexception.Error("Can't bind Server UnixSocket",errbuf);
+#endif
     throw _httpexception;
   }
 }
 #endif
+
+libhttppp::ServerSocket::ServerSocket() {
+#ifdef Windows
+	_Socket = INVALID_SOCKET;
+#else
+	_Socket = 0;
+#endif
+	_Maxconnections = MAXDEFAULTCONN;
+	_Addr = NULL;
+}
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
   _Maxconnections=maxconnections;
@@ -114,32 +137,65 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 	  _httpexception.Cirtical("WSAStartup failed");
   }
 #endif
-  _SockAddr.sin_family = AF_INET;
-  _SockAddr.sin_port = htons(port);
-  if(addr==NULL)
-    _SockAddr.sin_addr.s_addr = INADDR_ANY;
-  else
-    _SockAddr.sin_addr.s_addr = inet_addr(addr);
-  if ((_Socket = socket(AF_INET, SOCK_STREAM, 0)) < 0){
-    _httpexception.Cirtical("Can't create Server Socket");
-    throw _httpexception;
+  char port_buffer[6];
+  snprintf(port_buffer,6, "%hu", port);
+  struct addrinfo *result, *rp;
+  memset(&_SockAddr, 0, sizeof(struct addrinfo));
+  _SockAddr.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+  _SockAddr.ai_socktype = SOCK_STREAM; /* Datagram socket */
+  _SockAddr.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
+  _SockAddr.ai_protocol = 0;          /* Any protocol */
+  _SockAddr.ai_canonname = NULL;
+  _SockAddr.ai_addr = NULL;
+  _SockAddr.ai_next = NULL;
+
+  int s = getaddrinfo(addr, port_buffer, &_SockAddr, &result);
+  if (s != 0) {
+	  _httpexception.Cirtical("getaddrinfo failed ", gai_strerror(s));
+	  throw _httpexception;
   }
+
+  /* getaddrinfo() returns a list of address structures.
+  Try each address until we successfully bind(2).
+  If socket(2) (or bind(2)) fails, we (close the socket
+  and) try the next address. */
+
+  for (rp = result; rp != NULL; rp = rp->ai_next) {
+	  _Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
+	  if (_Socket == -1)
+		  continue;
+
 #ifndef Windows
-  int optval = 1;
-  setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
+	  int optval = 1;
+	  setsockopt(_Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 #else
-  BOOL bOptVal = TRUE;
-  int bOptLen = sizeof (BOOL);
-  setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,(const char *)&bOptVal, bOptLen);
+	  BOOL bOptVal = TRUE;
+	  int bOptLen = sizeof(BOOL);
+	  setsockopt(_Socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&bOptVal, bOptLen);
 #endif
-  if (bind(_Socket, (struct sockaddr *)&_SockAddr, sizeof(struct sockaddr)) < 0){
-    _httpexception.Cirtical("Can't bind Server Socket");
-    throw _httpexception;
+
+	  if (bind(_Socket, rp->ai_addr, rp->ai_addrlen) == 0)
+		  break;                  /* Success */
+
+#ifdef Windows
+	  closesocket(_Socket);
+#else
+	  close(_Socket);
+#endif
   }
+
+  if (rp == NULL) {               /* No address succeeded */
+	  _httpexception.Cirtical("Could not bind\n");
+	  throw _httpexception;
+  }
+  freeaddrinfo(result);
 }
 
 libhttppp::ServerSocket::~ServerSocket(){
-
+#ifndef Windows
+	unlink(_UXSocketAddr.sun_path);
+#endif
+	delete[] _Addr;
 }
 
 void libhttppp::ServerSocket::setnonblocking(){
@@ -153,7 +209,7 @@ void libhttppp::ServerSocket::setnonblocking(){
 
 void libhttppp::ServerSocket::listenSocket(){
   if(listen(_Socket, _Maxconnections) < 0){
-    _httpexception.Cirtical("Can't create Server Socket");
+    _httpexception.Cirtical("Can't listen Server Socket", errno);
     throw _httpexception;
   }
 }
@@ -199,6 +255,8 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   }
   return socket;
 }
+
+
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
   return sendData(socket,data,size,0);

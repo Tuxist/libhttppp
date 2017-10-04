@@ -41,17 +41,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket){
   _ServerSocket=serversocket;
-  _Eventloop=true;
+  _ServerSocket->setnonblocking();
+  _ServerSocket->listenSocket();
+  _EventEndloop =true;
 }
 
 libhttppp::Queue::~Queue(){
   
 }
 
-libhttppp::Queue* _QueueIns;
+libhttppp::Queue* _QueueIns=NULL;
 
-void libhttppp::Queue::exitEventLoop(int signum){
-  _QueueIns->_Eventloop=false;
+void libhttppp::Queue::CtrlHandler(int signum){
+  _QueueIns->_EventEndloop=false;
 }
 
 
@@ -75,7 +77,7 @@ void libhttppp::Queue::runEventloop(){
     throw _httpexception;
   }
   
-  while(_Eventloop){
+  while(_EventEndloop){
     int n = epoll_wait(epollfd, events, _ServerSocket->getMaxconnections(), EPOLLWAIT);
     for(int i=0; i<n; i++) {
       Connection *curcon=NULL;
@@ -183,7 +185,7 @@ void libhttppp::Queue::runEventloop(){
         curcon->Unlock();
     }
     _QueueIns=this;
-    signal(SIGINT,exitEventLoop);
+    signal(SIGINT, CtrlHandler);
   }
   delete[] events;
 }

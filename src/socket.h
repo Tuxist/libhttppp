@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     #include <sys/un.h>
     #include <sys/socket.h>
     #include <netinet/in.h>
+    #include <netdb.h>
   }
 #else
   #include <winsock2.h>
@@ -58,7 +59,7 @@ namespace libhttppp {
     SOCKET            getSocket();
 #endif
   private:
-#ifndef WIN32
+#ifndef Windows
     int              _Socket;
 #else
     SOCKET           _Socket;
@@ -71,7 +72,7 @@ namespace libhttppp {
 
   class ServerSocket : public HTTPS{
   public:
-#ifndef WIN32
+#ifndef Windows
     ServerSocket(const char *uxsocket,int maxconnections);
     int           acceptEvent(ClientSocket *clientsocket);
     int           getSocket();
@@ -79,6 +80,7 @@ namespace libhttppp {
     SOCKET        acceptEvent(ClientSocket *clientsocket);
     SOCKET        getSocket();
 #endif
+	ServerSocket();
     ServerSocket(const char *addr,int port,int maxconnections);
     ~ServerSocket();
 
@@ -90,17 +92,17 @@ namespace libhttppp {
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size,int flags);
   private:
-    sockaddr_in   _SockAddr;
-#ifndef WIN32
-    sockaddr_un   _UXSocketAddr;
-    int           _Socket;
+	struct addrinfo _SockAddr;
+#ifndef Windows
+    sockaddr_un     _UXSocketAddr;
+    int             _Socket;
 #else
-    SOCKET        _Socket;
+    SOCKET          _Socket;
 #endif   
-    char         *_addr;
-    int           _Port;
-    int           _Maxconnections;
-    HTTPException _httpexception;
+    char           *_Addr;
+    int             _Port;
+    int             _Maxconnections;
+    HTTPException   _httpexception;
   };
 };
 #endif

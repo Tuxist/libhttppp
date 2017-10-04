@@ -26,6 +26,4 @@
 
 #define DEBUG
 
-#ifdef Windows
-  #define MAX_WORKER_THREAD 16
-#endif
+#define MAX_WORKER_THREAD 16

@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifdef Windows
   #include <Windows.h>
+  #include <mswsock.h>
 #endif
 
 #ifndef QUEUE_H
@@ -52,20 +53,69 @@ namespace libhttppp {
 		virtual void ResponseEvent(libhttppp::Connection *curcon);
 		virtual void ConnectEvent(libhttppp::Connection *curcon);
         virtual void DisconnectEvent(Connection *curcon);
-
+		/*Run Mainloop*/
 		virtual void runEventloop();
-        static  void exitEventLoop(int signum);
+
+#ifdef Windows
+		typedef enum _IO_OPERATION {
+			ClientIoAccept,
+			ClientIoRead,
+			ClientIoWrite
+		} IO_OPERATION, *PIO_OPERATION;
+
+		//
+		// data to be associated for every I/O operation on a socket
+		//
+		typedef struct _PER_IO_CONTEXT {
+			WSAOVERLAPPED               Overlapped;
+			char                        Buffer[BLOCKSIZE];
+			WSABUF                      wsabuf;
+			int                         nTotalBytes;
+			int                         nSentBytes;
+			IO_OPERATION                IOOperation;
+			SOCKET                      SocketAccept;
+
+			struct _PER_IO_CONTEXT      *pIOContextForward;
+		} PER_IO_CONTEXT, *PPER_IO_CONTEXT;
+
+		//
+		// For AcceptEx, the IOCP key is the PER_SOCKET_CONTEXT for the listening socket,
+		// so we need to another field SocketAccept in PER_IO_CONTEXT. When the outstanding
+		// AcceptEx completes, this field is our connection socket handle.
+		//
+
+		//
+		// data to be associated with every socket added to the IOCP
+		//
+		typedef struct _PER_SOCKET_CONTEXT {
+			SOCKET                      Socket;
+
+			LPFN_ACCEPTEX               fnAcceptEx;
+
+			//
+			//linked list for all outstanding i/o on the socket
+			//
+			PPER_IO_CONTEXT             pIOContext;
+			struct _PER_SOCKET_CONTEXT  *pCtxtBack;
+			struct _PER_SOCKET_CONTEXT  *pCtxtForward;
+		} PER_SOCKET_CONTEXT, *PPER_SOCKET_CONTEXT;
+
+		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
+		static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
+#else
+        static  void CtrlHandler(int signum);
+#endif
   private:
 #ifdef Windows
-	static DWORD WINAPI       _WorkerThread(LPVOID WorkThreadContext);
-	DWORD              _g_dwThreadCount;
-	HANDLE             _g_ThreadHandles[MAX_WORKER_THREAD];
-	CRITICAL_SECTION   _g_CriticalSection;
-	HANDLE             _g_hIOCP;
+	HANDLE              _ThreadHandles[MAX_WORKER_THREAD];
+	HANDLE              _IOCP;
+	WSAEVENT            _CleanupEvent[1];
+	CRITICAL_SECTION    _CriticalSection;
 #endif
     HTTPException       _httpexception;
     ServerSocket       *_ServerSocket;
-    bool                _Eventloop;
+	bool                _EventEndloop;
+	bool                _EventRestartloop;
   };
 }
 
