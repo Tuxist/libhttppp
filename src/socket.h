@@ -73,14 +73,15 @@ namespace libhttppp {
   class ServerSocket : public HTTPS{
   public:
 #ifndef Windows
+	ServerSocket(int socket);
     ServerSocket(const char *uxsocket,int maxconnections);
     int           acceptEvent(ClientSocket *clientsocket);
     int           getSocket();
 #else
+	ServerSocket(SOCKET socket);
     SOCKET        acceptEvent(ClientSocket *clientsocket);
     SOCKET        getSocket();
 #endif
-	ServerSocket();
     ServerSocket(const char *addr,int port,int maxconnections);
     ~ServerSocket();
 

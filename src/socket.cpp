@@ -117,14 +117,16 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 }
 #endif
 
-libhttppp::ServerSocket::ServerSocket() {
+
 #ifdef Windows
-	_Socket = INVALID_SOCKET;
+  libhttppp::ServerSocket::ServerSocket(SOCKET socket) {
 #else
-	_Socket = 0;
+  libhttppp::ServerSocket::ServerSocket(int socket) {
 #endif
+	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
 	_Addr = NULL;
+	
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){

@@ -102,11 +102,22 @@ namespace libhttppp {
 
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
 		static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
+		BOOL CreateAcceptSocket(BOOL fUpdateIOCP);
+		PPER_SOCKET_CONTEXT UpdateCompletionPort(SOCKET sd, IO_OPERATION ClientIo,
+			                                     BOOL bAddToList);
+		VOID CloseClient(PPER_SOCKET_CONTEXT lpPerSocketContext, BOOL bGraceful);
+		PPER_SOCKET_CONTEXT CtxtAllocate(SOCKET sd, IO_OPERATION ClientIO);
+		VOID CtxtListAddTo(PPER_SOCKET_CONTEXT lpPerSocketContext);
+		VOID CtxtListDeleteFrom(PPER_SOCKET_CONTEXT lpPerSocketContext);
+		VOID CtxtListFree();
+		SOCKET CreateSocket(void);
 #else
         static  void CtrlHandler(int signum);
 #endif
   private:
 #ifdef Windows
+	PPER_SOCKET_CONTEXT _pCtxtListenSocket;
+	PPER_SOCKET_CONTEXT _pCtxtList;
 	HANDLE              _ThreadHandles[MAX_WORKER_THREAD];
 	HANDLE              _IOCP;
 	WSAEVENT            _CleanupEvent[1];
