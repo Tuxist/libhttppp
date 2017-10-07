@@ -84,6 +84,14 @@ SOCKET libhttppp::ClientSocket::getSocket(){
 }
 
 #ifndef Windows
+void libhttppp::ClientSocket::setSocketint socket() {
+#else
+void libhttppp::ClientSocket::setSocket(SOCKET socket) {
+#endif
+   _Socket=socket;
+}
+
+#ifndef Windows
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   int optval = 1;
  _Maxconnections=maxconnections;

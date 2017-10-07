@@ -645,6 +645,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 	PPER_SOCKET_CONTEXT lpPerSocketContext = NULL;
 	PPER_SOCKET_CONTEXT lpAcceptSocketContext = NULL;
 	PPER_IO_CONTEXT lpIOContext = NULL;
+	Connection *curcon = NULL;
 	WSABUF buffRecv;
 	WSABUF buffSend;
 	DWORD dwRecvNumBytes = 0;
@@ -710,7 +711,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 		// associated with this socket.  This will determine what action to take.
 		//
 		switch (lpIOContext->IOOperation) {
-		case ClientIoAccept:
+		case ClientIoAccept: {
 
 			//
 			// When the AcceptEx function returns, the socket sAcceptSocket is 
@@ -736,7 +737,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				//
 				//just warn user here.
 				//
-				//myprintf("setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed to update accept socket\n");
+				//printf("setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed to update accept socket\n");
 				WSASetEvent(_QueueIns->_CleanupEvent[0]);
 				return(0);
 			}
@@ -750,10 +751,18 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				//
 				//just warn user here.
 				//
-				//myprintf("failed to update accept socket to IOCP\n");
+				//printf("failed to update accept socket to IOCP\n");
 				WSASetEvent(_QueueIns->_CleanupEvent[0]);
 				return(0);
 			}
+
+			//
+			// Add connection to connection handler
+			//
+			curcon = _QueueIns->addConnection();
+			ClientSocket *clientsocket = curcon->getClientSocket();
+			clientsocket->setSocket(lpAcceptSocketContext->Socket);
+			printf("aceppt connection on port: %d\n", clientsocket->getSocket());
 
 			if (dwIoSize) {
 				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoWrite;
@@ -775,7 +784,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					&(lpAcceptSocketContext->pIOContext->Overlapped), NULL);
 
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-					//myprintf("WSASend() failed: %d\n", WSAGetLastError());
+					//printf("WSASend() failed: %d\n", WSAGetLastError());
 					_QueueIns->CloseClient(lpAcceptSocketContext, FALSE);
 				}
 			}
@@ -789,13 +798,14 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				dwRecvNumBytes = 0;
 				dwFlags = 0;
 				buffRecv.buf = lpAcceptSocketContext->pIOContext->Buffer,
-					buffRecv.len = BLOCKSIZE;
+				buffRecv.len = BLOCKSIZE;
 				nRet = WSARecv(
 					lpAcceptSocketContext->Socket,
 					&buffRecv, 1,
 					&dwRecvNumBytes,
 					&dwFlags,
 					&lpAcceptSocketContext->pIOContext->Overlapped, NULL);
+
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
 					_QueueIns->CloseClient(lpAcceptSocketContext, FALSE);
@@ -811,91 +821,87 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				return(0);
 			}
 			break;
+		}
 
 
-		//case ClientIoRead:
+		case ClientIoRead: {
 
-		//	//
-		//	// a read operation has completed, post a write operation to echo the
-		//	// data back to the client using the same data buffer.
-		//	//
-		//	lpIOContext->IOOperation = ClientIoWrite;
-		//	lpIOContext->nTotalBytes = dwIoSize;
-		//	lpIOContext->nSentBytes = 0;
-		//	lpIOContext->wsabuf.len = dwIoSize;
-		//	dwFlags = 0;
-		//	nRet = WSASend(
-		//		lpPerSocketContext->Socket,
-		//		&lpIOContext->wsabuf, 1, &dwSendNumBytes,
-		//		dwFlags,
-		//		&(lpIOContext->Overlapped), NULL);
-		//	if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-		//		myprintf("WSASend() failed: %d\n", WSAGetLastError());
-		//		CloseClient(lpPerSocketContext, FALSE);
-		//	}
-		//	else if (g_bVerbose) {
-		//		myprintf("WorkerThread %d: Socket(%d) Recv completed (%d bytes), Send posted\n",
-		//			GetCurrentThreadId(), lpPerSocketContext->Socket, dwIoSize);
-		//	}
-		//	break;
+			//
+			// a read operation has completed, post a write operation to echo the
+			// data back to the client using the same data buffer.
+			//
+			lpIOContext->IOOperation = ClientIoWrite;
+			lpIOContext->nTotalBytes = dwIoSize;
+			lpIOContext->nSentBytes = 0;
+			lpIOContext->wsabuf.len = dwIoSize;
+			dwFlags = 0;
+			if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+				//myprintf("WSASend() failed: %d\n", WSAGetLastError());
+				_QueueIns->CloseClient(lpPerSocketContext, FALSE);
+				_QueueIns->DisconnectEvent(curcon);
+				_QueueIns->delConnection(curcon);
+				break;
+			}
+			curcon = _QueueIns->getConnection(lpAcceptSocketContext->Socket);
+			if(curcon)
+			  _QueueIns->RequestEvent(curcon);
+			printf("read\n");
+			break;
+		}
 
-		//case ClientIoWrite:
+		case ClientIoWrite: {
 
-		//	//
-		//	// a write operation has completed, determine if all the data intended to be
-		//	// sent actually was sent.
-		//	//
-		//	lpIOContext->IOOperation = ClientIoWrite;
-		//	lpIOContext->nSentBytes += dwIoSize;
-		//	dwFlags = 0;
-		//	if (lpIOContext->nSentBytes < lpIOContext->nTotalBytes) {
+			//
+			// a write operation has completed, determine if all the data intended to be
+			// sent actually was sent.
+			//
+			lpIOContext->IOOperation = ClientIoWrite;
+			lpIOContext->nSentBytes += dwIoSize;
+			dwFlags = 0;
+			if (lpIOContext->nSentBytes < lpIOContext->nTotalBytes) {
 
-		//		//
-		//		// the previous write operation didn't send all the data,
-		//		// post another send to complete the operation
-		//		//
-		//		buffSend.buf = lpIOContext->Buffer + lpIOContext->nSentBytes;
-		//		buffSend.len = lpIOContext->nTotalBytes - lpIOContext->nSentBytes;
-		//		nRet = WSASend(
-		//			lpPerSocketContext->Socket,
-		//			&buffSend, 1, &dwSendNumBytes,
-		//			dwFlags,
-		//			&(lpIOContext->Overlapped), NULL);
-		//		if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-		//			myprintf("WSASend() failed: %d\n", WSAGetLastError());
-		//			CloseClient(lpPerSocketContext, FALSE);
-		//		}
-		//		else if (g_bVerbose) {
-		//			myprintf("WorkerThread %d: Socket(%d) Send partially completed (%d bytes), Recv posted\n",
-		//				GetCurrentThreadId(), lpPerSocketContext->Socket, dwIoSize);
-		//		}
-		//	}
-		//	else {
+				//
+				// the previous write operation didn't send all the data,
+				// post another send to complete the operation
+				//
+				buffSend.buf = lpIOContext->Buffer + lpIOContext->nSentBytes;
+				buffSend.len = lpIOContext->nTotalBytes - lpIOContext->nSentBytes;
+				nRet = WSASend(
+					lpPerSocketContext->Socket,
+					&buffSend, 1, &dwSendNumBytes,
+					dwFlags,
+					&(lpIOContext->Overlapped), NULL);
+				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+					//myprintf("WSASend() failed: %d\n", WSAGetLastError());
+					_QueueIns->CloseClient(lpPerSocketContext, FALSE);
+					_QueueIns->DisconnectEvent(curcon);
+					_QueueIns->delConnection(lpAcceptSocketContext->Socket);
+				}
+			}
+			else {
 
-		//		//
-		//		// previous write operation completed for this socket, post another recv
-		//		//
-		//		lpIOContext->IOOperation = ClientIoRead;
-		//		dwRecvNumBytes = 0;
-		//		dwFlags = 0;
-		//		buffRecv.buf = lpIOContext->Buffer,
-		//			buffRecv.len = MAX_BUFF_SIZE;
-		//		nRet = WSARecv(
-		//			lpPerSocketContext->Socket,
-		//			&buffRecv, 1, &dwRecvNumBytes,
-		//			&dwFlags,
-		//			&lpIOContext->Overlapped, NULL);
-		//		if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-		//			myprintf("WSARecv() failed: %d\n", WSAGetLastError());
-		//			CloseClient(lpPerSocketContext, FALSE);
-		//		}
-		//		else if (g_bVerbose) {
-		//			myprintf("WorkerThread %d: Socket(%d) Send completed (%d bytes), Recv posted\n",
-		//				GetCurrentThreadId(), lpPerSocketContext->Socket, dwIoSize);
-		//		}
-		//	}
-		//	break;
-
+				//
+				// previous write operation completed for this socket, post another recv
+				//
+				lpIOContext->IOOperation = ClientIoRead;
+				dwRecvNumBytes = 0;
+				dwFlags = 0;
+				buffRecv.buf = lpIOContext->Buffer,
+					buffRecv.len = BLOCKSIZE;
+				nRet = WSARecv(
+					lpPerSocketContext->Socket,
+					&buffRecv, 1, &dwRecvNumBytes,
+					&dwFlags,
+					&lpIOContext->Overlapped, NULL);
+				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
+					_QueueIns->CloseClient(lpPerSocketContext, FALSE);
+					_QueueIns->DisconnectEvent(curcon);
+					_QueueIns->delConnection(lpAcceptSocketContext->Socket);
+				}
+			}
+			break;
+		}
 		} //switch
 	} //while
 	return(0);

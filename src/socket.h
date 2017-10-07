@@ -55,8 +55,10 @@ namespace libhttppp {
     void              setnonblocking();
 #ifndef WIN32
     int               getSocket();
+	void              setSocket(int socket);
 #else
     SOCKET            getSocket();
+	void              setSocket(SOCKET socket);
 #endif
   private:
 #ifndef Windows
