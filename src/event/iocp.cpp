@@ -864,8 +864,8 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				// the previous write operation didn't send all the data,
 				// post another send to complete the operation
 				//
-				buffSend.buf = lpIOContext->Buffer + lpIOContext->nSentBytes;
-				buffSend.len = lpIOContext->nTotalBytes - lpIOContext->nSentBytes;
+				buffSend.buf = (char*)curcon->getSendData()->getData();
+				buffSend.len = curcon->getSendData()->getDataSize();
 				nRet = WSASend(
 					lpPerSocketContext->Socket,
 					&buffSend, 1, &dwSendNumBytes,
@@ -876,6 +876,8 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					_QueueIns->CloseClient(lpPerSocketContext, FALSE);
 					_QueueIns->DisconnectEvent(curcon);
 					_QueueIns->delConnection(lpAcceptSocketContext->Socket);
+				} else {
+					curcon->resizeSendQueue(dwSendNumBytes);
 				}
 			}
 			else {
