@@ -1,24 +1,27 @@
 # libhttppp
 
-Status Report:
+###Status Report:
 
-Finished:
-HttpForm
-HttpMultiform
-Httpcookie
-Httpbasicauth
-Https
-epoll (linux support)
+##Finished:
+-HttpForm
+-HttpMultiform
+-Httpcookie
+-Httpbasicauth
+-Https
+-epoll (linux support)
 
-Todo:
-Httpdigestauth
-Httpntlmauth
-Httpcompression (gzip)
-Httpclientsupport
-iocp (Windows support)
-kqueue (Mac OS BSD support)
-select (other os)
+##On Work
+-Httpdigestauth
+-iocp (Windows support)
+-Multithreading
 
-Download:
+##Todo:
+-Httpntlmauth
+-Httpcompression (gzip)
+-Httpclientsupport
+-kqueue (Mac OS BSD support)
+-select (other os)
+
+##Download:
 https://github.com/Tuxist/libhttppp
 
