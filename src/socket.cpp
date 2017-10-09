@@ -84,7 +84,7 @@ SOCKET libhttppp::ClientSocket::getSocket(){
 }
 
 #ifndef Windows
-void libhttppp::ClientSocket::setSocketint socket() {
+void libhttppp::ClientSocket::setSocket(int socket) {
 #else
 void libhttppp::ClientSocket::setSocket(SOCKET socket) {
 #endif
