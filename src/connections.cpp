@@ -230,14 +230,6 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
   return -1;
 }
 
-bool libhttppp::Connection::tryLock(){
-  return _Locked->try_lock();
-}
-
-void libhttppp::Connection::Unlock(){
-  _Locked->unlock();
-}
-
 libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket;
   _nextConnection=NULL;
@@ -247,7 +239,6 @@ libhttppp::Connection::Connection(){
   _SendDataFirst=NULL;
   _SendDataLast=NULL;
   _SendDataSize=0;
-  _Locked=new std::mutex;
 }
 
 libhttppp::Connection::~Connection(){
@@ -255,7 +246,6 @@ libhttppp::Connection::~Connection(){
   delete _ReadDataFirst;
   delete _SendDataFirst;
   delete _nextConnection;
-  delete _Locked;
 }
 
 

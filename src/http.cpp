@@ -1206,6 +1206,14 @@ void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
       if(_Realm){
         curauthstrs << " realm=\"" << _Realm <<"\"";
       }  
+      char nonce[16]={'0'};
+      for(size_t noncepos=0; noncepos<=16; noncepos++){
+        char random[]={1,2,3,4,5,6,7,8,9,'a','b','c','d','e','f','\0'};
+        for(size_t rdpos=0; random[rdpos]!='\0'; rdpos++){ 
+           nonce[noncepos]=random[rdpos];
+        }
+      }
+      curauthstrs << "nonce=\"" << nonce << "\"";
       std::string curauthstr =curauthstrs.str();
       curresp->setData("WWW-Authenticate",curauthstr.c_str());
     };

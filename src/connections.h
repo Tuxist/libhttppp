@@ -83,9 +83,6 @@ namespace libhttppp {
     size_t          getRecvSize(); 
 
     int             pollState;
-    /*Helping function for multithreaded apps*/
-    bool            tryLock();
-    void            Unlock();
   private:
     ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
 				 size_t *qsize,size_t size);
@@ -99,8 +96,6 @@ namespace libhttppp {
     ConnectionData *_ReadDataFirst;
     ConnectionData *_ReadDataLast;
     size_t          _ReadDataSize;
-    /*needs for thread safty implemented later*/
-    std::mutex     *_Locked;   
     /*Helper functions*/
     Connection();
     ~Connection();
