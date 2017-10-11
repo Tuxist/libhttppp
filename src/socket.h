@@ -97,7 +97,7 @@ namespace libhttppp {
   private:
 	struct addrinfo _SockAddr;
 #ifndef Windows
-    sockaddr_un     _UXSocketAddr;
+    sockaddr_un    *_UXSocketAddr;
     int             _Socket;
 #else
     SOCKET          _Socket;

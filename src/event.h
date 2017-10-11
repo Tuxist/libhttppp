@@ -112,7 +112,8 @@ namespace libhttppp {
 		VOID CtxtListFree();
 		SOCKET CreateSocket(void);
 #else
-        static  void CtrlHandler(int signum);
+        static  void *WorkerThread(void *instance);
+        static  void  CtrlHandler(int signum);
 #endif
   private:
 #ifdef Windows

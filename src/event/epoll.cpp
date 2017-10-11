@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include <sys/sysinfo.h>
 #include <cstdlib>
 #include <config.h>
 #include <errno.h>
@@ -56,48 +57,63 @@ void libhttppp::Queue::CtrlHandler(int signum) {
     _QueueIns->_EventEndloop=false;
 }
 
-
 void libhttppp::Queue::runEventloop() {
+    int threadcount=get_nprocs()*2;
+    pthread_t threads[threadcount];
+    for(int i=0; i<threadcount; i++){
+    int thc = pthread_create( &threads[i], NULL, &WorkerThread,(void*) this);
+      if( thc != 0 ) {
+        _httpexception.Cirtical("can't create thread");
+        throw _httpexception;
+      }  
+    }
+    for(int i=0; i<threadcount; i++){
+        pthread_join(threads[i], NULL);
+    }
+}
+    
+void *libhttppp::Queue::WorkerThread(void *instance){
+    Queue *queue=(Queue *)instance;
     struct epoll_event *events;
     struct epoll_event  event = {0};
-    events = new epoll_event[(_ServerSocket->getMaxconnections()*sizeof(struct epoll_event))];
-    for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
+    events = new epoll_event[(queue->_ServerSocket->getMaxconnections()*sizeof(struct epoll_event))];
+    for(int i=0; i<queue->_ServerSocket->getMaxconnections(); i++)
         events[i].data.fd = -1;
-    int epollfd = epoll_create(_ServerSocket->getMaxconnections());
+    int epollfd = epoll_create(queue->_ServerSocket->getMaxconnections());
 
     if (epollfd == -1) {
-        _httpexception.Cirtical("can't create epoll");
-        throw _httpexception;
+        queue->_httpexception.Cirtical("can't create epoll");
+        throw queue->_httpexception;
     }
 
-    event.events = EPOLLIN | EPOLLOUT;
-    event.data.fd = _ServerSocket->getSocket();
-    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &event) < 0) {
-        _httpexception.Cirtical("can't create epoll");
-        throw _httpexception;
+    event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
+    event.data.fd = queue->_ServerSocket->getSocket();
+    if (epoll_ctl(epollfd, EPOLL_CTL_ADD, queue->_ServerSocket->getSocket(), &event) < 0) {
+        queue->_httpexception.Cirtical("can't create epoll");
+        throw queue->_httpexception;
     }
 
-    while(_EventEndloop) {
-        int n = epoll_wait(epollfd, events, _ServerSocket->getMaxconnections(), EPOLLWAIT);
+    while(queue->_EventEndloop) {
+        int n = epoll_wait(epollfd, events, queue->_ServerSocket->getMaxconnections(), EPOLLWAIT);
         for(int i=0; i<n; i++) {
             Connection *curcon=NULL;
-            if(events[i].data.fd == _ServerSocket->getSocket()) {
+            if(events[i].data.fd == queue->_ServerSocket->getSocket()) {
                 try {
                     /*will create warning debug mode that normally because the check already connection
                      * with this socket if getconnection throw they will be create a new one
                      */
-                    curcon=addConnection();
+                    curcon=queue->addConnection();
                     ClientSocket *clientsocket=curcon->getClientSocket();
-                    int fd=_ServerSocket->acceptEvent(clientsocket);
+                    int fd=queue->_ServerSocket->acceptEvent(clientsocket);
                     if(fd>0) {
                         event.data.fd = fd;
                         clientsocket->setnonblocking();
                         event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
                         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
                             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
-                        ConnectEvent(curcon);
+                        queue->ConnectEvent(curcon);
                     } else {
-                        delConnection(curcon);
+                        queue->delConnection(curcon);
                     }
                 } catch(HTTPException &e) {
                     if(e.isCritical())
@@ -105,20 +121,20 @@ void libhttppp::Queue::runEventloop() {
                 }
                 continue;
             } else {
-                curcon=getConnection(events[i].data.fd);
+                curcon=queue->getConnection(events[i].data.fd);
             }
 
             if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR) {
 CloseConnection:
-                DisconnectEvent(curcon);
+                queue->DisconnectEvent(curcon);
                 try {
-                    delConnection(curcon);
+                    queue->delConnection(curcon);
                     curcon=NULL;
                     epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
-                    _httpexception.Note("Connection shutdown!");
+                    queue->_httpexception.Note("Connection shutdown!");
                     continue;
                 } catch(HTTPException &e) {
-                    _httpexception.Note("Can't do Connection shutdown!");
+                    queue->_httpexception.Note("Can't do Connection shutdown!");
                 }
                 ;
             }
@@ -129,14 +145,14 @@ CloseConnection:
                     char buf[BLOCKSIZE];
                     int rcvsize=0;
                     try {
-                        rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
+                        rcvsize=queue->_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
                         if(rcvsize>0) {
                             curcon->addRecvQueue(buf,rcvsize);
                         }
                     } catch(HTTPException &e) {
 
                     }
-                    RequestEvent(curcon);
+                    queue->RequestEvent(curcon);
                     event.events = EPOLLIN | EPOLLOUT |EPOLLRDHUP;
                     epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
                 } catch(HTTPException &e) {
@@ -153,13 +169,13 @@ CloseConnection:
                     if(curcon && curcon->getSendData()) {
                         ssize_t sended=0;
 
-                        sended=_ServerSocket->sendData(curcon->getClientSocket(),
+                        sended=queue->_ServerSocket->sendData(curcon->getClientSocket(),
                                                        (void*)curcon->getSendData()->getData(),
                                                        curcon->getSendData()->getDataSize(),MSG_NOSIGNAL);
 
 
                         if(sended==-1) {
-                            _httpexception.Note("Sending Failed");
+                            queue->_httpexception.Note("Sending Failed");
                             if (errno == EAGAIN || EWOULDBLOCK) {
                                 continue;
                             } else {
@@ -173,16 +189,17 @@ CloseConnection:
                         event.events = EPOLLIN |EPOLLRDHUP;
                         epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
                     }
-                    ResponseEvent(curcon);
+                    queue->ResponseEvent(curcon);
                 } catch(HTTPException &e) {
                     goto CloseConnection;
                 }
             }
         }
-        _QueueIns=this;
+        _QueueIns=queue;
         signal(SIGINT, CtrlHandler);
     }
     delete[] events;
+    return NULL;
 }
 
 void libhttppp::Queue::RequestEvent(Connection *curcon) {

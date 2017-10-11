@@ -95,9 +95,10 @@ void libhttppp::ClientSocket::setSocket(SOCKET socket) {
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   int optval = 1;
  _Maxconnections=maxconnections;
-  _UXSocketAddr.sun_family = AF_UNIX;
+ _UXSocketAddr = new sockaddr_un;
+  _UXSocketAddr->sun_family = AF_UNIX;
   try {
-    std::copy(uxsocket,uxsocket+strlen(uxsocket),_UXSocketAddr.sun_path);
+    std::copy(uxsocket,uxsocket+strlen(uxsocket),_UXSocketAddr->sun_path);
   }catch(...){
      _httpexception.Cirtical("Can't copy Server UnixSocket");
      throw _httpexception;
@@ -110,7 +111,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 
   setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
   
-  if (bind(_Socket, (struct sockaddr *)&_UXSocketAddr, sizeof(struct sockaddr)) < 0){
+  if (bind(_Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
 #ifdef Linux
 	  char errbuf[255];
 	  _httpexception.Error("Can't bind Server UnixSocket",
@@ -134,7 +135,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
 	_Addr = NULL;
-	
+	_UXSocketAddr = NULL;
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
@@ -203,7 +204,8 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 
 libhttppp::ServerSocket::~ServerSocket(){
 #ifndef Windows
-	unlink(_UXSocketAddr.sun_path);
+    if(_UXSocketAddr)
+      unlink(_UXSocketAddr->sun_path);
 #endif
 	delete[] _Addr;
 }
@@ -250,9 +252,14 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   SOCKET socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
 #endif
   if(socket==-1){
-    char errbuf[255];
-    strerror_r(errno,errbuf,255);
-    _httpexception.Error(errbuf);
+#ifdef Linux
+	  char errbuf[255];
+	  _httpexception.Error("Can't accept on  Socket",strerror_r(errno, errbuf, 255));
+#else
+	  char errbuf[255];
+	  strerror_r(errno, errbuf, 255);
+	  _httpexception.Error("Can't accept on  Socket",errbuf);
+#endif
   }
   clientsocket->_Socket=socket;
   if(isSSLTrue()){
