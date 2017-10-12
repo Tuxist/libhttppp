@@ -116,6 +116,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                         queue->delConnection(curcon);
                     }
                 } catch(HTTPException &e) {
+                    queue->delConnection(curcon);
                     if(e.isCritical())
                         throw e;
                 }
