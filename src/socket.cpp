@@ -149,7 +149,10 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   if (iResult != 0) {
 	  _httpexception.Cirtical("WSAStartup failed");
   }
+#else
+  _UXSocketAddr = NULL;
 #endif
+
   char port_buffer[6];
   snprintf(port_buffer,6, "%hu", port);
   struct addrinfo *result, *rp;
