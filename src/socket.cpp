@@ -135,7 +135,9 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
 	_Addr = NULL;
+#ifndef Windows
 	_UXSocketAddr = NULL;
+#endif
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
