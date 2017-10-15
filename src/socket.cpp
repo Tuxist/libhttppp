@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <sys/fcntl.h>
 #else
   #include <Windows.h>
-
 #endif
 
 #include <sys/types.h>
