@@ -22,6 +22,6 @@ add_executable (httpauth httpauth.cpp)
 
 target_link_libraries(httpauth httppp-static)
 
-add_executable (httpproxy httproxy.cpp)
+add_executable (httpproxy httpproxy.cpp)
 
 target_link_libraries(httpproxy httppp-static)
