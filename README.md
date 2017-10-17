@@ -9,11 +9,12 @@
 - Httpbasicauth
 - Https
 - epoll (linux support)
+- Multithreading
 
 ## On Work
 - Httpdigestauth
 - iocp (Windows support)
-- Multithreading
+
 
 ## Todo:
 - Httpntlmauth
