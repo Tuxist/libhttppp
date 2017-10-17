@@ -113,7 +113,7 @@ void libhttppp::Queue::runEventloop() {
 				HANDLE  hThread;
 				DWORD   dwThreadId;
 
-				hThread = CreateThread(NULL, 0, WorkerThread, _IOCP, 0, &dwThreadId);
+				hThread = CreateThread(NULL, 0, WorkerThread, this, 0, &dwThreadId);
 				if (hThread == NULL) {
 					//myprintf("CreateThread() failed to create worker thread: %d\n",
 					//	GetLastError());
@@ -637,8 +637,7 @@ VOID libhttppp::Queue::CtxtListFree() {
 }
 
 DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
-
-	HANDLE hIOCP = (HANDLE)WorkThreadContext;
+	Queue  *queue = (Queue*)WorkThreadContext;
 	BOOL bSuccess = FALSE;
 	int nRet = 0;
 	LPWSAOVERLAPPED lpOverlapped = NULL;
@@ -660,7 +659,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 		// continually loop to service io completion packets
 		//
 		bSuccess = GetQueuedCompletionStatus(
-			hIOCP,
+			queue->_IOCP,
 			&dwIoSize,
 			(PDWORD_PTR)&lpPerSocketContext,
 			(LPOVERLAPPED *)&lpOverlapped,
@@ -680,7 +679,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			return(0);
 		}
 
-		if (_QueueIns->_EventEndloop) {
+		if (queue->_EventEndloop) {
 
 			//
 			// main thread will do all cleanup needed - see finally block
@@ -701,7 +700,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				// client connection dropped, continue to service remaining (and possibly 
 				// new) client connections
 				//
-				_QueueIns->CloseClient(lpPerSocketContext, FALSE);
+				queue->CloseClient(lpPerSocketContext, FALSE);
 				continue;
 			}
 		}
@@ -722,7 +721,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			// option, specifying sAcceptSocket as the socket handle and sListenSocket 
 			// as the option value. 
 			//
-			SOCKET sock = _QueueIns->_ServerSocket->getSocket();
+			SOCKET sock = queue->_ServerSocket->getSocket();
 
 			nRet = setsockopt(
 				lpPerSocketContext->pIOContext->SocketAccept,
@@ -738,11 +737,11 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				//just warn user here.
 				//
 				//printf("setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed to update accept socket\n");
-				WSASetEvent(_QueueIns->_CleanupEvent[0]);
+				WSASetEvent(queue->_CleanupEvent[0]);
 				return(0);
 			}
 
-			lpAcceptSocketContext = _QueueIns->UpdateCompletionPort(
+			lpAcceptSocketContext = queue->UpdateCompletionPort(
 				lpPerSocketContext->pIOContext->SocketAccept,
 				ClientIoAccept, TRUE);
 
@@ -752,14 +751,14 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				//just warn user here.
 				//
 				//printf("failed to update accept socket to IOCP\n");
-				WSASetEvent(_QueueIns->_CleanupEvent[0]);
+				WSASetEvent(queue->_CleanupEvent[0]);
 				return(0);
 			}
 
 			//
 			// Add connection to connection handler
 			//
-			curcon = _QueueIns->addConnection();
+			curcon = queue->addConnection();
 			ClientSocket *clientsocket = curcon->getClientSocket();
 			clientsocket->setSocket(lpAcceptSocketContext->Socket);
 			printf("aceppt connection on port: %d\n", clientsocket->getSocket());
@@ -785,7 +784,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//printf("WSASend() failed: %d\n", WSAGetLastError());
-					_QueueIns->CloseClient(lpAcceptSocketContext, FALSE);
+					queue->CloseClient(lpAcceptSocketContext, FALSE);
 				}
 			}
 			else {
@@ -808,16 +807,16 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
-					_QueueIns->CloseClient(lpAcceptSocketContext, FALSE);
+					queue->CloseClient(lpAcceptSocketContext, FALSE);
 				}
 			}
 
 			//
 			//Time to post another outstanding AcceptEx
 			//
-			if (!_QueueIns->CreateAcceptSocket(FALSE)) {
+			if (!queue->CreateAcceptSocket(FALSE)) {
 				//myprintf("Please shut down and reboot the server.\n");
-				WSASetEvent(_QueueIns->_CleanupEvent[0]);
+				WSASetEvent(queue->_CleanupEvent[0]);
 				return(0);
 			}
 			break;
@@ -837,14 +836,14 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			dwFlags = 0;
 			if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 				//myprintf("WSASend() failed: %d\n", WSAGetLastError());
-				_QueueIns->CloseClient(lpPerSocketContext, FALSE);
-				_QueueIns->DisconnectEvent(curcon);
-				_QueueIns->delConnection(curcon);
+				queue->CloseClient(lpPerSocketContext, FALSE);
+				queue->DisconnectEvent(curcon);
+				queue->delConnection(curcon);
 				break;
 			}
-			curcon = _QueueIns->getConnection(lpAcceptSocketContext->Socket);
+			curcon = queue->getConnection(lpAcceptSocketContext->Socket);
 			if(curcon)
-			  _QueueIns->RequestEvent(curcon);
+				queue->RequestEvent(curcon);
 			printf("read\n");
 			break;
 		}
@@ -873,9 +872,9 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					&(lpIOContext->Overlapped), NULL);
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//myprintf("WSASend() failed: %d\n", WSAGetLastError());
-					_QueueIns->CloseClient(lpPerSocketContext, FALSE);
-					_QueueIns->DisconnectEvent(curcon);
-					_QueueIns->delConnection(lpAcceptSocketContext->Socket);
+					queue->CloseClient(lpPerSocketContext, FALSE);
+					queue->DisconnectEvent(curcon);
+					queue->delConnection(lpAcceptSocketContext->Socket);
 				} else {
 					curcon->resizeSendQueue(dwSendNumBytes);
 				}
@@ -897,9 +896,9 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					&lpIOContext->Overlapped, NULL);
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
-					_QueueIns->CloseClient(lpPerSocketContext, FALSE);
-					_QueueIns->DisconnectEvent(curcon);
-					_QueueIns->delConnection(lpAcceptSocketContext->Socket);
+					queue->CloseClient(lpPerSocketContext, FALSE);
+					queue->DisconnectEvent(curcon);
+					queue->delConnection(lpAcceptSocketContext->Socket);
 				}
 			}
 			break;

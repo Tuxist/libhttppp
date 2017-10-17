@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <sys/fcntl.h>
 #else
   #include <Windows.h>
-
 #endif
 
 #include <sys/types.h>
@@ -135,7 +134,9 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
 	_Addr = NULL;
+#ifndef Windows
 	_UXSocketAddr = NULL;
+#endif
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
@@ -147,7 +148,10 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   if (iResult != 0) {
 	  _httpexception.Cirtical("WSAStartup failed");
   }
+#else
+  _UXSocketAddr = NULL;
 #endif
+
   char port_buffer[6];
   snprintf(port_buffer,6, "%hu", port);
   struct addrinfo *result, *rp;
