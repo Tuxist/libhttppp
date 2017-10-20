@@ -644,6 +644,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 	PPER_SOCKET_CONTEXT lpPerSocketContext = NULL;
 	PPER_SOCKET_CONTEXT lpAcceptSocketContext = NULL;
 	PPER_IO_CONTEXT lpIOContext = NULL;
+	ConnectionPool cpool(queue->_ServerSocket);
 	Connection *curcon = NULL;
 	WSABUF buffRecv;
 	WSABUF buffSend;
@@ -758,7 +759,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			//
 			// Add connection to connection handler
 			//
-			curcon = queue->addConnection();
+			curcon = cpool.addConnection();
 			ClientSocket *clientsocket = curcon->getClientSocket();
 			clientsocket->setSocket(lpAcceptSocketContext->Socket);
 			printf("aceppt connection on port: %d\n", clientsocket->getSocket());
@@ -838,10 +839,10 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 				queue->CloseClient(lpPerSocketContext, FALSE);
 				queue->DisconnectEvent(curcon);
-				queue->delConnection(curcon);
+				cpool.delConnection(curcon);
 				break;
 			}
-			curcon = queue->getConnection(lpAcceptSocketContext->Socket);
+			curcon = cpool.getConnection(lpAcceptSocketContext->Socket);
 			if(curcon)
 				queue->RequestEvent(curcon);
 			printf("read\n");
@@ -874,7 +875,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 					queue->CloseClient(lpPerSocketContext, FALSE);
 					queue->DisconnectEvent(curcon);
-					queue->delConnection(lpAcceptSocketContext->Socket);
+					cpool.delConnection(lpAcceptSocketContext->Socket);
 				} else {
 					curcon->resizeSendQueue(dwSendNumBytes);
 				}
@@ -898,7 +899,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
 					queue->CloseClient(lpPerSocketContext, FALSE);
 					queue->DisconnectEvent(curcon);
-					queue->delConnection(lpAcceptSocketContext->Socket);
+					cpool.delConnection(lpAcceptSocketContext->Socket);
 				}
 			}
 			break;
