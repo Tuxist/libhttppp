@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::Queue* _QueueIns=NULL;
 
-libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
+libhttppp::Queue::Queue(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
     _EventEndloop=true;
 	_EventRestartloop = true;

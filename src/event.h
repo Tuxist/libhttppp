@@ -40,9 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace libhttppp {
 #ifdef MSVC
-	class __declspec(dllexport)  Queue : public ConnectionPool {
+	class __declspec(dllexport)  Queue {
 #else
-	class __attribute__ ((visibility ("default"))) Queue : public ConnectionPool {
+	class __attribute__ ((visibility ("default"))) Queue {
 #endif
 	public:
 		Queue(ServerSocket *serversocket);

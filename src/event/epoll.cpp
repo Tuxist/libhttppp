@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../event.h"
 
-libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
+libhttppp::Queue::Queue(ServerSocket *serversocket) {
     _ServerSocket=serversocket;
     _ServerSocket->setnonblocking();
     _ServerSocket->listenSocket();
@@ -74,6 +74,7 @@ void libhttppp::Queue::runEventloop() {
     
 void *libhttppp::Queue::WorkerThread(void *instance){
     Queue *queue=(Queue *)instance;
+    ConnectionPool cpool(queue->_ServerSocket);
     struct epoll_event *events;
     struct epoll_event  event = {0};
     events = new epoll_event[(queue->_ServerSocket->getMaxconnections()*sizeof(struct epoll_event))];
@@ -102,7 +103,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                     /*will create warning debug mode that normally because the check already connection
                      * with this socket if getconnection throw they will be create a new one
                      */
-                    curcon=queue->addConnection();
+                    curcon=cpool.addConnection();
                     ClientSocket *clientsocket=curcon->getClientSocket();
                     int fd=queue->_ServerSocket->acceptEvent(clientsocket);
                     if(fd>0) {
@@ -113,23 +114,23 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
                         queue->ConnectEvent(curcon);
                     } else {
-                        queue->delConnection(curcon);
+                        cpool.delConnection(curcon);
                     }
                 } catch(HTTPException &e) {
-                    queue->delConnection(curcon);
+                    cpool.delConnection(curcon);
                     if(e.isCritical())
                         throw e;
                 }
                 continue;
             } else {
-                curcon=queue->getConnection(events[i].data.fd);
+                curcon=cpool.getConnection(events[i].data.fd);
             }
 
             if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR) {
 CloseConnection:
                 queue->DisconnectEvent(curcon);
                 try {
-                    queue->delConnection(curcon);
+                    cpool.delConnection(curcon);
                     curcon=NULL;
                     epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
                     queue->_httpexception.Note("Connection shutdown!");
