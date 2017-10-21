@@ -762,53 +762,38 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			curcon = cpool.addConnection();
 			ClientSocket *clientsocket = curcon->getClientSocket();
 			clientsocket->setSocket(lpAcceptSocketContext->Socket);
-			printf("aceppt connection on port: %d\n", clientsocket->getSocket());
+			queue->ConnectEvent(curcon);
+			printf("aceppt connection on port: %ld\n", clientsocket->getSocket());
 
 			if (dwIoSize) {
 				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoWrite;
 				lpAcceptSocketContext->pIOContext->nTotalBytes = dwIoSize;
 				lpAcceptSocketContext->pIOContext->nSentBytes = 0;
-				lpAcceptSocketContext->pIOContext->wsabuf.len = dwIoSize;
 				hRet = StringCbCopyN(lpAcceptSocketContext->pIOContext->Buffer,
 					BLOCKSIZE,
 					lpPerSocketContext->pIOContext->Buffer,
 					sizeof(lpPerSocketContext->pIOContext->Buffer)
 				);
-				lpAcceptSocketContext->pIOContext->wsabuf.buf = lpAcceptSocketContext->pIOContext->Buffer;
 
-				nRet = WSASend(
-					lpPerSocketContext->pIOContext->SocketAccept,
-					&lpAcceptSocketContext->pIOContext->wsabuf, 1,
-					&dwSendNumBytes,
-					0,
-					&(lpAcceptSocketContext->pIOContext->Overlapped), NULL);
+				curcon->addRecvQueue(lpAcceptSocketContext->pIOContext->Buffer, dwIoSize);
+				queue->RequestEvent(curcon);
 
+				if (curcon->getSendData()) {
+					lpAcceptSocketContext->pIOContext->wsabuf.len = curcon->getSendData()->getDataSize();
+					lpAcceptSocketContext->pIOContext->wsabuf.buf = (char*)curcon->getSendData()->getData();
+					nRet = WSASend(
+						lpPerSocketContext->pIOContext->SocketAccept,
+						&lpAcceptSocketContext->pIOContext->wsabuf, 1,
+						&dwSendNumBytes,
+						0,
+						&(lpAcceptSocketContext->pIOContext->Overlapped), NULL);
+					curcon->resizeSendQueue(dwSendNumBytes);
+				}
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//printf("WSASend() failed: %d\n", WSAGetLastError());
 					queue->CloseClient(lpAcceptSocketContext, FALSE);
-				}
-			}
-			else {
-
-				//
-				// AcceptEx completes but doesn't read any data so we need to post
-				// an outstanding overlapped read.
-				//
-				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoRead;
-				dwRecvNumBytes = 0;
-				dwFlags = 0;
-				buffRecv.buf = lpAcceptSocketContext->pIOContext->Buffer,
-				buffRecv.len = BLOCKSIZE;
-				nRet = WSARecv(
-					lpAcceptSocketContext->Socket,
-					&buffRecv, 1,
-					&dwRecvNumBytes,
-					&dwFlags,
-					&lpAcceptSocketContext->pIOContext->Overlapped, NULL);
-
-				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
-					queue->CloseClient(lpAcceptSocketContext, FALSE);
+					cpool.delConnection(curcon);
+					curcon = NULL;
 				}
 			}
 
@@ -835,6 +820,7 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			lpIOContext->nSentBytes = 0;
 			lpIOContext->wsabuf.len = dwIoSize;
 			dwFlags = 0;
+			curcon = cpool.getConnection(lpPerSocketContext->Socket);
 			if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 				//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 				queue->CloseClient(lpPerSocketContext, FALSE);
@@ -842,7 +828,6 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 				cpool.delConnection(curcon);
 				break;
 			}
-			curcon = cpool.getConnection(lpAcceptSocketContext->Socket);
 			if(curcon)
 				queue->RequestEvent(curcon);
 			printf("read\n");
@@ -858,7 +843,10 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 			lpIOContext->IOOperation = ClientIoWrite;
 			lpIOContext->nSentBytes += dwIoSize;
 			dwFlags = 0;
-			if (lpIOContext->nSentBytes < lpIOContext->nTotalBytes) {
+			curcon = cpool.getConnection(lpPerSocketContext->Socket);
+			if (!curcon)
+				break;
+			if (curcon->getSendData() && curcon->getSendData()->getDataSize()<0) {
 
 				//
 				// the previous write operation didn't send all the data,
@@ -878,28 +866,6 @@ DWORD WINAPI libhttppp::Queue::WorkerThread(LPVOID WorkThreadContext) {
 					cpool.delConnection(lpAcceptSocketContext->Socket);
 				} else {
 					curcon->resizeSendQueue(dwSendNumBytes);
-				}
-			}
-			else {
-
-				//
-				// previous write operation completed for this socket, post another recv
-				//
-				lpIOContext->IOOperation = ClientIoRead;
-				dwRecvNumBytes = 0;
-				dwFlags = 0;
-				buffRecv.buf = lpIOContext->Buffer,
-					buffRecv.len = BLOCKSIZE;
-				nRet = WSARecv(
-					lpPerSocketContext->Socket,
-					&buffRecv, 1, &dwRecvNumBytes,
-					&dwFlags,
-					&lpIOContext->Overlapped, NULL);
-				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-					//myprintf("WSARecv() failed: %d\n", WSAGetLastError());
-					queue->CloseClient(lpPerSocketContext, FALSE);
-					queue->DisconnectEvent(curcon);
-					cpool.delConnection(lpAcceptSocketContext->Socket);
 				}
 			}
 			break;
