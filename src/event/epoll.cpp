@@ -112,7 +112,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                         event.data.ptr = (void*) curcon;
                         event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
                         if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event)==-1 && errno==EEXIST)
-                            epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+                            epoll_ctl(epollfd, EPOLL_CTL_MOD,fd, &event);
                         queue->ConnectEvent(curcon);
                     } else {
                         cpool.delConnection(curcon);
@@ -131,9 +131,9 @@ void *libhttppp::Queue::WorkerThread(void *instance){
 CloseConnection:
                 queue->DisconnectEvent(curcon);
                 try {
+                    epoll_ctl(epollfd, EPOLL_CTL_DEL, curcon->getClientSocket()->getSocket(), &event);
                     cpool.delConnection(curcon);
                     curcon=NULL;
-                    epoll_ctl(epollfd, EPOLL_CTL_DEL, events[i].data.fd, &event);
                     queue->_httpexception.Note("Connection shutdown!");
                     continue;
                 } catch(HTTPException &e) {
