@@ -88,6 +88,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
 
     event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
     event.data.fd = queue->_ServerSocket->getSocket();
+    
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, queue->_ServerSocket->getSocket(), &event) < 0) {
         queue->_httpexception.Cirtical("can't create epoll");
         throw queue->_httpexception;
@@ -105,11 +106,12 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                     curcon=cpool.addConnection();
                     ClientSocket *clientsocket=curcon->getClientSocket();
                     int fd=queue->_ServerSocket->acceptEvent(clientsocket);
+                    clientsocket->setnonblocking();
                     if(fd>0) {
                         event.data.fd = fd;
-                        clientsocket->setnonblocking();
+                        event.data.ptr = (void*) curcon;
                         event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
-                        if(epoll_ctl(epollfd, EPOLL_CTL_ADD, event.data.fd, &event)==-1 && errno==EEXIST)
+                        if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event)==-1 && errno==EEXIST)
                             epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
                         queue->ConnectEvent(curcon);
                     } else {
@@ -122,7 +124,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                 }
                 continue;
             } else {
-                curcon=cpool.getConnection(events[i].data.fd);
+                curcon=(Connection*)events[i].data.ptr;
             }
 
             if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR) {
