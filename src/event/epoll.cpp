@@ -99,6 +99,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
         for(int i=0; i<n; i++) {
             Connection *curcon=NULL;
             if(events[i].data.fd == queue->_ServerSocket->getSocket()) {
+             while(1){
                 try {
                     /*will create warning debug mode that normally because the check already connection
                      * with this socket if getconnection throw they will be create a new one
@@ -115,6 +116,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                             epoll_ctl(epollfd, EPOLL_CTL_MOD,fd, &event);
                         queue->ConnectEvent(curcon);
                     } else {
+                        break;
                         cpool.delConnection(curcon);
                     }
                 } catch(HTTPException &e) {
@@ -122,6 +124,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                     if(e.isCritical())
                         throw e;
                 }
+             }
                 continue;
             } else {
                 curcon=(Connection*)events[i].data.ptr;
@@ -174,7 +177,7 @@ CloseConnection:
 
                         sended=queue->_ServerSocket->sendData(curcon->getClientSocket(),
                                                        (void*)curcon->getSendData()->getData(),
-                                                       curcon->getSendData()->getDataSize(),MSG_NOSIGNAL);
+                                                       curcon->getSendData()->getDataSize());
 
 
                         if(sended==-1) {

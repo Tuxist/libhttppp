@@ -133,7 +133,6 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 #endif
 	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
-	_Addr = NULL;
 #ifndef Windows
 	_UXSocketAddr = NULL;
 #endif
@@ -210,8 +209,8 @@ libhttppp::ServerSocket::~ServerSocket(){
 #ifndef Windows
     if(_UXSocketAddr)
       unlink(_UXSocketAddr->sun_path);
+    delete _UXSocketAddr;
 #endif
-	delete[] _Addr;
 }
 
 void libhttppp::ServerSocket::setnonblocking(){
