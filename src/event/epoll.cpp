@@ -86,7 +86,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
         throw queue->_httpexception;
     }
 
-    event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
+    event.events = EPOLLIN | EPOLLOUT;
     event.data.fd = queue->_ServerSocket->getSocket();
     
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, queue->_ServerSocket->getSocket(), &event) < 0) {
@@ -130,7 +130,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                 curcon=(Connection*)events[i].data.ptr;
             }
 
-            if(events[i].events & EPOLLRDHUP || events[i].events & EPOLLERR) {
+            if(events[i].events & EPOLLRDHUP) {
 CloseConnection:
                 queue->DisconnectEvent(curcon);
                 try {
@@ -143,10 +143,13 @@ CloseConnection:
                     queue->_httpexception.Note("Can't do Connection shutdown!");
                 }
                 ;
-            }
-
-
-            if(events[i].events & EPOLLIN) {
+            }else if(events[i].events & EPOLLHUP || events[i].events & EPOLLERR){
+                 for(int ic=0; ic<n; ic++){
+                   curcon=(Connection*)events[i].data.ptr;
+                   cpool.delConnection(curcon);
+                 }
+                 queue->_httpexception.Error("some epoll error cleaning up connections");
+            }else if(events[i].events & EPOLLIN) {
                 try {
                     char buf[BLOCKSIZE];
                     int rcvsize=0;
@@ -168,9 +171,7 @@ CloseConnection:
                     if(e.isError())
                         goto CloseConnection;
                 }
-            }
-
-            if(events[i].events & EPOLLOUT) {
+            }else if(events[i].events & EPOLLOUT) {
                 try {
                     if(curcon && curcon->getSendData()) {
                         ssize_t sended=0;
