@@ -129,8 +129,25 @@ void *libhttppp::Queue::WorkerThread(void *instance){
             } else {
                 curcon=(Connection*)events[i].data.ptr;
             }
-
-            if(events[i].events & EPOLLRDHUP) {
+            if(events[i].events & EPOLLIN) {
+                try {
+                    char buf[BLOCKSIZE];
+                    int rcvsize=0;
+                    rcvsize=queue->_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
+                    if(rcvsize>0) {
+                      curcon->addRecvQueue(buf,rcvsize);
+                      queue->RequestEvent(curcon);
+                    }
+                    event.events = EPOLLIN | EPOLLOUT |EPOLLRDHUP;
+                    epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+                } catch(HTTPException &e) {
+                    if(e.isCritical()) {
+                        throw e;
+                    }
+                    if(e.isError())
+                        goto CloseConnection;
+                }
+            }else if(events[i].events & EPOLLRDHUP) {
 CloseConnection:
                 queue->DisconnectEvent(curcon);
                 try {
@@ -149,28 +166,6 @@ CloseConnection:
                    cpool.delConnection(curcon);
                  }
                  queue->_httpexception.Error("some epoll error cleaning up connections");
-            }else if(events[i].events & EPOLLIN) {
-                try {
-                    char buf[BLOCKSIZE];
-                    int rcvsize=0;
-                    try {
-                        rcvsize=queue->_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-                        if(rcvsize>0) {
-                            curcon->addRecvQueue(buf,rcvsize);
-                        }
-                    } catch(HTTPException &e) {
-
-                    }
-                    queue->RequestEvent(curcon);
-                    event.events = EPOLLIN | EPOLLOUT |EPOLLRDHUP;
-                    epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
-                } catch(HTTPException &e) {
-                    if(e.isCritical()) {
-                        throw e;
-                    }
-                    if(e.isError())
-                        goto CloseConnection;
-                }
             }else if(events[i].events & EPOLLOUT) {
                 try {
                     if(curcon && curcon->getSendData()) {

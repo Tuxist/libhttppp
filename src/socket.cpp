@@ -301,11 +301,11 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(rval==-1){
 #ifdef Linux
     char errbuf[255];
-    _httpexception.Error(strerror_r(errno,errbuf,255));
+    _httpexception.Error("Socket sendata:",strerror_r(errno,errbuf,255));
 #else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    _httpexception.Error(errbuf);
+    _httpexception.Error("Socket sendata:",errbuf);
 #endif
     if(errno != EAGAIN)
       throw _httpexception;
@@ -333,11 +333,11 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
   if(recvsize==-1){
 #ifdef Linux 
     char errbuf[255];
-    _httpexception.Error(strerror_r(errno,errbuf,255));
+    _httpexception.Error("Socket recvata:",strerror_r(errno,errbuf,255));
 #else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    _httpexception.Error(errbuf);
+    _httpexception.Error("Socket recvata:",errbuf);
 #endif
     throw _httpexception;
   }
