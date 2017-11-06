@@ -99,33 +99,29 @@ void *libhttppp::Queue::WorkerThread(void *instance){
         for(int i=0; i<n; i++) {
             Connection *curcon=NULL;
             if(events[i].data.fd == queue->_ServerSocket->getSocket()) {
-             while(1){
-                try {
-                    /*will create warning debug mode that normally because the check already connection
-                     * with this socket if getconnection throw they will be create a new one
-                     */
-                    curcon=cpool.addConnection();
-                    ClientSocket *clientsocket=curcon->getClientSocket();
-                    int fd=queue->_ServerSocket->acceptEvent(clientsocket);
-                    clientsocket->setnonblocking();
-                    if(fd>0) {
-                        event.data.fd = fd;
-                        event.data.ptr = (void*) curcon;
-                        event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
-                        if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event)==-1 && errno==EEXIST)
-                            epoll_ctl(epollfd, EPOLL_CTL_MOD,fd, &event);
-                        queue->ConnectEvent(curcon);
-                    } else {
-                        break;
-                        cpool.delConnection(curcon);
-                    }
-                } catch(HTTPException &e) {
-                    cpool.delConnection(curcon);
-                    if(e.isCritical())
-                        throw e;
+              try {
+              /*will create warning debug mode that normally because the check already connection
+               * with this socket if getconnection throw they will be create a new one
+               */
+                curcon=cpool.addConnection();
+                ClientSocket *clientsocket=curcon->getClientSocket();
+                int fd=queue->_ServerSocket->acceptEvent(clientsocket);
+                clientsocket->setnonblocking();
+                if(fd>0) {
+                  event.data.fd = fd;
+                  event.data.ptr = (void*) curcon;
+                  event.events = EPOLLIN |EPOLLOUT |EPOLLRDHUP;
+                  if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event)==-1 && errno==EEXIST)
+                    epoll_ctl(epollfd, EPOLL_CTL_MOD,fd, &event);
+                  queue->ConnectEvent(curcon);
+                } else {
+                  cpool.delConnection(curcon);
                 }
-             }
-                continue;
+              } catch(HTTPException &e) {
+                cpool.delConnection(curcon);
+                if(e.isCritical())
+                  throw e;
+              }
             } else {
                 curcon=(Connection*)events[i].data.ptr;
             }
@@ -137,6 +133,8 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                     if(rcvsize>0) {
                       curcon->addRecvQueue(buf,rcvsize);
                       queue->RequestEvent(curcon);
+                    }else{
+                      continue;  
                     }
                     event.events = EPOLLIN | EPOLLOUT |EPOLLRDHUP;
                     epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
@@ -170,29 +168,21 @@ CloseConnection:
                 try {
                     if(curcon && curcon->getSendData()) {
                         ssize_t sended=0;
-
                         sended=queue->_ServerSocket->sendData(curcon->getClientSocket(),
                                                        (void*)curcon->getSendData()->getData(),
                                                        curcon->getSendData()->getDataSize());
 
 
-                        if(sended==-1) {
-                            queue->_httpexception.Note("Sending Failed");
-                            if (errno == EAGAIN || EWOULDBLOCK) {
-                                continue;
-                            } else {
-                                curcon->cleanSendData();
-                                goto CloseConnection;
-                            }
-                        } else {
+                        if(sended>0){
                             curcon->resizeSendQueue(sended);
+                            queue->ResponseEvent(curcon);
                         }
                     } else {
                         event.events = EPOLLIN |EPOLLRDHUP;
                         epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
                     }
-                    queue->ResponseEvent(curcon);
                 } catch(HTTPException &e) {
+                    curcon->cleanSendData();
                     goto CloseConnection;
                 }
             }

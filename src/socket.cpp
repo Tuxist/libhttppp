@@ -307,7 +307,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
     strerror_r(errno,errbuf,255);
     _httpexception.Error("Socket sendata:",errbuf);
 #endif
-    if(errno != EAGAIN)
+    if(errno != EAGAIN || errno !=EWOULDBLOCK)
       throw _httpexception;
   }
   return rval;
@@ -339,7 +339,8 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     strerror_r(errno,errbuf,255);
     _httpexception.Error("Socket recvata:",errbuf);
 #endif
-    throw _httpexception;
+    if(errno != EAGAIN || errno !=EWOULDBLOCK)
+      throw _httpexception;
   }
   return recvsize;
 }

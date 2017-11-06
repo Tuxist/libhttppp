@@ -212,7 +212,7 @@ libhttppp::HttpResponse::HttpResponse(){
   setVersion(HTTPVERSION("1.1"));
   _ContentType=NULL;
   _ContentLength=NULL;
-  _Connection=setData("Connection","Keep-Alive");
+  _Connection=setData("Connection","keep-alive");
 }
 
 void libhttppp::HttpResponse::setState(const char* httpstate){
@@ -231,15 +231,15 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
-  _ContentLength=setData("Content-Length",len,_ContentLength);
+  _ContentLength=setData("content-length",len,_ContentLength);
 }
 
 void libhttppp::HttpResponse::setContentType(const char* type){
-  _ContentType=setData("Content-Type",type,_ContentType);
+  _ContentType=setData("content-type",type,_ContentType);
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  _ContentLength=setData("Connection",type,_ContentType);
+  _ContentLength=setData("connection",type,_ContentType);
 }
 
 void libhttppp::HttpResponse::setVersion(const char* version){
@@ -278,9 +278,8 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 
 
 void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, ssize_t datalen){
-  setData("Connection","keep-alive");
   if(datalen!=-1)
-    setData("Content-Length",datalen);
+    setData("content-length",datalen,_ContentLength);
   char *header;
   size_t headersize = printHeader(&header);
   curconnection->addSendQueue(header,headersize);
