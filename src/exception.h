@@ -81,19 +81,19 @@ namespace libhttppp {
     }
     
     virtual const char* Warning(const char *desc,const char *msg=NULL){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
+      return ErrorTemplate(&_Warning,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
     }
   
     virtual const char* Error(const char *desc,const char *msg = NULL){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
+      return ErrorTemplate(&_Error,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
     }
   
-    virtual const char* Cirtical(const char *desc,const char *msg = NULL){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
+    virtual const char* Critical(const char *desc,const char *msg = NULL){
+      return ErrorTemplate(&_Critical,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
     }
   
-	virtual const char* Cirtical(const char *desc, int msg) {
-		return ErrorTemplate(&_Note, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
+	virtual const char* Critical(const char *desc, int msg) {
+		return ErrorTemplate(&_Critical, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
 	}
 
     virtual const char* what() const throw(){

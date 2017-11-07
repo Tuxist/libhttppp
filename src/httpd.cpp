@@ -92,7 +92,7 @@ libhttppp::HTTPDCmdController::HTTPDCmdController() {
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey,bool required, const char *defaultvalue, const char *help) {
 	if (!key || !skey || !help) {
-		_httpexception.Cirtical("cmd parser key,skey or help not set!");
+		_httpexception.Critical("cmd parser key,skey or help not set!");
 		throw _httpexception;
 	}
 	/*if key exist overwriting options*/
@@ -263,7 +263,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdCon
     parseCmd(argc,argv);
 	if (!checkRequired()) {
 		printHelp();
-		_httpexception.Cirtical("cmd parser not enough arguments given");
+		_httpexception.Critical("cmd parser not enough arguments given");
 		throw _httpexception;
 	}
 

@@ -253,7 +253,7 @@ libhttppp::ConnectionPool::ConnectionPool(ServerSocket *socket){
   _lastConnection=NULL;
   _ServerSocket=socket;
   if(!_ServerSocket){
-    _httpexception.Cirtical("ServerSocket not set!");
+    _httpexception.Critical("ServerSocket not set!");
     throw _httpexception;
   }
 }

@@ -99,12 +99,12 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   try {
     std::copy(uxsocket,uxsocket+strlen(uxsocket),_UXSocketAddr->sun_path);
   }catch(...){
-     _httpexception.Cirtical("Can't copy Server UnixSocket");
+     _httpexception.Critical("Can't copy Server UnixSocket");
      throw _httpexception;
   }
 
   if ((_Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
-    _httpexception.Cirtical("Can't create Socket UnixSocket");
+    _httpexception.Critical("Can't create Socket UnixSocket");
     throw _httpexception;
   }
 
@@ -145,7 +145,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   WSADATA wsaData;
   iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
   if (iResult != 0) {
-	  _httpexception.Cirtical("WSAStartup failed");
+	  _httpexception.Critical("WSAStartup failed");
   }
 #else
   _UXSocketAddr = NULL;
@@ -165,7 +165,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 
   int s = getaddrinfo(addr, port_buffer, &_SockAddr, &result);
   if (s != 0) {
-	  _httpexception.Cirtical("getaddrinfo failed ", gai_strerror(s));
+	  _httpexception.Critical("getaddrinfo failed ", gai_strerror(s));
 	  throw _httpexception;
   }
 
@@ -199,7 +199,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   }
 
   if (rp == NULL) {               /* No address succeeded */
-	  _httpexception.Cirtical("Could not bind\n");
+	  _httpexception.Critical("Could not bind\n");
 	  throw _httpexception;
   }
   freeaddrinfo(result);
@@ -224,7 +224,7 @@ void libhttppp::ServerSocket::setnonblocking(){
 
 void libhttppp::ServerSocket::listenSocket(){
   if(listen(_Socket, _Maxconnections) < 0){
-    _httpexception.Cirtical("Can't listen Server Socket", errno);
+    _httpexception.Critical("Can't listen Server Socket", errno);
     throw _httpexception;
   }
 }
@@ -339,8 +339,9 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     strerror_r(errno,errbuf,255);
     _httpexception.Error("Socket recvata:",errbuf);
 #endif
-    if(errno != EAGAIN || errno !=EWOULDBLOCK)
+    if(errno != EAGAIN || errno !=EWOULDBLOCK){
       throw _httpexception;
+    }
   }
   return recvsize;
 }

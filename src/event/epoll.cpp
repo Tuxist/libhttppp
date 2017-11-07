@@ -62,7 +62,7 @@ void libhttppp::Queue::runEventloop() {
     for(int i=0; i<threadcount; i++){
     int thc = pthread_create( &threads[i], NULL, &WorkerThread,(void*) this);
       if( thc != 0 ) {
-        _httpexception.Cirtical("can't create thread");
+        _httpexception.Critical("can't create thread");
         throw _httpexception;
       }  
     }
@@ -82,23 +82,26 @@ void *libhttppp::Queue::WorkerThread(void *instance){
     int epollfd = epoll_create(queue->_ServerSocket->getMaxconnections());
 
     if (epollfd == -1) {
-        queue->_httpexception.Cirtical("can't create epoll");
+        queue->_httpexception.Critical("can't create epoll");
         throw queue->_httpexception;
     }
 
-    event.events = EPOLLIN | EPOLLOUT;
+    event.events = EPOLLIN | EPOLLOUT | EPOLLONESHOT;
     event.data.fd = queue->_ServerSocket->getSocket();
     
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, queue->_ServerSocket->getSocket(), &event) < 0) {
-        queue->_httpexception.Cirtical("can't create epoll");
+        queue->_httpexception.Critical("can't create epoll");
         throw queue->_httpexception;
     }
-
+    
+    int srvssocket=queue->_ServerSocket->getSocket();
+    int maxconnets=queue->_ServerSocket->getMaxconnections();
+    
     while(queue->_EventEndloop) {
-        int n = epoll_wait(epollfd, events, queue->_ServerSocket->getMaxconnections(), EPOLLWAIT);
+        int n = epoll_wait(epollfd, events,maxconnets, EPOLLWAIT);
         for(int i=0; i<n; i++) {
             Connection *curcon=NULL;
-            if(events[i].data.fd == queue->_ServerSocket->getSocket()) {
+            if(events[i].data.fd == srvssocket) {
               try {
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
@@ -142,8 +145,11 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                     if(e.isCritical()) {
                         throw e;
                     }
-                    if(e.isError())
+                    if(e.isError()){
+                        printf("error\n");
                         goto CloseConnection;
+                    }
+                    
                 }
             }else if(events[i].events & EPOLLRDHUP) {
 CloseConnection:
@@ -185,6 +191,8 @@ CloseConnection:
                     curcon->cleanSendData();
                     goto CloseConnection;
                 }
+            }else{
+              goto CloseConnection;  
             }
         }
         _QueueIns=queue;
