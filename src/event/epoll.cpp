@@ -140,13 +140,13 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                       continue;  
                     }
                     event.events = EPOLLIN | EPOLLOUT |EPOLLRDHUP;
-                    epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+                    epoll_ctl(epollfd, EPOLL_CTL_MOD, curcon->getClientSocket()->getSocket(), &event);
                 } catch(HTTPException &e) {
                     if(e.isCritical()) {
                         throw e;
                     }
                     if(e.isError()){
-                        printf("error\n");
+                        printf("socket: %d \n",curcon->getClientSocket()->getSocket());
                         goto CloseConnection;
                     }
                     
@@ -164,15 +164,9 @@ CloseConnection:
                     queue->_httpexception.Note("Can't do Connection shutdown!");
                 }
                 ;
-            }else if(events[i].events & EPOLLHUP || events[i].events & EPOLLERR){
-                 for(int ic=0; ic<n; ic++){
-                   curcon=(Connection*)events[i].data.ptr;
-                   cpool.delConnection(curcon);
-                 }
-                 queue->_httpexception.Error("some epoll error cleaning up connections");
             }else if(events[i].events & EPOLLOUT) {
                 try {
-                    if(curcon && curcon->getSendData()) {
+                    if(curcon->getSendData()) {
                         ssize_t sended=0;
                         sended=queue->_ServerSocket->sendData(curcon->getClientSocket(),
                                                        (void*)curcon->getSendData()->getData(),
@@ -185,7 +179,7 @@ CloseConnection:
                         }
                     } else {
                         event.events = EPOLLIN |EPOLLRDHUP;
-                        epoll_ctl(epollfd, EPOLL_CTL_MOD, events[i].data.fd, &event);
+                        epoll_ctl(epollfd, EPOLL_CTL_MOD,curcon->getClientSocket()->getSocket(), &event);
                     }
                 } catch(HTTPException &e) {
                     curcon->cleanSendData();
