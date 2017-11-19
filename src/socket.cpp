@@ -288,7 +288,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 #else
     int rval=0;
 #endif
-  if(isSSLTrue()){
+  if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
   }else{
 #ifndef Windows
@@ -319,7 +319,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
   ssize_t recvsize=0;
-  if(isSSLTrue()){
+  if(isSSLTrue() && socket->_SSL){
     recvsize=SSL_read(socket->_SSL,data,size);
   }else{
 #ifndef Windows
