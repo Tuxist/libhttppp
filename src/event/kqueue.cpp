@@ -30,105 +30,169 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/time.h>
 #include <errno.h>
 #include <err.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <signal.h>
 
 #include "../event.h"
 
-libhttppp::Queue::Queue(ServerSocket *socket) : ConnectionPool(socket) {
-  struct kevent change;
-  struct kevent event;
-  pid_t pid;
-  int kq, nev,i,fd;
-
-  struct kevent evSet;
-  struct kevent *evList= new struct kevent[socket->getMaxconnections()];
-  if ((kq = kqueue()) == -1){
-    _httpexception.Cirtical("Can't create Kqueue!!!");
-    throw _httpexception;
-  }
-  EV_SET(&change, 1, EVFILT_TIMER, EV_ADD | EV_ENABLE, 0, 2000, 0);
-  for(;;){
-    nev = kevent(kq, NULL, 0, evList, socket->getMaxconnections(), NULL);
-    if (nev < 1){
-      _httpexception.Cirtical("Kqueue crashed");
-      throw _httpexception;
-    }
-    for (i=0; i<nev; i++) {
-      if (evList[i].flags & EV_EOF) {
-        CloseConnection:
-        try{
-          EV_SET(&evSet, fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-          fd = evList[i].ident;
-          if (kevent(kq, &evSet, 1, NULL, 0, NULL) == -1){
-            _httpexception.Cirtical("Can't delete Client Connection that shoulnd't happend");
-            throw _httpexception;
-          }
-          delConnection(fd);
-          continue;
-         }catch(HTTPException &e){
-           throw e;
-         }
-         continue;
-         ;
-      }else if (evList[i].ident == socket->getSocket()) {
-          try{
-            _httpexception.Note("Acccept Connection!");
-            ClientSocket *clientsocket = new ClientSocket;
-            fd =_ServerSocket->acceptEvent(clientsocket);
-            Connection *curcon=addConnection(clientsocket);
-            EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-            if(kevent(kq, &evSet, 1, NULL, 0, NULL)==-1)
-             delConnection(curcon);
-          }catch(HTTPException &e){
-            continue;
-          }
-        }else if(evList[i].flags & EVFILT_WRITE) {
-          try{
-            Connection *curcon=getConnection(fd);
-            if(curcon->getSendData()){
-              _httpexception.Note("Sending");
-              ssize_t sended=_ServerSocket->sendData(curcon->getClientSocket(),(void*)curcon->getSendData()->getData(),curcon->getSendData()->getDataSize());
-              if(sended==-1){
-                if (errno == EAGAIN || errno==EWOULDBLOCK)
-                  continue;
-                else
-                  goto CloseConnection;
-              }
-              curcon->resizeSendQueue(sended);
-            }else{
-              EV_SET(&evSet, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-            }
-           }catch(HTTPException &e){
-             goto CloseConnection;
-           }
-        }else if(evList[i].flags & EVFILT_READ) {
-          try{
-            Connection *curcon=getConnection(fd);
-            _httpexception.Note("Reciving");
-            char buf[BLOCKSIZE];
-            int rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-            if(rcvsize==-1){
-               if (errno == EAGAIN || errno == EWOULDBLOCK)
-                 continue;
-               else
-                 goto CloseConnection;
-            }
-            curcon->addRecvQueue(buf,rcvsize);
-            RequestEvent(curcon);
-            if(curcon->getSendData()){
-              EV_SET(&evSet, fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-            }
-          }catch(HTTPException &e){
-            if(e.isError())
-             goto CloseConnection;
-            else if(e.isCritical())
-              std::terminate();
-          }
-        }
-     }
-  }
-  delete evList;
+libhttppp::Queue::Queue(ServerSocket *serversocket) {
+    _ServerSocket=serversocket;
+    _ServerSocket->setnonblocking();
+    _ServerSocket->listenSocket();
+    _EventEndloop =true;
 }
 
-libhttppp::Queue::~Queue(){
+libhttppp::Queue::~Queue() {
+    
+}
 
+libhttppp::Queue* _QueueIns=NULL;
+
+void libhttppp::Queue::CtrlHandler(int signum) {
+    _QueueIns->_EventEndloop=false;
+}
+
+void libhttppp::Queue::runEventloop() {
+    int threadcount=1;
+    pthread_t threads[threadcount];
+    for(int i=0; i<threadcount; i++){
+        int thc = pthread_create( &threads[i], NULL, &WorkerThread,(void*) this);
+        if( thc != 0 ) {
+            _httpexception.Critical("can't create thread");
+            throw _httpexception;
+        }
+    }
+    for(int i=0; i<threadcount; i++){
+        pthread_join(threads[i], NULL);
+    }
+}
+
+void *libhttppp::Queue::WorkerThread(void *instance){
+    Queue *queue=(Queue *)instance;
+    ConnectionPool cpool(queue->_ServerSocket);
+    int srvssocket=queue->_ServerSocket->getSocket();
+    int maxconnets=queue->_ServerSocket->getMaxconnections();
+    
+    struct kevent event;
+    struct kevent *events;
+    events = new struct kevent[(maxconnets*sizeof(struct kevent))];
+    int kq = kqueue();
+    if (kq    == -1)
+        return NULL;
+    EV_SET(&event,queue->_ServerSocket->getSocket(), EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_WRITE,
+           0,    NULL);
+    /* Attach event to the    kqueue.    */
+    int ret = kevent(kq, &event, 1, NULL, 0, NULL);
+    if (ret == -1)
+        return NULL;
+    if (event.flags & EV_ERROR)
+        return NULL;
+
+    
+    
+    while(queue->_EventEndloop) {
+        ret = kevent(kq, NULL, 0, events, maxconnets, NULL);
+        for(int i=0; i<ret; i++) {
+            Connection *curcon=NULL;
+            if(events[i].ident == srvssocket) {
+                try {
+                    /*will create warning debug mode that normally because the check already connection
+                     * with this socket if getconnection throw they will be create a new one
+                     */
+                    curcon=cpool.addConnection();
+                    ClientSocket *clientsocket=curcon->getClientSocket();
+                    int fd=queue->_ServerSocket->acceptEvent(clientsocket);
+                    clientsocket->setnonblocking();
+                    if(fd>0) {
+                        EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+                        events[i].udata=(void*)curcon;
+                        queue->ConnectEvent(curcon);
+                    } else {
+                        cpool.delConnection(curcon);
+                    }
+                } catch(HTTPException &e) {
+                    cpool.delConnection(curcon);
+                    if(e.isCritical())
+                        throw e;
+                }
+            } else {
+                curcon=(Connection*)events[i].udata;
+            }
+            if(events[i].flags & EVFILT_READ) {
+                try {
+                    char buf[BLOCKSIZE];
+                    int rcvsize=0;
+                    rcvsize=queue->_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
+                    if(rcvsize>0) {
+                        curcon->addRecvQueue(buf,rcvsize);
+                        queue->RequestEvent(curcon);
+                    }else{
+                        continue;
+                    }
+                } catch(HTTPException &e) {
+                    if(e.isCritical()) {
+                        throw e;
+                    }
+                    if(e.isError()){
+                        printf("socket: %d \n",curcon->getClientSocket()->getSocket());
+                        goto CloseConnection;
+                    }
+                    
+                }
+            }else if(events[i].flags & EV_EOF) {
+            CloseConnection:
+                queue->DisconnectEvent(curcon);
+                try {
+                    cpool.delConnection(curcon);
+                    curcon=NULL;
+                    queue->_httpexception.Note("Connection shutdown!");
+                    continue;
+                } catch(HTTPException &e) {
+                    queue->_httpexception.Note("Can't do Connection shutdown!");
+                }
+                ;
+            }else if(events[i].flags & EVFILT_WRITE) {
+                try {
+                    if(curcon->getSendData()) {
+                        ssize_t sended=0;
+                        sended=queue->_ServerSocket->sendData(curcon->getClientSocket(),
+                                                              (void*)curcon->getSendData()->getData(),
+                                                              curcon->getSendData()->getDataSize());
+                        
+                        
+                        if(sended>0){
+                            curcon->resizeSendQueue(sended);
+                            queue->ResponseEvent(curcon);
+                        }
+                    }
+                } catch(HTTPException &e) {
+                    curcon->cleanSendData();
+                    goto CloseConnection;
+                }
+            }else{
+                goto CloseConnection;
+            }
+        }
+        _QueueIns=queue;
+        signal(SIGINT, CtrlHandler);
+    }
+    delete[] events;
+    return NULL;
+}
+
+void libhttppp::Queue::RequestEvent(Connection *curcon) {
+    return;
+}
+
+void libhttppp::Queue::ResponseEvent(libhttppp::Connection *curcon) {
+    return;
+};
+
+void libhttppp::Queue::ConnectEvent(libhttppp::Connection *curcon) {
+    return;
+};
+
+void libhttppp::Queue::DisconnectEvent(Connection *curcon) {
+    return;
 }
