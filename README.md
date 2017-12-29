@@ -14,13 +14,12 @@
 ## On Work
 - Httpdigestauth
 - iocp (Windows support)
-
+- kqueue (Mac OS BSD support)
 
 ## Todo:
 - Httpntlmauth
 - Httpcompression (gzip)
 - Httpclientsupport
-- kqueue (Mac OS BSD support)
 - select (other os)
 
 ## Download:

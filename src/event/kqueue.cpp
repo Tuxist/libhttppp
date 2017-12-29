@@ -74,38 +74,47 @@ void *libhttppp::Queue::WorkerThread(void *instance){
     int srvssocket=queue->_ServerSocket->getSocket();
     int maxconnets=queue->_ServerSocket->getMaxconnections();
     
-    struct kevent event;
+    struct kevent setevent;
     struct kevent *events;
     events = new struct kevent[(maxconnets*sizeof(struct kevent))];
     int kq = kqueue();
-    if (kq    == -1)
-        return NULL;
-    EV_SET(&event,queue->_ServerSocket->getSocket(), EVFILT_VNODE, EV_ADD | EV_CLEAR, NOTE_WRITE,
-           0,    NULL);
+    if (kq    == -1){
+        queue->_httpexception.Critical("can't create kqueue");
+        throw queue->_httpexception;
+    }
+    /* Initialize kevent structure. */
+    EV_SET(&setevent,srvssocket, EVFILT_READ | EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0,0,NULL);
     /* Attach event to the    kqueue.    */
-    int ret = kevent(kq, &event, 1, NULL, 0, NULL);
-    if (ret == -1)
-        return NULL;
-    if (event.flags & EV_ERROR)
-        return NULL;
-
+    int ret = kevent(kq, &setevent, 1, events, maxconnets, NULL);
+    if (ret == -1){
+        queue->_httpexception.Critical("can't attach event kqueue");
+        throw queue->_httpexception;
+    }
+    
+    if (setevent.flags & EV_ERROR){
+        queue->_httpexception.Critical("everror on event kqueue");
+        throw queue->_httpexception;
+    }
     
     
     while(queue->_EventEndloop) {
+        printf("test\n");
         ret = kevent(kq, NULL, 0, events, maxconnets, NULL);
+        printf("ret: %d \n",ret);
         for(int i=0; i<ret; i++) {
+            printf("loop\n");
             Connection *curcon=NULL;
-            if(events[i].ident == srvssocket) {
+            if((int)events[i].ident == srvssocket) {
                 try {
                     /*will create warning debug mode that normally because the check already connection
                      * with this socket if getconnection throw they will be create a new one
                      */
+                    printf("connecting\n");
                     curcon=cpool.addConnection();
                     ClientSocket *clientsocket=curcon->getClientSocket();
                     int fd=queue->_ServerSocket->acceptEvent(clientsocket);
                     clientsocket->setnonblocking();
                     if(fd>0) {
-                        EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
                         events[i].udata=(void*)curcon;
                         queue->ConnectEvent(curcon);
                     } else {
