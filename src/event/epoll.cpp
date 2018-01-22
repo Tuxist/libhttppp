@@ -76,7 +76,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
     ConnectionPool cpool(queue->_ServerSocket);
     struct epoll_event *events;
     struct epoll_event  event = {0};
-    events = new epoll_event[(queue->_ServerSocket->getMaxconnections()*sizeof(struct epoll_event))];
+    events = new epoll_event[(queue->_ServerSocket->getMaxconnections())];
     for(int i=0; i<queue->_ServerSocket->getMaxconnections(); i++)
         events[i].data.fd = -1;
     int epollfd = epoll_create1(0);
@@ -86,7 +86,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
         throw queue->_httpexception;
     }
 
-    event.events = EPOLLIN |  EPOLLRDHUP | EPOLLET | EPOLLONESHOT;
+    event.events = EPOLLIN |  EPOLLRDHUP | EPOLLONESHOT;
     event.data.fd = queue->_ServerSocket->getSocket();
     
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, queue->_ServerSocket->getSocket(), &event) < 0) {

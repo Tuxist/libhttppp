@@ -44,7 +44,7 @@ void libhttppp::HTTPS::createContext(){
   SSL_load_error_strings();	
   OpenSSL_add_ssl_algorithms();
   const SSL_METHOD *method;
-  method = TLS_server_method();
+  method = SSLv23_server_method();
   _CTX = SSL_CTX_new(method);
   if (!_CTX) {
     perror("Unable to create SSL context");
