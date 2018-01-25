@@ -110,7 +110,7 @@ void *libhttppp::Queue::WorkerThread(void *instance){
         }
         for(int i=0; i<n; i++) {
             Connection *curcon=NULL;
-            printf("fd=%d; events:%s%s%s%s\n",events[i].data.fd,
+            printf("fd=%p; events:%s%s%s%s\n",events[i].data.ptr,
                 events[i].events & EPOLLIN ? "EPOLLIN " : "",
                 events[i].events & EPOLLOUT ? "EPOLLOUT " : "",
                 events[i].events & EPOLLHUP ? "EPOLLHUP " : "",
@@ -126,7 +126,6 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                 int fd=queue->_ServerSocket->acceptEvent(clientsocket);
                 clientsocket->setnonblocking();
                 if(fd>0) {
-                  event.data.fd = fd;
                   event.data.ptr = (void*) curcon;
                   event.events = EPOLLIN |EPOLLRDHUP;
                   if(epoll_ctl(epollfd, EPOLL_CTL_ADD, fd, &event)==-1 && errno==EEXIST)
@@ -135,7 +134,6 @@ void *libhttppp::Queue::WorkerThread(void *instance){
                 } else {
                   cpool.delConnection(curcon);
                 }
-                printf("connect clientsocket: %d event fd: %d \n",clientsocket->getSocket(),fd);
               } catch(HTTPException &e) {
                 cpool.delConnection(curcon);
                 if(e.isCritical())
