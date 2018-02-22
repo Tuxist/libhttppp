@@ -73,11 +73,12 @@ namespace libhttppp {
 	  HTTPException   _httpexception;
   };
 
-  class HttpD : public HTTPDCmdController {
+  class HttpD {
   public:
     HttpD(int argc, char** argv);
     ~HttpD();
-    ServerSocket    *getServerSocket();
+    ServerSocket       *getServerSocket();
+    HTTPDCmdController *_CmdController;
   private:
     ServerSocket   *_ServerSocket;
     HTTPException   _httpexception;
