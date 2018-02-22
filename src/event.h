@@ -35,18 +35,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <mswsock.h>
 #endif
 
-#ifndef QUEUE_H
-#define QUEUE_H
+#ifndef EVENT_H
+#define EVENT_H
 
 namespace libhttppp {
 #ifdef MSVC
-	class __declspec(dllexport)  Queue {
+	class __declspec(dllexport)  Event {
 #else
-	class __attribute__ ((visibility ("default"))) Queue {
+	class __attribute__ ((visibility ("default"))) Event {
 #endif
 	public:
-		Queue(ServerSocket *serversocket);
-		virtual ~Queue();
+		Event(ServerSocket *serversocket);
+		virtual ~Event();
 
 		/*API Events*/
 		virtual void RequestEvent(Connection *curcon);

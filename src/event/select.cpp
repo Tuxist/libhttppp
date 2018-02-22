@@ -25,42 +25,44 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-libhttppp::Queue::Queue(ServerSocket *serversocket) : ConnectionPool(serversocket) {
+#include "../event.h"
+
+libhttppp::Event::Event(ServerSocket *serversocket) : ConnectionPool(serversocket) {
 	_ServerSocket = serversocket;
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
 	_EventEndloop = true;
-	_QueueIns = this;
+	_EventIns = this;
 }
 
-libhttppp::Queue::~Queue() {
+libhttppp::Event::~Event() {
 
 }
 
-libhttppp::Queue* _QueueIns = NULL;
+libhttppp::Event* _EventIns = NULL;
 
-void libhttppp::Queue::CtrlHandler(int signum) {
-	_QueueIns->_EventEndloop = false;
+void libhttppp::Event::CtrlHandler(int signum) {
+	_EventIns->_EventEndloop = false;
 }
 
 
-void libhttppp::Queue::runEventloop() {
+void libhttppp::Event::runEventloop() {
 	while (_EventEndloop) {
 	}
 }
 
-void libhttppp::Queue::RequestEvent(Connection *curcon) {
+void libhttppp::Event::RequestEvent(Connection *curcon) {
 	return;
 }
 
-void libhttppp::Queue::ResponseEvent(libhttppp::Connection *curcon) {
+void libhttppp::Event::ResponseEvent(libhttppp::Connection *curcon) {
 	return;
 };
 
-void libhttppp::Queue::ConnectEvent(libhttppp::Connection *curcon) {
+void libhttppp::Event::ConnectEvent(libhttppp::Connection *curcon) {
 	return;
 };
 
-void libhttppp::Queue::DisconnectEvent(Connection *curcon) {
+void libhttppp::Event::DisconnectEvent(Connection *curcon) {
 	return;
 }

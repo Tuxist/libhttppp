@@ -58,9 +58,9 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
      curres.send(curcon,buffer.c_str(),buffer.length());
 };
 
-class Controller : public libhttppp::Queue {
+class Controller : public libhttppp::Event {
 public:
-  Controller(libhttppp::ServerSocket* serversocket) : Queue(serversocket){
+  Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
     
   };
   void RequestEvent(libhttppp::Connection *curcon){

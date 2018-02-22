@@ -131,9 +131,9 @@ private:
   std::stringstream sysstream;
 };
 
-class Controller : public libhttppp::Queue {
+class Controller : public libhttppp::Event {
 public:
-  Controller(libhttppp::ServerSocket* serversocket) : Queue(serversocket){
+  Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
     
   };
   

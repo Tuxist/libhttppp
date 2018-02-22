@@ -32,9 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public libhttppp::Queue {
+class Controller : public libhttppp::Event {
 public:
-  Controller(libhttppp::ServerSocket* serversocket) : Queue(serversocket){
+  Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
     
   };
   void RequestEvent(libhttppp::Connection *curcon){
