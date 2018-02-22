@@ -247,7 +247,7 @@ libhttppp::HTTPDCmdController::~HTTPDCmdController() {
 }
 
 
-libhttppp::HttpD::HttpD(int argc, char** argv) : HTTPDCmdController::HTTPDCmdController(){
+libhttppp::HttpD::HttpD(int argc, char** argv){
 	/*Register Parameters*/
 	registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
     registerCmd("httpaddr",'a', true,"0.0.0.0","Address to listen");

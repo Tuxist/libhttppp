@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef Windows
   #include <Windows.h>
   #include <mswsock.h>
+  #include <Strsafe.h>
 #endif
 
 #ifndef EVENT_H

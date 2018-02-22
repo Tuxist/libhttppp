@@ -229,6 +229,29 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
   return -1;
 }
 
+bool libhttppp::Connection::trylock(){
+#ifdef Windows
+  return false;
+#else
+  if(pthread_mutex_trylock(&_CMutex)==0)
+    return true;
+  else
+    return false;  
+#endif    
+}
+
+bool libhttppp::Connection::unlock(){
+#ifdef Windows
+  return false;  
+#else
+  if(pthread_mutex_unlock(&_CMutex)==0)
+    return true;
+  else
+    return false;   
+#endif    
+}
+
+
 libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket;
   _nextConnection=NULL;
@@ -238,6 +261,11 @@ libhttppp::Connection::Connection(){
   _SendDataFirst=NULL;
   _SendDataLast=NULL;
   _SendDataSize=0;
+#ifdef Windows
+  _CMutex = (HANDLE) ::CreateMutex(0, 0, 0);
+#else
+  _CMutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+#endif
 }
 
 libhttppp::Connection::~Connection(){

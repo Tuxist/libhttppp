@@ -30,6 +30,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "socket.h"
 #include "exception.h"
 
+#ifdef Windows
+  #include <windows.h>
+  #include <process.h>
+#else
+  #include "pthread.h"
+#endif
+
 #ifndef CONNECTIONS_H
 #define CONNECTIONS_H
 
@@ -83,6 +90,10 @@ namespace libhttppp {
     size_t          getRecvSize(); 
 
     int             pollState;
+    
+    /*Mutex functions for worker*/
+    bool            trylock();
+    bool            unlock();
   private:
     ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
 				 size_t *qsize,size_t size);
@@ -96,6 +107,11 @@ namespace libhttppp {
     ConnectionData *_ReadDataFirst;
     ConnectionData *_ReadDataLast;
     size_t          _ReadDataSize;
+#ifdef Windows
+    HANDLE           _CMutex;
+#else
+    pthread_mutex_t  _CMutex; 
+#endif    
     /*Helper functions*/
     Connection();
     ~Connection();

@@ -152,7 +152,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 #endif
 
   char port_buffer[6];
-  snprintf(port_buffer,6, "%hu", port);
+  snprintf(port_buffer,6, "%d", port);
   struct addrinfo *result, *rp;
   memset(&_SockAddr, 0, sizeof(struct addrinfo));
   _SockAddr.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
