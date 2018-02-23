@@ -12,18 +12,23 @@ set(libhttpSrcs
   httpd.cpp
   https.cpp
   base64.cpp
+  threadpool.cpp
 )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    ADD_DEFINITIONS(-DWIN)
+   ADD_DEFINITIONS(-DEVENT_IOCP)
    list(APPEND libhttpSrcs "event/iocp.cpp")
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+   ADD_DEFINITIONS(-DEVENT_EPOLL)
    list(APPEND libhttpSrcs "event/epoll.cpp")
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
        ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   ADD_DEFINITIONS(-DEVENT_KQUEUE)
    list(APPEND libhttpSrcs "event/kqueue.cpp")
 ELSE()
    list(APPEND libhttpSrcs "event/select.cpp")
+   ADD_DEFINITIONS(-DEVENT_SELECT)
 ENDIF()
 
 include_directories(
@@ -66,6 +71,7 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
+              threadpool.h
               "${CMAKE_BINARY_DIR}/config.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp

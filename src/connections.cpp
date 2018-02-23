@@ -231,6 +231,10 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 
 bool libhttppp::Connection::trylock(){
 #ifdef Windows
+	if(WaitForSingleObject(_CMutex,INFINITE) == WAIT_OBJECT_0)
+      return true;
+	else
+	  return false;
   return false;
 #else
   if(pthread_mutex_trylock(&_CMutex)==0)
@@ -242,7 +246,10 @@ bool libhttppp::Connection::trylock(){
 
 bool libhttppp::Connection::unlock(){
 #ifdef Windows
-  return false;  
+  if(!ReleaseMutex(_CMutex))
+    return false;
+  else
+    return true;  
 #else
   if(pthread_mutex_unlock(&_CMutex)==0)
     return true;
@@ -262,13 +269,16 @@ libhttppp::Connection::Connection(){
   _SendDataLast=NULL;
   _SendDataSize=0;
 #ifdef Windows
-  _CMutex = (HANDLE) ::CreateMutex(0, 0, 0);
+  _CMutex = (HANDLE)::CreateMutex(0, 0, 0);
 #else
   _CMutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
 #endif
 }
 
 libhttppp::Connection::~Connection(){
+#ifdef Windows
+  CloseHandle(_CMutex);
+#endif
   delete _ClientSocket;
   delete _ReadDataFirst;
   delete _SendDataFirst;

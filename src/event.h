@@ -36,6 +36,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <Strsafe.h>
 #endif
 
+#ifdef EVENT_EPOLL
+  #include <sys/epoll.h>
+#endif
+
 #ifndef EVENT_H
 #define EVENT_H
 
@@ -49,6 +53,11 @@ namespace libhttppp {
 		Event(ServerSocket *serversocket);
 		virtual ~Event();
 
+        /*Worker Events*/
+        virtual void ReadEvent(Connection *curcon);
+        virtual void WriteEvent(Connection *curcon);
+        virtual void CloseEvent(Connection *curcon);
+        
 		/*API Events*/
 		virtual void RequestEvent(Connection *curcon);
 		virtual void ResponseEvent(libhttppp::Connection *curcon);
@@ -56,8 +65,8 @@ namespace libhttppp {
         virtual void DisconnectEvent(Connection *curcon);
 		/*Run Mainloop*/
 		virtual void runEventloop();
-
-#ifdef Windows
+       
+#ifdef EVENT_IOCP
 		typedef enum _IO_OPERATION {
 			ClientIoAccept,
 			ClientIoRead,
@@ -117,7 +126,12 @@ namespace libhttppp {
         static  void  CtrlHandler(int signum);
 #endif
   private:
-#ifdef Windows
+#ifdef EVENT_EPOLL
+  int                 _epollFD;
+  struct epoll_event *_Events;
+  struct epoll_event  _setEvent;    
+#endif
+#ifdef EVENT_IOCP
 	PPER_SOCKET_CONTEXT _pCtxtListenSocket;
 	PPER_SOCKET_CONTEXT _pCtxtList;
 	HANDLE              _ThreadHandles[MAX_WORKER_THREAD];
@@ -129,6 +143,7 @@ namespace libhttppp {
     ServerSocket       *_ServerSocket;
 	bool                _EventEndloop;
 	bool                _EventRestartloop;
+    ConnectionPool     *_Cpool;
   };
 }
 
