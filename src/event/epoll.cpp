@@ -81,7 +81,7 @@ void libhttppp::Event::runEventloop() {
         throw _httpexception;
     }
 
-    _setEvent.events = EPOLLIN | EPOLLET;
+    _setEvent.events = EPOLLIN;
     _setEvent.data.fd = _ServerSocket->getSocket();
     
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &_setEvent) < 0) {
@@ -115,7 +115,7 @@ void libhttppp::Event::runEventloop() {
                 clientsocket->setnonblocking();
                 if(fd>0) {
                   _setEvent.data.ptr = (void*) curcon;
-                  _setEvent.events = EPOLLIN |EPOLLOUT| EPOLLRDHUP;
+                  _setEvent.events = EPOLLIN|EPOLLET;
                   if(epoll_ctl(_epollFD, EPOLL_CTL_ADD, fd, &_setEvent)==-1 && errno==EEXIST)
                     epoll_ctl(_epollFD, EPOLL_CTL_MOD,fd, &_setEvent);
                   ConnectEvent(curcon);
@@ -131,8 +131,6 @@ void libhttppp::Event::runEventloop() {
                 curcon=(Connection*)_Events[i].data.ptr;
                 if(_Events[i].events & EPOLLIN) {
                     ReadEvent(curcon);
-                }else if(_Events[i].events & EPOLLOUT) {
-                    WriteEvent(curcon); 
                 }else{
                     CloseEvent(curcon);
                 }
@@ -147,11 +145,13 @@ void libhttppp::Event::ReadEvent(libhttppp::Connection* curcon){
      try {
        char buf[BLOCKSIZE];
        int rcvsize=0;
-       rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-       if(rcvsize>0) {
-         curcon->addRecvQueue(buf,rcvsize);
-         RequestEvent(curcon);
-       }
+       do{
+         rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
+         if(rcvsize>0)
+           curcon->addRecvQueue(buf,rcvsize);
+       }while(rcvsize>0);
+       RequestEvent(curcon);
+       WriteEvent(curcon);
      } catch(HTTPException &e) {
        if(e.isCritical()) {
          throw e;
@@ -164,16 +164,15 @@ void libhttppp::Event::ReadEvent(libhttppp::Connection* curcon){
 
 void libhttppp::Event::WriteEvent(libhttppp::Connection* curcon){
   try {
-    if(curcon->getSendData()) {
-      ssize_t sended=0;
+    ssize_t sended=0;
+    while(curcon->getSendData()){
       sended=_ServerSocket->sendData(curcon->getClientSocket(),
                                     (void*)curcon->getSendData()->getData(),
                                     curcon->getSendData()->getDataSize());
-      if(sended>0){
+      if(sended>0)
         curcon->resizeSendQueue(sended);
-        ResponseEvent(curcon);
-      }
-    }
+    };
+    ResponseEvent(curcon);
   } catch(HTTPException &e) {
     curcon->cleanSendData();
     CloseEvent(curcon);
