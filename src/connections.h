@@ -27,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  
 
 #include <config.h>
-#include "socket.h"
 #include "exception.h"
+#include "os/os.h"
 
 #ifdef Windows
   #include <windows.h>

@@ -7,13 +7,18 @@ include(GenerateExportHeader)
 
 set(libhttpSrcs
   connections.cpp
-  socket.cpp
   http.cpp
   httpd.cpp
   https.cpp
   base64.cpp
   threadpool.cpp
 )
+
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  list(APPEND libhttpSrcs "os/Windows/socket.cpp")
+ELSE()
+  list(APPEND libhttpSrcs "os/Unix/socket.cpp")
+ENDIF()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    ADD_DEFINITIONS(-DWIN)
@@ -66,7 +71,6 @@ install(FILES connections.h
               httpd.h
               http.h
               httpdefinitions.h
-              socket.h
               exception.h
               event.h
               https.h

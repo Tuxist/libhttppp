@@ -203,6 +203,18 @@ void libhttppp::Event::runEventloop() {
 		SetConsoleCtrlHandler(CtrlHandler, FALSE);
 }
 
+void libhttppp::Event::CloseEvent(libhttppp::Connection* curcon){
+}
+
+void libhttppp::Event::ReadEvent(libhttppp::Connection* curcon)
+{
+}
+
+void libhttppp::Event::WriteEvent(libhttppp::Connection* curcon)
+{
+}
+
+
 //
 // Create a socket with all the socket options we need, namely disable buffering
 // and set linger.

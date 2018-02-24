@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 #include "connections.h"
-#include "socket.h"
+#include "os/os.h"
 #include <config.h>
 
 #ifdef Windows
@@ -122,7 +122,6 @@ namespace libhttppp {
 		VOID CtxtListFree();
 		SOCKET CreateSocket(void);
 #else
-        static  void *WorkerThread(void *instance);
         static  void  CtrlHandler(int signum);
 #endif
   private:

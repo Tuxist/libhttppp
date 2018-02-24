@@ -33,11 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 #include <openssl/rand.h>
 
-#ifdef Windows
-  #define strtok_r strtok_s
-#endif
-
-
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=NULL;
   _lastHeaderData=NULL;

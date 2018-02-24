@@ -27,19 +27,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <config.h>
 
-#ifndef Windows
+
 #include <unistd.h>
 extern "C" {
-#include <sys/un.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
+  #include <sys/un.h>
+  #include <sys/socket.h>
+  #include <netinet/in.h>
+  #include <netdb.h>
 }
-#else
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <cstdio>
-#endif
 
 #include "https.h"
 #include "exception.h"
@@ -53,19 +48,10 @@ public:
     ClientSocket();
     ~ClientSocket();
     void              setnonblocking();
-#ifndef WIN32
     int               getSocket();
     void              setSocket(int socket);
-#else
-    SOCKET            getSocket();
-    void              setSocket(SOCKET socket);
-#endif
 private:
-#ifndef Windows
     int              _Socket;
-#else
-    SOCKET           _Socket;
-#endif
     SSL             *_SSL;
     struct sockaddr  _ClientAddr;
     socklen_t        _ClientAddrLen;
@@ -74,16 +60,10 @@ private:
 
 class ServerSocket : public HTTPS {
 public:
-#ifndef Windows
     ServerSocket(int socket);
     ServerSocket(const char *uxsocket,int maxconnections);
     int           acceptEvent(ClientSocket *clientsocket);
     int           getSocket();
-#else
-    ServerSocket(SOCKET socket);
-    SOCKET        acceptEvent(ClientSocket *clientsocket);
-    SOCKET        getSocket();
-#endif
     ServerSocket(const char *addr,int port,int maxconnections);
     ~ServerSocket();
 
@@ -96,12 +76,8 @@ public:
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size,int flags);
 private:
     struct addrinfo _SockAddr;
-#ifndef Windows
     sockaddr_un    *_UXSocketAddr;
-    int                     _Socket;
-#else
-    SOCKET          _Socket;
-#endif
+    int             _Socket;
     int             _Port;
     int             _Maxconnections;
     HTTPException   _httpexception;

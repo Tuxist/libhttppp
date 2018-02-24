@@ -191,12 +191,6 @@ void libhttppp::Event::CloseEvent(libhttppp::Connection* curcon){
   }
 }
 
-void *libhttppp::Event::WorkerThread(void *instance){
-    return NULL;
-}
-
-
-
 void libhttppp::Event::RequestEvent(Connection *curcon) {
     return;
 }

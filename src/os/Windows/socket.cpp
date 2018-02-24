@@ -27,14 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "socket.h"
 
-#ifndef Windows
-  #include <sys/socket.h>
-  #include <arpa/inet.h>
-  #include <sys/fcntl.h>
-#else
-  #include <Windows.h>
-#endif
 
+#include <Windows.h>
 #include <sys/types.h>
 #include <algorithm>
 #include <cstring>
@@ -55,101 +49,43 @@ libhttppp::ClientSocket::ClientSocket(){
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-  shutdown(_Socket,
-#ifndef Windows 
-  SHUT_RDWR 
-#else 
-  SD_BOTH
-#endif
-  );
+  shutdown(_Socket,SD_BOTH);
   SSL_free(_SSL);
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
-#ifndef Windows
-  fcntl(_Socket, F_SETFL, O_NONBLOCK);
-#else
   u_long bmode=1;
   ioctlsocket(_Socket,FIONBIO,&bmode);
-#endif 
 }
 
-#ifndef Windows
-int libhttppp::ClientSocket::getSocket(){
-#else
 SOCKET libhttppp::ClientSocket::getSocket(){
-#endif
   return _Socket;
 }
 
-#ifndef Windows
-void libhttppp::ClientSocket::setSocket(int socket) {
-#else
 void libhttppp::ClientSocket::setSocket(SOCKET socket) {
-#endif
    _Socket=socket;
 }
 
-#ifndef Windows
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
-  int optval = 1;
- _Maxconnections=maxconnections;
- _UXSocketAddr = new sockaddr_un;
-  _UXSocketAddr->sun_family = AF_UNIX;
-  try {
-    std::copy(uxsocket,uxsocket+strlen(uxsocket),_UXSocketAddr->sun_path);
-  }catch(...){
-     _httpexception.Critical("Can't copy Server UnixSocket");
-     throw _httpexception;
-  }
-
-  if ((_Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
-    _httpexception.Critical("Can't create Socket UnixSocket");
-    throw _httpexception;
-  }
-
-  setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
-  
-  if (bind(_Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
-#ifdef Linux
-	  char errbuf[255];
-	  _httpexception.Error("Can't bind Server UnixSocket",
-		                    strerror_r(errno, errbuf, 255));
-#else
-	  char errbuf[255];
-	  strerror_r(errno, errbuf, 255);
-	  _httpexception.Error("Can't bind Server UnixSocket",errbuf);
-#endif
-    throw _httpexception;
-  }
+  _httpexception.Critical("ServerSocket","Unix Socket not soppurted by this OS");
+  throw _httpexception;
 }
-#endif
 
 
-#ifdef Windows
-  libhttppp::ServerSocket::ServerSocket(SOCKET socket) {
-#else
-  libhttppp::ServerSocket::ServerSocket(int socket) {
-#endif
+
+libhttppp::ServerSocket::ServerSocket(SOCKET socket) {
 	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
-#ifndef Windows
-	_UXSocketAddr = NULL;
-#endif
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
   _Maxconnections=maxconnections;
-#ifdef Windows
   int iResult;
   WSADATA wsaData;
   iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
   if (iResult != 0) {
 	  _httpexception.Critical("WSAStartup failed");
   }
-#else
-  _UXSocketAddr = NULL;
-#endif
 
   char port_buffer[6];
   snprintf(port_buffer,6, "%d", port);
@@ -178,24 +114,12 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 	  _Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
 	  if (_Socket == -1)
 		  continue;
-
-#ifndef Windows
-	  int optval = 1;
-	  setsockopt(_Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-#else
 	  BOOL bOptVal = TRUE;
 	  int bOptLen = sizeof(BOOL);
 	  setsockopt(_Socket, SOL_SOCKET, SO_REUSEADDR, (const char *)&bOptVal, bOptLen);
-#endif
-
 	  if (bind(_Socket, rp->ai_addr, rp->ai_addrlen) == 0)
 		  break;                  /* Success */
-
-#ifdef Windows
 	  closesocket(_Socket);
-#else
-	  close(_Socket);
-#endif
   }
 
   if (rp == NULL) {               /* No address succeeded */
@@ -206,20 +130,11 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 }
 
 libhttppp::ServerSocket::~ServerSocket(){
-#ifndef Windows
-    if(_UXSocketAddr)
-      unlink(_UXSocketAddr->sun_path);
-    delete _UXSocketAddr;
-#endif
 }
 
 void libhttppp::ServerSocket::setnonblocking(){
-#ifndef Windows
-  fcntl(_Socket, F_SETFL, O_NONBLOCK);
-#else
   u_long bmode=1;
   ioctlsocket(_Socket,FIONBIO,&bmode);
-#endif
 }
 
 void libhttppp::ServerSocket::listenSocket(){
@@ -229,40 +144,21 @@ void libhttppp::ServerSocket::listenSocket(){
   }
 }
 
-#ifndef Windows
-int libhttppp::ServerSocket::getSocket(){
-  return _Socket;
-}
-#else
 SOCKET libhttppp::ServerSocket::getSocket(){
   return _Socket;
 }
-#endif
 
 int libhttppp::ServerSocket::getMaxconnections(){
   return _Maxconnections;
 }
 
-#ifndef Windows
-int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
-#else
 SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
-#endif
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
-#ifndef Windows
-  int socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
-#else
   SOCKET socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
-#endif
   if(socket==-1){
-#ifdef Linux
-	  char errbuf[255];
-	  _httpexception.Error("Can't accept on  Socket",strerror_r(errno, errbuf, 255));
-#else
-	  char errbuf[255];
-	  strerror_r(errno, errbuf, 255);
-	  _httpexception.Error("Can't accept on  Socket",errbuf);
-#endif
+    char errbuf[255];
+    strerror_r(errno, errbuf, 255);
+    _httpexception.Error("Can't accept on  Socket",errbuf);
   }
   clientsocket->_Socket=socket;
   if(isSSLTrue()){
@@ -283,30 +179,17 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 }
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
-#ifndef Windows
-    ssize_t rval=0;
-#else
-    int rval=0;
-#endif
+  int rval=0;
   if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
   }else{
-#ifndef Windows
-    rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
-#else
     rval=sendto(socket->getSocket(),(const char*) data, (int)size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
-#endif
   }
 
   if(rval==-1){
-#ifdef Linux
-    char errbuf[255];
-    _httpexception.Error("Socket sendata:",strerror_r(errno,errbuf,255));
-#else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
     _httpexception.Error("Socket sendata:",errbuf);
-#endif
     if(errno != EAGAIN || errno !=EWOULDBLOCK)
       throw _httpexception;
   }
@@ -322,23 +205,13 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     recvsize=SSL_read(socket->_SSL,data,size);
   }else{
-#ifndef Windows
-    recvsize=recvfrom(socket->getSocket(),data, size,flags,
-                              &socket->_ClientAddr, &socket->_ClientAddrLen);
-#else
     recvsize=recvfrom(socket->getSocket(), (char*)data,(int)size,flags,
                               &socket->_ClientAddr, &socket->_ClientAddrLen);
-#endif
   }
   if(recvsize==-1){
-#ifdef Linux 
-    char errbuf[255];
-    _httpexception.Error("Socket recvata:",strerror_r(errno,errbuf,255));
-#else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
     _httpexception.Error("Socket recvata:",errbuf);
-#endif
     if(errno != EAGAIN || errno !=EWOULDBLOCK){
       throw _httpexception;
     }

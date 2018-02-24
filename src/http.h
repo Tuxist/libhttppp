@@ -25,10 +25,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "socket.h"
+#include <config.h>
+
+#include "os/os.h"
 #include "httpdefinitions.h"
 #include "exception.h"
-#include "config.h"
 #include "event.h"
 
 #ifndef HTTP_H
