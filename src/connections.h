@@ -127,19 +127,9 @@ namespace libhttppp {
     Connection *addConnection();
     
     Connection *delConnection(ClientSocket *clientsocket);
-#ifndef Windows
-    Connection *delConnection(int socket);
-#else
-    Connection *delConnection(SOCKET socket);
-#endif
     Connection *delConnection(Connection *delcon);
     
     Connection *getConnection(ClientSocket *clientsocket);
-#ifndef Windows
-    Connection *getConnection(int socket);
-#else
-    Connection *getConnection(SOCKET socket);
-#endif
   protected:
     HTTPException _httpexception;
     ServerSocket *_ServerSocket;

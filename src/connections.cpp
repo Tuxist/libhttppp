@@ -311,16 +311,6 @@ libhttppp::Connection* libhttppp::ConnectionPool::addConnection(){
   return _lastConnection;
 }
 
-#ifndef Windows
-libhttppp::Connection* libhttppp::ConnectionPool::delConnection(int socket){
-  return delConnection(getConnection(socket));
-}
-#else
-libhttppp::Connection* libhttppp::ConnectionPool::delConnection(SOCKET socket){
-  return delConnection(getConnection(socket));
-}
-#endif
-
 libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *clientsocket){
   return delConnection(getConnection(clientsocket));
 }
@@ -356,16 +346,4 @@ libhttppp::Connection* libhttppp::ConnectionPool::getConnection(ClientSocket *cl
       return curcon;
   }
   return NULL;
-}
-
-#ifndef Windows
-libhttppp::Connection* libhttppp::ConnectionPool::getConnection(int socket){
-#else
-libhttppp::Connection* libhttppp::ConnectionPool::getConnection(SOCKET socket){
-#endif
-  for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
-    if(curcon->getClientSocket()->getSocket()==socket)
-      return curcon;
-  }
-  return NULL; 
 }
