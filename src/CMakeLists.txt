@@ -11,9 +11,9 @@ set(libhttpSrcs
   httpd.cpp
   https.cpp
   base64.cpp
-  threadpool.cpp
 )
 
+#os dependencies
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/Windows/socket.cpp")
 ELSE()
@@ -75,12 +75,31 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
-              threadpool.h
               "${CMAKE_BINARY_DIR}/config.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp
         COMPONENT Devel
 )
+
+#os dependencies
+install(FILES os/os.h 
+        DESTINATION include/httppp/os
+        COMPONENT Devel
+)
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+install(FILES os/Windows/inttype.h 
+              os/Windows/socket.h
+        DESTINATION include/httppp/os/Windows
+        COMPONENT Devel
+)
+ELSE()
+install(FILES os/Unix/inttype.h 
+              os/Unix/socket.h
+        DESTINATION include/httppp/os/Unix
+        COMPONENT Devel
+)
+ENDIF()
+
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
