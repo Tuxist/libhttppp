@@ -99,9 +99,10 @@ namespace libhttppp {
 		//
 		typedef struct _PER_SOCKET_CONTEXT {
 			SOCKET                      Socket;
-
+            Connection                 *CurConnection;
+            
 			LPFN_ACCEPTEX               fnAcceptEx;
-
+            
 			//
 			//linked list for all outstanding i/o on the socket
 			//

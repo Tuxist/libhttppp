@@ -770,6 +770,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 			// Add connection to connection handler
 			//
 			curcon = cpool.addConnection();
+            lpPerSocketContext->CurConnection=curcon;
 			ClientSocket *clientsocket = curcon->getClientSocket();
 			clientsocket->setSocket(lpAcceptSocketContext->Socket);
 			event->ConnectEvent(curcon);
@@ -830,7 +831,8 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 			lpIOContext->nSentBytes = 0;
 			lpIOContext->wsabuf.len = dwIoSize;
 			dwFlags = 0;
-			curcon = cpool.getConnection(lpPerSocketContext->Socket);
+            
+			curcon = lpPerSocketContext->CurConnection;
 			if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 				//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 				event->CloseClient(lpPerSocketContext, FALSE);
@@ -853,7 +855,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 			lpIOContext->IOOperation = ClientIoWrite;
 			lpIOContext->nSentBytes += dwIoSize;
 			dwFlags = 0;
-			curcon = cpool.getConnection(lpPerSocketContext->Socket);
+			curcon = lpPerSocketContext->CurConnection;
 			if (!curcon)
 				break;
 			if (curcon->getSendData() && curcon->getSendData()->getDataSize()<0) {
@@ -873,7 +875,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 					//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 					event->CloseClient(lpPerSocketContext, FALSE);
 					event->DisconnectEvent(curcon);
-					cpool.delConnection(lpAcceptSocketContext->Socket);
+					cpool.delConnection(lpPerSocketContext->CurConnection);
 				} else {
 					curcon->resizeSendQueue(dwSendNumBytes);
 				}
