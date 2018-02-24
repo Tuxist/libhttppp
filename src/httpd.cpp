@@ -297,10 +297,8 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
   try {
 	  if (port != 0)
 		  _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
-#ifndef Windows
 	  else
 		  _ServerSocket = new ServerSocket(httpaddr, maxconnections);
-#endif
 	  if (!_ServerSocket) {
 		  throw _httpexception;
 	  }
