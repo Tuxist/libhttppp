@@ -98,7 +98,6 @@ namespace libhttppp {
 		// data to be associated with every socket added to the IOCP
 		//
 		typedef struct _PER_SOCKET_CONTEXT {
-			SOCKET                      Socket;
             Connection                 *CurConnection;
             
 			LPFN_ACCEPTEX               fnAcceptEx;

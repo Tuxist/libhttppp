@@ -407,7 +407,7 @@ VOID libhttppp::Event::CloseClient(PPER_SOCKET_CONTEXT lpPerSocketContext, BOOL 
 
 			lingerStruct.l_onoff = 1;
 			lingerStruct.l_linger = 0;
-			setsockopt(lpPerSocketContext->Socket, SOL_SOCKET, SO_LINGER,
+			setsockopt(lpPerSocketContext->CurConnection->getClientSocket()->getSocket(), SOL_SOCKET, SO_LINGER,
 				(char *)&lingerStruct, sizeof(lingerStruct));
 		}
 		if (lpPerSocketContext->pIOContext->SocketAccept != INVALID_SOCKET) {
@@ -415,8 +415,8 @@ VOID libhttppp::Event::CloseClient(PPER_SOCKET_CONTEXT lpPerSocketContext, BOOL 
 			lpPerSocketContext->pIOContext->SocketAccept = INVALID_SOCKET;
 		};
 
-		closesocket(lpPerSocketContext->Socket);
-		lpPerSocketContext->Socket = INVALID_SOCKET;
+		closesocket(lpPerSocketContext->CurConnection->getClientSocket()->getSocket());
+		lpPerSocketContext->CurConnection->getClientSocket()->setSocket(INVALID_SOCKET);
 		CtxtListDeleteFrom(lpPerSocketContext);
 		lpPerSocketContext = NULL;
 	}
@@ -450,7 +450,7 @@ libhttppp::Event::PPER_SOCKET_CONTEXT libhttppp::Event::CtxtAllocate(SOCKET sd, 
 	if (lpPerSocketContext) {
 		lpPerSocketContext->pIOContext = (PPER_IO_CONTEXT)xmalloc(sizeof(PER_IO_CONTEXT));
 		if (lpPerSocketContext->pIOContext) {
-			lpPerSocketContext->Socket = sd;
+			lpPerSocketContext->CurConnection->getClientSocket()->setSocket(sd);
 			lpPerSocketContext->pCtxtBack = NULL;
 			lpPerSocketContext->pCtxtForward = NULL;
 
@@ -772,7 +772,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 			curcon = cpool.addConnection();
             lpPerSocketContext->CurConnection=curcon;
 			ClientSocket *clientsocket = curcon->getClientSocket();
-			clientsocket->setSocket(lpAcceptSocketContext->Socket);
+			clientsocket->setSocket(lpAcceptSocketContext->CurConnection->getClientSocket()->getSocket());
 			event->ConnectEvent(curcon);
 			printf("aceppt connection on port: %ld\n", clientsocket->getSocket());
 
@@ -867,7 +867,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 				buffSend.buf = (char*)curcon->getSendData()->getData();
 				buffSend.len = curcon->getSendData()->getDataSize();
 				nRet = WSASend(
-					lpPerSocketContext->Socket,
+					lpPerSocketContext->CurConnection->getClientSocket()->getSocket(),
 					&buffSend, 1, &dwSendNumBytes,
 					dwFlags,
 					&(lpIOContext->Overlapped), NULL);

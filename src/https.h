@@ -32,8 +32,8 @@ extern "C" {
 	typedef struct ssl_ctx_st SSL_CTX;
 };
 
-#ifndef SSL_H
-#define SSL_H
+#ifndef HTTPS_H
+#define HTTPS_H
 namespace libhttppp {
   class HTTPS{
   public:
