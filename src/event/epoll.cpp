@@ -71,7 +71,7 @@ void libhttppp::Event::runEventloop() {
 //     for(int i=0; i<threadcount; i++){
 //         pthread_join(threads[i], NULL);
 //  
-    _setEvent = {0};
+    _setEvent = (struct epoll_event){0};
     for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
         _Events[i].data.fd = -1;
     _epollFD = epoll_create1(0);
