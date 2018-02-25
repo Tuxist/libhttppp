@@ -17,9 +17,11 @@ set(libhttpSrcs
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/Windows/socket.cpp")
   list(APPEND libhttpSrcs "os/Windows/mutex.cpp")
+  list(APPEND libhttpSrcs "os/Windows/threadpool.cpp")
 ELSE()
   list(APPEND libhttpSrcs "os/Unix/socket.cpp")
   list(APPEND libhttpSrcs "os/Unix/mutex.cpp")
+  list(APPEND libhttpSrcs "os/Unix/threadpool.cpp")
 ENDIF()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -92,6 +94,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 install(FILES os/Windows/inttype.h 
               os/Windows/socket.h
               os/Windows/mutex.h
+              os/Windows/threadpool.h
         DESTINATION include/httppp/os/Windows
         COMPONENT Devel
 )
@@ -99,6 +102,7 @@ ELSE()
 install(FILES os/Unix/inttype.h 
               os/Unix/socket.h
               os/Unix/mutex.h
+              os/Unix/threadpool.h
         DESTINATION include/httppp/os/Unix
         COMPONENT Devel
 )
