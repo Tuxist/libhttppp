@@ -25,18 +25,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <pthread.h>
+#include "thread.h"
 
-#ifndef THREADPOOL_H
-#define THREADPOOL_H
-
-namespace libhttppp {
-  class Thread{
-  public:
-    Thread();
-    ~Thread();
-  private:
-    pthread_t    *_Thread;
-  };
+libhttppp::Thread::Thread(void* function(void*), void* arguments){
+  int thc = pthread_create(&_Thread, NULL, function,arguments);
+  if( thc != 0 ) {
+    _httpexception.Critical("can't create thread");
+    throw _httpexception;
+  }  
 }
-#endif
+
+libhttppp::Thread::~Thread(){
+}
