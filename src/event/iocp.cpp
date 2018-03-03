@@ -37,6 +37,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
     _EventEndloop=true;
 	_EventRestartloop = true;
+    _Cpool= new ConnectionPool(_ServerSocket);
 	_IOCP=INVALID_HANDLE_VALUE;
 	_pCtxtListenSocket = NULL;
 	_pCtxtList = NULL;
@@ -654,7 +655,6 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 	PPER_SOCKET_CONTEXT lpPerSocketContext = NULL;
 	PPER_SOCKET_CONTEXT lpAcceptSocketContext = NULL;
 	PPER_IO_CONTEXT lpIOContext = NULL;
-	ConnectionPool cpool(event->_ServerSocket);
 	Connection *curcon = NULL;
 	WSABUF buffRecv;
 	WSABUF buffSend;
@@ -769,8 +769,10 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 			//
 			// Add connection to connection handler
 			//
-			curcon = cpool.addConnection();
-            lpPerSocketContext->CurConnection=curcon;
+			if(lpPerSocketContext->CurConnection==NULL){
+			  curcon = event->_Cpool->addConnection();
+              lpPerSocketContext->CurConnection=curcon;
+            }
 			ClientSocket *clientsocket = curcon->getClientSocket();
 			clientsocket->setSocket(lpAcceptSocketContext->CurConnection->getClientSocket()->getSocket());
 			event->ConnectEvent(curcon);
@@ -803,7 +805,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 					//printf("WSASend() failed: %d\n", WSAGetLastError());
 					event->CloseClient(lpAcceptSocketContext, FALSE);
-					cpool.delConnection(curcon);
+					event->_Cpool->delConnection(curcon);
 					curcon = NULL;
 				}
 			}
@@ -837,7 +839,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 				//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 				event->CloseClient(lpPerSocketContext, FALSE);
 				event->DisconnectEvent(curcon);
-				cpool.delConnection(curcon);
+				event->_Cpool->delConnection(curcon);
 				break;
 			}
 			if(curcon)
@@ -875,7 +877,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 					//myprintf("WSASend() failed: %d\n", WSAGetLastError());
 					event->CloseClient(lpPerSocketContext, FALSE);
 					event->DisconnectEvent(curcon);
-					cpool.delConnection(lpPerSocketContext->CurConnection);
+					event->_Cpool->delConnection(lpPerSocketContext->CurConnection);
 				} else {
 					curcon->resizeSendQueue(dwSendNumBytes);
 				}
@@ -910,7 +912,7 @@ BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
 }
 
 libhttppp::Event::~Event(){
-
+  delete _Cpool;
 }
 
 void libhttppp::Event::RequestEvent(Connection *curcon) {
