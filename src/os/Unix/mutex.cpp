@@ -35,6 +35,13 @@ libhttppp::Mutex::~Mutex(){
 }
 
 
+bool libhttppp::Mutex::lock(){
+  if(pthread_mutex_lock(&_CMutex)==0)
+    return true;
+  else
+    return false; 
+}
+
 bool libhttppp::Mutex::trylock(){
   if(pthread_mutex_trylock(&_CMutex)==0)
     return true;

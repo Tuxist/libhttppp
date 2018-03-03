@@ -171,8 +171,8 @@ void libhttppp::Event::WriteEvent(libhttppp::Connection* curcon){
                                     curcon->getSendData()->getDataSize());
       if(sended>0)
         curcon->resizeSendQueue(sended);
+      ResponseEvent(curcon);
     };
-    ResponseEvent(curcon);
   } catch(HTTPException &e) {
     curcon->cleanSendData();
     CloseEvent(curcon);

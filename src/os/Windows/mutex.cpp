@@ -37,11 +37,28 @@ libhttppp::Mutex::~Mutex(){
 }
 
 bool libhttppp::Mutex::trylock(){
-  if(WaitForSingleObject(_CMutex,INFINITE) == WAIT_OBJECT_0)
-    return true;
-  else
-    return false;
+    unsigned long ret = WaitForSingleObject(_CMutex, 0); 
+    if(ret == WAIT_OBJECT_0){
+        return true;
+    } else if(ret == WAIT_TIMEOUT){
+        return false;
+    } else if(ret == WAIT_ABANDONED){
+        ReleaseMutex(_CMutex);
+        _httpexception.Critical("Mutex","Mutex wasn't Released by owned thread");
+        throw _httpexception;
+    } else{
+        return false;
+    }
 }
+
+bool libhttppp::Mutex::lock(){ 
+  unsigned long ret = WaitForSingleObject(_CMutex,INFINITE);
+  if(ret != WAIT_OBJECT_0){
+    return false;
+  }
+  return true;
+}
+
 
 bool libhttppp::Mutex::unlock(){
   if(!ReleaseMutex(_CMutex))

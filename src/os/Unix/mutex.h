@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <pthread.h>
 
+#include "exception.h"
+
 #ifndef MUTEX_H
 #define MUTEX_H
 
@@ -36,9 +38,11 @@ namespace libhttppp {
     Mutex();
     ~Mutex();
     bool            trylock();
+    bool            lock();
     bool            unlock();
   private:
-    pthread_mutex_t  _CMutex;   
+    pthread_mutex_t  _CMutex;
+    HTTPException    _httpexception;
   };
 }
 

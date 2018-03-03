@@ -28,6 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <windows.h>
 #include <process.h>
 
+#include "exception.h"
+
 #ifndef MUTEX_H
 #define MUTEX_H
 
@@ -37,9 +39,11 @@ namespace libhttppp {
     Mutex();
     ~Mutex();
     bool            trylock();
+    bool            lock();
     bool            unlock();
   private:
-    HANDLE           _CMutex;   
+    HANDLE           _CMutex;
+    HTTPException    _httpexception;
   };
 }
 

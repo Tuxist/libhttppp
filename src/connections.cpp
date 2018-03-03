@@ -252,6 +252,7 @@ libhttppp::ConnectionPool::ConnectionPool(ServerSocket *socket){
   _firstConnection=NULL;
   _lastConnection=NULL;
   _ServerSocket=socket;
+  _CMutex = new Mutex;
   if(!_ServerSocket){
     _httpexception.Critical("ServerSocket not set!");
     throw _httpexception;
@@ -260,9 +261,13 @@ libhttppp::ConnectionPool::ConnectionPool(ServerSocket *socket){
 
 libhttppp::ConnectionPool::~ConnectionPool(){
     delete _firstConnection;
+    delete _CMutex;
 }
 
 libhttppp::Connection* libhttppp::ConnectionPool::addConnection(){
+  if(!_CMutex->lock()){
+     return NULL;  
+  }
   if(!_firstConnection){
     _firstConnection=new Connection;
     _lastConnection=_firstConnection;
@@ -270,7 +275,9 @@ libhttppp::Connection* libhttppp::ConnectionPool::addConnection(){
     _lastConnection->_nextConnection=new Connection;
     _lastConnection=_lastConnection->_nextConnection;
   }
-  return _lastConnection;
+  Connection *rcon=_lastConnection;
+  _CMutex->unlock();
+  return rcon;
 }
 
 libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *clientsocket){
@@ -278,6 +285,9 @@ libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *cl
 }
 
 libhttppp::Connection* libhttppp::ConnectionPool::delConnection(Connection *delcon){
+  if(!_CMutex->lock()){
+     return NULL;  
+  }
   Connection *prevcon=NULL;
   for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
     if(curcon==delcon){
@@ -296,10 +306,14 @@ libhttppp::Connection* libhttppp::ConnectionPool::delConnection(Connection *delc
     }
     prevcon=curcon;
   }
-  if(prevcon && prevcon->_nextConnection)
+  if(prevcon && prevcon->_nextConnection){
+    _CMutex->unlock();
     return prevcon->_nextConnection;
-  else
-    return _firstConnection;
+  }else{
+    Connection *fcon=_firstConnection;
+    _CMutex->unlock();
+    return fcon;
+  }
 }
 
 libhttppp::Connection* libhttppp::ConnectionPool::getConnection(ClientSocket *clientsocket){

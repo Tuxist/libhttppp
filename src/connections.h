@@ -122,7 +122,9 @@ namespace libhttppp {
     HTTPException _httpexception;
     ServerSocket *_ServerSocket;
     Connection   *_firstConnection;
-    Connection   *_lastConnection; 
+    Connection   *_lastConnection;
+  private:
+    Mutex        *_CMutex;
   };
   
   class ClientConnection {
