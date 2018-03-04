@@ -32,7 +32,8 @@ libhttppp::Thread::Thread(void* function(void*), void* arguments){
   if( thc != 0 ) {
     _httpexception.Critical("can't create thread");
     throw _httpexception;
-  }  
+  }
+  pthread_detach(_Thread);
 }
 
 libhttppp::Thread::~Thread(){
