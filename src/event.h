@@ -54,9 +54,29 @@ namespace libhttppp {
 		virtual ~Event();
 
         /*Worker Events*/
-        virtual void ReadEvent(Connection *curcon);
-        virtual void WriteEvent(Connection *curcon);
-        virtual void CloseEvent(Connection *curcon);
+        class ConnectionContext {
+        public:
+            ConnectionContext     *nextConnectionContext();
+        private:
+            ConnectionContext();
+            ~ConnectionContext();
+            /*Indefier Connection*/
+            Connection             *_CurConnection;
+            /*Linking to CurrentConnectionpoll*/
+            ConnectionPool         *_CurCPool;
+            /*Linking to Events*/
+            Event                  *_CurEvent;
+            /*next entry*/
+            ConnectionContext      *_nextConnectionContext;
+            friend class Event;
+        };
+        
+        ConnectionContext *addConnection();
+        ConnectionContext *delConnection(Connection *delcon);
+        
+        static void *ReadEvent(void *curcon);
+        static void *WriteEvent(void *curcon);
+        static void *CloseEvent(void *curcon);
         
 		/*API Events*/
 		virtual void RequestEvent(Connection *curcon);
@@ -138,6 +158,11 @@ namespace libhttppp {
 	WSAEVENT            _CleanupEvent[1];
 	CRITICAL_SECTION    _CriticalSection;
 #endif
+    
+    /*Connection Context helper*/
+    ConnectionContext *_firstConnectionContext;
+    ConnectionContext *_lastConnectionContext;
+    
     HTTPException       _httpexception;
     ServerSocket       *_ServerSocket;
 	bool                _EventEndloop;

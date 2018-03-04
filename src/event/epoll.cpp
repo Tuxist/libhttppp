@@ -45,11 +45,15 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _EventEndloop =true;
     _Cpool= new ConnectionPool(_ServerSocket);
     _Events = new epoll_event[(_ServerSocket->getMaxconnections())];
+    _firstConnectionContext=NULL;
+    _lastConnectionContext=NULL;
 }
 
 libhttppp::Event::~Event() {
   delete   _Cpool;
   delete[] _Events;
+  delete _firstConnectionContext;
+  _lastConnectionContext=NULL;
 }
 
 libhttppp::Event* _EventIns=NULL;
@@ -59,18 +63,6 @@ void libhttppp::Event::CtrlHandler(int signum) {
 }
 
 void libhttppp::Event::runEventloop() {
-//     int threadcount=1;/*get_nprocs()*2;*/
-//     pthread_t threads[threadcount];
-//     for(int i=0; i<threadcount; i++){
-//     int thc = pthread_create( &threads[i], NULL, &WorkerThread,(void*) this);
-//       if( thc != 0 ) {
-//         _httpexception.Critical("can't create thread");
-//         throw _httpexception;
-//       }  
-//     }
-//     for(int i=0; i<threadcount; i++){
-//         pthread_join(threads[i], NULL);
-//  
     _setEvent = (struct epoll_event){0};
     for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
         _Events[i].data.fd = -1;
@@ -103,36 +95,36 @@ void libhttppp::Event::runEventloop() {
                 
         }
         for(int i=0; i<n; i++) {
-            Connection *curcon=NULL;
+            ConnectionContext *curct=NULL;
             if(_Events[i].data.fd == srvssocket) {
               try {
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
                */
-                curcon=_Cpool->addConnection();
-                ClientSocket *clientsocket=curcon->getClientSocket();
+                curct=addConnection();
+                ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
                 int fd=_ServerSocket->acceptEvent(clientsocket);
                 clientsocket->setnonblocking();
                 if(fd>0) {
-                  _setEvent.data.ptr = (void*) curcon;
+                  _setEvent.data.ptr = (void*) curct;
                   _setEvent.events = EPOLLIN|EPOLLET;
                   if(epoll_ctl(_epollFD, EPOLL_CTL_ADD, fd, &_setEvent)==-1 && errno==EEXIST)
                     epoll_ctl(_epollFD, EPOLL_CTL_MOD,fd, &_setEvent);
-                  ConnectEvent(curcon);
+                  ConnectEvent(curct->_CurConnection);
                 } else {
-                  _Cpool->delConnection(curcon);
+                  delConnection(curct->_CurConnection);
                 }
               } catch(HTTPException &e) {
-                _Cpool->delConnection(curcon);
+                delConnection(curct->_CurConnection);
                 if(e.isCritical())
                   throw e;
               }
             } else {
-                curcon=(Connection*)_Events[i].data.ptr;
+                curct=(ConnectionContext*)_Events[i].data.ptr;
                 if(_Events[i].events & EPOLLIN) {
-                    ReadEvent(curcon);
+                    Thread(ReadEvent,curct);
                 }else{
-                    CloseEvent(curcon);
+                    CloseEvent(curct);
                 }
             } 
         }
@@ -141,56 +133,132 @@ void libhttppp::Event::runEventloop() {
     }
 }
 
-void libhttppp::Event::ReadEvent(libhttppp::Connection* curcon){
-     try {
-       char buf[BLOCKSIZE];
-       int rcvsize=0;
-       do{
-         rcvsize=_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-         if(rcvsize>0)
-           curcon->addRecvQueue(buf,rcvsize);
-       }while(rcvsize>0);
-       RequestEvent(curcon);
-       WriteEvent(curcon);
-     } catch(HTTPException &e) {
+libhttppp::Event::ConnectionContext::ConnectionContext(){
+  _CurConnection=NULL;
+  _CurCPool=NULL;
+  _CurEvent=NULL;
+  _nextConnectionContext=NULL;    
+}
+
+libhttppp::Event::ConnectionContext::~ConnectionContext(){
+  delete _nextConnectionContext;
+}
+
+
+libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextConnectionContext(){
+  return _nextConnectionContext;    
+}
+
+
+libhttppp::Event::ConnectionContext * libhttppp::Event::addConnection(){
+  if(!_firstConnectionContext){
+    _firstConnectionContext=new ConnectionContext();
+    _lastConnectionContext=_firstConnectionContext;
+  }else{
+    _lastConnectionContext->_nextConnectionContext=new ConnectionContext();
+    _lastConnectionContext=_lastConnectionContext->_nextConnectionContext;
+  }
+  _lastConnectionContext->_CurConnection=_Cpool->addConnection();
+  _lastConnectionContext->_CurCPool=_Cpool;
+  _lastConnectionContext->_CurEvent=this;
+  return _lastConnectionContext;
+}
+
+libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp::Connection* delcon){
+  _Cpool->delConnection(delcon);
+  ConnectionContext *prevcontext=NULL;
+  for(ConnectionContext *curcontext=_firstConnectionContext; curcontext; 
+      curcontext=curcontext->nextConnectionContext()){
+    if(curcontext->_CurConnection==delcon){
+      if(prevcontext){
+        prevcontext->_nextConnectionContext=curcontext->_nextConnectionContext;
+        if(_lastConnectionContext->_CurConnection==delcon)
+          _lastConnectionContext=prevcontext;
+      }else{
+        _firstConnectionContext=curcontext->_nextConnectionContext;
+        if(_lastConnectionContext->_CurConnection==delcon)
+          _lastConnectionContext=_firstConnectionContext;
+      }
+      curcontext->_nextConnectionContext=NULL;
+      delete curcontext;
+      break;
+    }
+    prevcontext=curcontext;
+  }
+  if(prevcontext && prevcontext->_nextConnectionContext){
+    return prevcontext->_nextConnectionContext;
+  }else{
+    ConnectionContext *fcontext=_firstConnectionContext;
+    return fcontext;
+  }
+}
+
+
+
+/*Workers*/
+void *libhttppp::Event::ReadEvent(void *curcon){
+  ConnectionContext *ccon=(ConnectionContext*)curcon;
+  Event *eventins=ccon->_CurEvent;
+  Connection *con=(Connection*)ccon->_CurConnection;
+  try {
+    char buf[BLOCKSIZE];
+    int rcvsize=0;
+    do{
+      rcvsize=eventins->_ServerSocket->recvData(con->getClientSocket(),buf,BLOCKSIZE);
+      if(rcvsize>0)
+        con->addRecvQueue(buf,rcvsize);
+    }while(rcvsize>0);
+    eventins->RequestEvent(con);
+    WriteEvent(ccon);
+  } catch(HTTPException &e) {
        if(e.isCritical()) {
          throw e;
        }
        if(e.isError()){
-          CloseEvent(curcon);
+          CloseEvent(ccon);
        }
-     }   
+  }
+  return NULL;
 }
 
-void libhttppp::Event::WriteEvent(libhttppp::Connection* curcon){
+void *libhttppp::Event::WriteEvent(void* curcon){
+  ConnectionContext *ccon=(ConnectionContext*)curcon;
+  Event *eventins=ccon->_CurEvent;
+  Connection *con=(Connection*)ccon->_CurConnection;
   try {
     ssize_t sended=0;
-    while(curcon->getSendData()){
-      sended=_ServerSocket->sendData(curcon->getClientSocket(),
-                                    (void*)curcon->getSendData()->getData(),
-                                    curcon->getSendData()->getDataSize());
+    while(con->getSendData()){
+      sended=eventins->_ServerSocket->sendData(con->getClientSocket(),
+                                    (void*)con->getSendData()->getData(),
+                                    con->getSendData()->getDataSize());
       if(sended>0)
-        curcon->resizeSendQueue(sended);
-      ResponseEvent(curcon);
+        con->resizeSendQueue(sended);
+      eventins->ResponseEvent(con);
     };
   } catch(HTTPException &e) {
-    curcon->cleanSendData();
-    CloseEvent(curcon);
+    con->cleanSendData();
+    CloseEvent(ccon);
   }
+  return NULL;
 }
 
-void libhttppp::Event::CloseEvent(libhttppp::Connection* curcon){
-  DisconnectEvent(curcon);
+void *libhttppp::Event::CloseEvent(void *curcon){
+  ConnectionContext *ccon=(ConnectionContext*)curcon;
+  Event *eventins=ccon->_CurEvent;
+  Connection *con=(Connection*)ccon->_CurConnection;  
+  eventins->DisconnectEvent(con);
   try {
-    epoll_ctl(_epollFD, EPOLL_CTL_DEL, curcon->getClientSocket()->getSocket(), &_setEvent);
-    _Cpool->delConnection(curcon);
+    epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
+    eventins->delConnection(con);
     curcon=NULL;
-    _httpexception.Note("Connection shutdown!");
+    eventins->_httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {
-    _httpexception.Note("Can't do Connection shutdown!");
+    eventins->_httpexception.Note("Can't do Connection shutdown!");
   }
+  return NULL;
 }
 
+/*Event Handlers*/
 void libhttppp::Event::RequestEvent(Connection *curcon) {
     return;
 }
