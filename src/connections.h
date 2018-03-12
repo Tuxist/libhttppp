@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <config.h>
 #include "exception.h"
-#include "os/os.h"
+#include <os/os.h>
 
 #ifndef CONNECTIONS_H
 #define CONNECTIONS_H
@@ -84,9 +84,6 @@ namespace libhttppp {
 
     int             pollState;
     
-    /*Mutex function for worker*/
-    Mutex           CMutex;
-    
   private:
     ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
 				 size_t *qsize,size_t size);
@@ -124,7 +121,6 @@ namespace libhttppp {
     Connection   *_firstConnection;
     Connection   *_lastConnection;
   private:
-    Mutex        *_CMutex;
   };
   
   class ClientConnection {

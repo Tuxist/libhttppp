@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include <signal.h>
 #include <pthread.h>
+#include "os/os.h"
 
 #define READEVENT 0
 #define SENDEVENT 1
@@ -259,7 +260,7 @@ void *libhttppp::Event::CloseEvent(void *curcon){
 }
 
 /*Event Handlers*/
-void libhttppp::Event::RequestEvent(Connection *curcon) {
+void libhttppp::Event::RequestEvent(libhttppp::Connection *curcon) {
     return;
 }
 
@@ -271,6 +272,6 @@ void libhttppp::Event::ConnectEvent(libhttppp::Connection *curcon) {
     return;
 }
 
-void libhttppp::Event::DisconnectEvent(Connection *curcon) {
+void libhttppp::Event::DisconnectEvent(libhttppp::Connection *curcon) {
     return;
 }
