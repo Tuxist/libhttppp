@@ -46,6 +46,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _EventEndloop =true;
     _Cpool= new ConnectionPool(_ServerSocket);
     _Events = new epoll_event[(_ServerSocket->getMaxconnections())];
+    _Mutex = new Mutex;
     _firstConnectionContext=NULL;
     _lastConnectionContext=NULL;
 }
@@ -54,6 +55,7 @@ libhttppp::Event::~Event() {
   delete   _Cpool;
   delete[] _Events;
   delete _firstConnectionContext;
+  delete _Mutex;
   _lastConnectionContext=NULL;
 }
 
@@ -138,10 +140,12 @@ libhttppp::Event::ConnectionContext::ConnectionContext(){
   _CurConnection=NULL;
   _CurCPool=NULL;
   _CurEvent=NULL;
+  _Mutex=new Mutex;
   _nextConnectionContext=NULL;    
 }
 
 libhttppp::Event::ConnectionContext::~ConnectionContext(){
+  delete _Mutex;
   delete _nextConnectionContext;
 }
 
@@ -152,6 +156,7 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
 
 
 libhttppp::Event::ConnectionContext * libhttppp::Event::addConnection(){
+  _Mutex->lock();
   if(!_firstConnectionContext){
     _firstConnectionContext=new ConnectionContext();
     _lastConnectionContext=_firstConnectionContext;
@@ -162,10 +167,12 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::addConnection(){
   _lastConnectionContext->_CurConnection=_Cpool->addConnection();
   _lastConnectionContext->_CurCPool=_Cpool;
   _lastConnectionContext->_CurEvent=this;
+  _Mutex->unlock();
   return _lastConnectionContext;
 }
 
 libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp::Connection* delcon){
+  _Mutex->lock();
   _Cpool->delConnection(delcon);
   ConnectionContext *prevcontext=NULL;
   for(ConnectionContext *curcontext=_firstConnectionContext; curcontext; 
@@ -186,6 +193,7 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp:
     }
     prevcontext=curcontext;
   }
+  _Mutex->unlock();
   if(prevcontext && prevcontext->_nextConnectionContext){
     return prevcontext->_nextConnectionContext;
   }else{
@@ -199,6 +207,8 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp:
 /*Workers*/
 void *libhttppp::Event::ReadEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
+  printf("rv event lock\n");
+  ccon->_Mutex->lock();
   Event *eventins=ccon->_CurEvent;
   Connection *con=(Connection*)ccon->_CurConnection;
   try {
@@ -210,8 +220,12 @@ void *libhttppp::Event::ReadEvent(void *curcon){
         con->addRecvQueue(buf,rcvsize);
     }while(rcvsize>0);
     eventins->RequestEvent(con);
+    printf("unlock\n");
+    ccon->_Mutex->unlock(); 
     WriteEvent(ccon);
   } catch(HTTPException &e) {
+      printf("unlock\n");
+      ccon->_Mutex->unlock();
        if(e.isCritical()) {
          throw e;
        }
@@ -224,6 +238,8 @@ void *libhttppp::Event::ReadEvent(void *curcon){
 
 void *libhttppp::Event::WriteEvent(void* curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
+  printf("wr event lock\n");
+  ccon->_Mutex->lock();
   Event *eventins=ccon->_CurEvent;
   Connection *con=(Connection*)ccon->_CurConnection;
   try {
@@ -238,13 +254,19 @@ void *libhttppp::Event::WriteEvent(void* curcon){
     };
   } catch(HTTPException &e) {
     con->cleanSendData();
+    ccon->_Mutex->unlock();
     CloseEvent(ccon);
   }
+  printf("unlock\n");
+  ccon->_Mutex->unlock();
   return NULL;
 }
 
 void *libhttppp::Event::CloseEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
+  printf("cl event lock\n");
+  ccon->_Mutex->lock();
+  ccon->_CurEvent->_Mutex->lock();
   Event *eventins=ccon->_CurEvent;
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
@@ -256,6 +278,9 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   } catch(HTTPException &e) {
     eventins->_httpexception.Note("Can't do Connection shutdown!");
   }
+  printf("unlock\n");
+  ccon->_CurEvent->_Mutex->unlock();
+  ccon->_Mutex->unlock();
   return NULL;
 }
 

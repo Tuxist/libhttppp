@@ -66,6 +66,8 @@ namespace libhttppp {
             ConnectionPool         *_CurCPool;
             /*Linking to Events*/
             Event                  *_CurEvent;
+            /*Thread Monitor*/
+            Mutex                  *_Mutex;
             /*next entry*/
             ConnectionContext      *_nextConnectionContext;
             friend class Event;
@@ -78,13 +80,13 @@ namespace libhttppp {
         static void *WriteEvent(void *curcon);
         static void *CloseEvent(void *curcon);
         
-		/*API Events*/
-		virtual void RequestEvent(Connection *curcon);
-		virtual void ResponseEvent(libhttppp::Connection *curcon);
-		virtual void ConnectEvent(libhttppp::Connection *curcon);
+	/*API Events*/
+	virtual void RequestEvent(Connection *curcon);
+	virtual void ResponseEvent(libhttppp::Connection *curcon);
+	virtual void ConnectEvent(libhttppp::Connection *curcon);
         virtual void DisconnectEvent(Connection *curcon);
-		/*Run Mainloop*/
-		virtual void runEventloop();
+	/*Run Mainloop*/
+	virtual void runEventloop();
        
 #ifdef EVENT_IOCP
 		typedef enum _IO_OPERATION {
@@ -163,10 +165,13 @@ namespace libhttppp {
     ConnectionContext *_firstConnectionContext;
     ConnectionContext *_lastConnectionContext;
     
+    /*Thread Monitor*/
+    Mutex              *_Mutex;
+    
     HTTPException       _httpexception;
     ServerSocket       *_ServerSocket;
-	bool                _EventEndloop;
-	bool                _EventRestartloop;
+    bool                _EventEndloop;
+    bool                _EventRestartloop;
     ConnectionPool     *_Cpool;
   };
 }
