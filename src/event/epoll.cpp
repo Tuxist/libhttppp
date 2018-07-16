@@ -31,7 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include <errno.h>
 #include <signal.h>
-#include <pthread.h>
 #include "os/os.h"
 
 #define READEVENT 0
