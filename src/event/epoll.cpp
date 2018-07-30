@@ -169,15 +169,7 @@ void libhttppp::Event::runEventloop() {
                 if(_Events[i].events & EPOLLIN) {
                     Thread(ReadEvent,curct);
                 }else{
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock MainMutex");
-#endif
-                    _Mutex->lock();
                     CloseEvent(curct);
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock MainMutex");
-#endif
-                    _Mutex->unlock();
                 }
             } 
         }
@@ -256,7 +248,7 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp:
           _lastConnectionContext=prevcontext;
         }
 #ifdef DEBUG_MUTEX
-     _httpexception.Note("delConnection","unlock prevConnectionMutex");
+        _httpexception.Note("delConnection","unlock prevConnectionMutex");
 #endif
         prevcontext->_Mutex->unlock();
       }else{
@@ -332,6 +324,7 @@ void *libhttppp::Event::ReadEvent(void *curcon){
          throw e;
        }
        if(e.isError()){
+          con->cleanRecvData();
           CloseEvent(ccon);
        }
   }
@@ -357,7 +350,6 @@ void *libhttppp::Event::WriteEvent(void* curcon){
       eventins->ResponseEvent(con);
     }
   } catch(HTTPException &e) {
-    con->cleanSendData();
     CloseEvent(ccon);
   }
 #ifdef DEBUG_MUTEX
@@ -371,13 +363,13 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
 #ifdef DEBUG_MUTEX
-  eventins->_httpexception.Note("CloseEvent","MainMutex");
+  eventins->_httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
 #ifdef DEBUG_MUTEX
-  eventins->_httpexception.Note("CloseEvent","unlock MainMutex");
+  eventins->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
   ccon->_Mutex->unlock();
   try {
