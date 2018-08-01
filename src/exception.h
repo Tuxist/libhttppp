@@ -50,10 +50,6 @@ namespace libhttppp {
   public:
     
     HTTPException(){
-      _Note=false;
-      _Warning=false;
-      _Error=false;
-      _Critical=false;
     }
     
     virtual bool isNote(){
@@ -73,48 +69,47 @@ namespace libhttppp {
     }
     
     virtual const char* Note(const char *desc,const char *msg=NULL){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Note: %s %s\r\n", desc,msg);
+      return ErrorTemplate(_Note,_Buffer,"HTTP Note: %s %s\r\n", desc,msg);
     }
 
     virtual const char* Note(const char *desc,size_t msg){
-      return ErrorTemplate(&_Note,_Buffer,"HTTP Note: %zu\r\n",desc, msg);
+      return ErrorTemplate(_Note,_Buffer,"HTTP Note: %zu\r\n",desc, msg);
     }
     
     virtual const char* Warning(const char *desc,const char *msg=NULL){
-      return ErrorTemplate(&_Warning,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
+      return ErrorTemplate(_Warning,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
     }
   
     virtual const char* Error(const char *desc,const char *msg = NULL){
-      return ErrorTemplate(&_Error,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
+      return ErrorTemplate(_Error,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
     }
   
     virtual const char* Critical(const char *desc,const char *msg = NULL){
-      return ErrorTemplate(&_Critical,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
+      return ErrorTemplate(_Critical,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
     }
   
-	virtual const char* Critical(const char *desc, int msg) {
-		return ErrorTemplate(&_Critical, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
-	}
+    virtual const char* Critical(const char *desc, int msg) {
+      return ErrorTemplate(_Critical, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
+    }
 
     virtual const char* what() const throw(){
       return _Buffer;
     }
   protected:
     template <typename Arg1,typename Arg2, typename Arg3>
-    const char *ErrorTemplate(bool *type,char *buffer,Arg1 printstyle,Arg2 description, Arg3 message){
-      *type=true;
+    const char *ErrorTemplate(int type,char *buffer,Arg1 printstyle,Arg2 description, Arg3 message){
 //      std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,description,message);
+      flockfile(stdout);
 #ifdef DEBUG
-      printf("%s",buffer);
+      printf("%s\n",buffer);
 #endif
+      funlockfile(stdout);
       return buffer;
     }
+    
     char _Buffer[MSGLEN];
-    bool _Note;
-    bool _Warning;
-    bool _Error;
-    bool _Critical;
+    enum Type { _Note,_Warning,_Error,_Critical};
   };
 }
 #endif

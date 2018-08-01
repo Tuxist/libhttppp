@@ -53,10 +53,14 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 }
 
 libhttppp::Event::~Event() {
+#ifdef DEBUG_MUTEX
+   _httpexception.Note("~Event","Lock MainMutex");
+#endif
+  _Mutex->lock();
   delete   _Cpool;
   delete[] _Events;
-  delete _firstConnectionContext;
-  delete _Mutex;
+  delete   _firstConnectionContext;
+  delete   _Mutex;
   _lastConnectionContext=NULL;
 }
 
@@ -87,6 +91,7 @@ void libhttppp::Event::runEventloop() {
     
     int srvssocket=_ServerSocket->getSocket();
     int maxconnets=_ServerSocket->getMaxconnections();
+    signal(SIGPIPE, SIG_IGN);
     while(_EventEndloop) {
         int n = epoll_wait(_epollFD,_Events,maxconnets, EPOLLWAIT);
         if(n<0){
