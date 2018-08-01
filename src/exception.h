@@ -50,46 +50,55 @@ namespace libhttppp {
   public:
     
     HTTPException(){
+      CType=TNote;
     }
     
     virtual bool isNote(){
-      return _Note;
+      if(CType==TNote)
+        return true;    
+      return false;
     }
     
     virtual bool isWarning(){
-      return _Warning;
+      if(CType==TWarning)
+        return true;    
+      return false;
     }
     
     virtual bool isError(){
-      return _Error;
+      if(CType==TError)
+        return true;    
+      return false;
     }
     
     virtual bool isCritical(){
-      return _Critical;
+      if(CType==TCritical)
+        return true;    
+      return false;
     }
     
     virtual const char* Note(const char *desc,const char *msg=NULL){
-      return ErrorTemplate(_Note,_Buffer,"HTTP Note: %s %s\r\n", desc,msg);
+      return ErrorTemplate(TNote,_Buffer,"HTTP Note: %s %s\r\n", desc,msg);
     }
 
     virtual const char* Note(const char *desc,size_t msg){
-      return ErrorTemplate(_Note,_Buffer,"HTTP Note: %zu\r\n",desc, msg);
+      return ErrorTemplate(TNote,_Buffer,"HTTP Note: %zu\r\n",desc, msg);
     }
     
     virtual const char* Warning(const char *desc,const char *msg=NULL){
-      return ErrorTemplate(_Warning,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
+      return ErrorTemplate(TWarning,_Buffer,"HTTP Warning: %s %s\r\n",desc, msg);
     }
-  
+    
     virtual const char* Error(const char *desc,const char *msg = NULL){
-      return ErrorTemplate(_Error,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
+      return ErrorTemplate(TError,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
     }
   
     virtual const char* Critical(const char *desc,const char *msg = NULL){
-      return ErrorTemplate(_Critical,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
+      return ErrorTemplate(TCritical,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
     }
   
     virtual const char* Critical(const char *desc, int msg) {
-      return ErrorTemplate(_Critical, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
+      return ErrorTemplate(TCritical, _Buffer, "HTTP Cirtical: %s %d \r\n", desc, msg);
     }
 
     virtual const char* what() const throw(){
@@ -98,6 +107,7 @@ namespace libhttppp {
   protected:
     template <typename Arg1,typename Arg2, typename Arg3>
     const char *ErrorTemplate(int type,char *buffer,Arg1 printstyle,Arg2 description, Arg3 message){
+      CType=type;
 //      std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,description,message);
       flockfile(stdout);
@@ -109,7 +119,8 @@ namespace libhttppp {
     }
     
     char _Buffer[MSGLEN];
-    enum Type { _Note,_Warning,_Error,_Critical};
+    enum Type {TNote,TWarning,TError,TCritical};
+    int CType;
   };
 }
 #endif
