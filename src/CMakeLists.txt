@@ -6,6 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 include(GenerateExportHeader)
 
 set(libhttpSrcs
+  exception.cpp
   connections.cpp
   http.cpp
   httpd.cpp

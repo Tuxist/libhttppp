@@ -46,12 +46,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define MSGLEN 255
 
 namespace libhttppp {
+  class Mutex;
   class HTTPException {
   public:
     
-    HTTPException(){
-      CType=TNote;
-    }
+    HTTPException();
+    ~HTTPException();
     
     virtual bool isNote(){
       if(CType==TNote)
@@ -121,6 +121,7 @@ namespace libhttppp {
     char _Buffer[MSGLEN];
     enum Type {TNote,TWarning,TError,TCritical};
     int CType;
+    Mutex *_Mutex;
   };
 }
 #endif

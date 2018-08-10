@@ -70,6 +70,8 @@ namespace libhttppp {
             Mutex                  *_Mutex;
             /*next entry*/
             ConnectionContext      *_nextConnectionContext;
+            /*exception handler*/
+            HTTPException           _httpexception;
             friend class Event;
         };
         
