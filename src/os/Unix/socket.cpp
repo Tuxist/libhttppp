@@ -82,7 +82,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
   
   if (bind(_Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
-#ifdef Linux
+#ifdef __GLIBCXX__
 	  char errbuf[255];
 	  _httpexception.Error("Can't bind Server UnixSocket",
 		                    strerror_r(errno, errbuf, 255));
@@ -179,13 +179,13 @@ int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
   int socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket==-1){
-#ifdef Linux
-	  char errbuf[255];
-	  _httpexception.Error("Can't accept on  Socket",strerror_r(errno, errbuf, 255));
+#ifdef __GLIBCXX__
+    char errbuf[255];
+    _httpexception.Error("Can't accept on  Socket",strerror_r(errno, errbuf, 255));
 #else
-	  char errbuf[255];
-	  strerror_r(errno, errbuf, 255);
-	  _httpexception.Error("Can't accept on  Socket",errbuf);
+    char errbuf[255];
+    strerror_r(errno, errbuf, 255);
+    _httpexception.Error("Can't accept on  Socket",errbuf);
 #endif
   }
   clientsocket->_Socket=socket;
@@ -215,7 +215,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   }
 
   if(rval==-1){
-#ifdef Linux
+#ifdef __GLIBCXX__
     char errbuf[255];
     _httpexception.Error("Socket sendata:",strerror_r(errno,errbuf,255));
 #else
@@ -242,7 +242,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
                               &socket->_ClientAddr, &socket->_ClientAddrLen);
   }
   if(recvsize==-1){
-#ifdef Linux 
+#ifdef __GLIBCXX__ 
     char errbuf[255];
     _httpexception.Error("Socket recvata:",strerror_r(errno,errbuf,255));
 #else
