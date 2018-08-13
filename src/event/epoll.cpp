@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define READEVENT 0
 #define SENDEVENT 1
 
-#define DEBUG_MUTEX
+//#define DEBUG_MUTEX
 
 #include "../event.h"
 
