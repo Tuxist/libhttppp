@@ -204,15 +204,16 @@ void libhttppp::Event::runEventloop() {
 		SetConsoleCtrlHandler(CtrlHandler, FALSE);
 }
 
-void libhttppp::Event::CloseEvent(libhttppp::Connection* curcon){
+void *libhttppp::Event::CloseEvent(void* curcon){
+	return NULL;
 }
 
-void libhttppp::Event::ReadEvent(libhttppp::Connection* curcon)
-{
+void *libhttppp::Event::ReadEvent(void* curcon){
+	return NULL;
 }
 
-void libhttppp::Event::WriteEvent(libhttppp::Connection* curcon)
-{
+void *libhttppp::Event::WriteEvent(void* curcon){
+	return NULL;
 }
 
 

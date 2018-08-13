@@ -110,11 +110,9 @@ namespace libhttppp {
       CType=type;
 //      std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,description,message);
-      flockfile(stdout);
 #ifdef DEBUG
       printf("%s\n",buffer);
 #endif
-      funlockfile(stdout);
       return buffer;
     }
     
