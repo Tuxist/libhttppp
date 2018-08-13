@@ -236,6 +236,10 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::addConnection(){
 
 libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp::Connection* delcon){
   ConnectionContext *prevcontext=NULL;
+#ifdef DEBUG_MUTEX
+  _httpexception.Note("delConnection","Lock MainMutex");
+#endif
+  _Mutex->lock();
   for(ConnectionContext *curcontext=_firstConnectionContext; curcontext; 
       curcontext=curcontext->nextConnectionContext()){
     if(curcontext->_CurConnection==delcon){
@@ -288,6 +292,10 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp:
     }
     prevcontext=curcontext;
   }
+#ifdef DEBUG_MUTEX
+  _httpexception.Note("delConnection","unlock MainMutex");
+#endif
+  _Mutex->unlock();
   if(prevcontext && prevcontext->_nextConnectionContext){
     return prevcontext->_nextConnectionContext;
   }else{
