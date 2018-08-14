@@ -252,7 +252,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 	/*Register Parameters*/
 	_CmdController->registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
     _CmdController->registerCmd("httpaddr",'a', false,"0.0.0.0","Address to listen");
-    _CmdController->registerCmd("httpport", 'p', true, 0, "Port to listen");
+    _CmdController->registerCmd("httpport", 'p', false, 8080, "Port to listen");
     _CmdController->registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
     _CmdController->registerCmd("httpscert", 'c',false,(const char*) NULL, "HTTPS Certfile");
     _CmdController->registerCmd("httpskey", 'k',false, (const char*) NULL, "HTTPS Keyfile");
