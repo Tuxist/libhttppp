@@ -251,7 +251,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     _CmdController= new HTTPDCmdController;
 	/*Register Parameters*/
 	_CmdController->registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
-    _CmdController->registerCmd("httpaddr",'a', false,"0.0.0.0","Address to listen");
+    _CmdController->registerCmd("httpaddr",'a', true,(const char*) NULL,"Address to listen");
     _CmdController->registerCmd("httpport", 'p', false, 8080, "Port to listen");
     _CmdController->registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
     _CmdController->registerCmd("httpscert", 'c',false,(const char*) NULL, "HTTPS Certfile");
@@ -271,8 +271,11 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 
 	/*get port from console paramter*/
 	int port = 0;
-	if(_CmdController->getHTTPDCmdbyKey("httpport"))
+    bool portset=false;
+	if(_CmdController->getHTTPDCmdbyKey("httpport")){
 	    port = _CmdController->getHTTPDCmdbyKey("httpport")->getValueInt();
+        portset = _CmdController->getHTTPDCmdbyKey("httpport")->getFound();
+    }
 
 	/*get httpaddress from console paramter*/
 	const char *httpaddr = NULL;
@@ -295,11 +298,16 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 		sslkeypath = _CmdController->getHTTPDCmdbyKey("httpskey")->getValue();
 
   try {
-	  if (port != 0)
+#ifndef Windows
+	  if (portset == true)
 		  _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
 	  else
 		  _ServerSocket = new ServerSocket(httpaddr, maxconnections);
-	  if (!_ServerSocket) {
+#else
+      _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
+#endif
+
+      if (!_ServerSocket) {
 		  throw _httpexception;
 	  }
 	  
