@@ -90,74 +90,17 @@ namespace libhttppp {
 	/*Run Mainloop*/
 	virtual void runEventloop();
        
-#ifdef EVENT_IOCP
-		typedef enum _IO_OPERATION {
-			ClientIoAccept,
-			ClientIoRead,
-			ClientIoWrite
-		} IO_OPERATION, *PIO_OPERATION;
-
-		//
-		// data to be associated for every I/O operation on a socket
-		//
-		typedef struct _PER_IO_CONTEXT {
-			WSAOVERLAPPED               Overlapped;
-			char                        Buffer[BLOCKSIZE];
-			WSABUF                      wsabuf;
-			int                         nTotalBytes;
-			int                         nSentBytes;
-			IO_OPERATION                IOOperation;
-			SOCKET                      SocketAccept;
-
-			struct _PER_IO_CONTEXT      *pIOContextForward;
-		} PER_IO_CONTEXT, *PPER_IO_CONTEXT;
-
-		//
-		// For AcceptEx, the IOCP key is the PER_SOCKET_CONTEXT for the listening socket,
-		// so we need to another field SocketAccept in PER_IO_CONTEXT. When the outstanding
-		// AcceptEx completes, this field is our connection socket handle.
-		//
-
-		//
-		// data to be associated with every socket added to the IOCP
-		//
-		typedef struct _PER_SOCKET_CONTEXT {
-            Connection                 *CurConnection;
-            
-			LPFN_ACCEPTEX               fnAcceptEx;
-            
-			//
-			//linked list for all outstanding i/o on the socket
-			//
-			PPER_IO_CONTEXT             pIOContext;
-			struct _PER_SOCKET_CONTEXT  *pCtxtBack;
-			struct _PER_SOCKET_CONTEXT  *pCtxtForward;
-		} PER_SOCKET_CONTEXT, *PPER_SOCKET_CONTEXT;
-
+#ifdef Windows
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
-		static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
-		BOOL CreateAcceptSocket(BOOL fUpdateIOCP);
-		PPER_SOCKET_CONTEXT UpdateCompletionPort(SOCKET sd, IO_OPERATION ClientIo,
-			                                     BOOL bAddToList);
-		VOID CloseClient(PPER_SOCKET_CONTEXT lpPerSocketContext, BOOL bGraceful);
-		PPER_SOCKET_CONTEXT CtxtAllocate(SOCKET sd, IO_OPERATION ClientIO);
-		VOID CtxtListAddTo(PPER_SOCKET_CONTEXT lpPerSocketContext);
-		VOID CtxtListDeleteFrom(PPER_SOCKET_CONTEXT lpPerSocketContext);
-		VOID CtxtListFree();
-		SOCKET CreateSocket(void);
 #else
         static  void  CtrlHandler(int signum);
 #endif
   private:
 #ifdef EVENT_EPOLL
-  int                 _epollFD;
-  struct epoll_event *_Events;
-  struct epoll_event  _setEvent;    
-#endif
-#ifdef EVENT_IOCP
-	PPER_SOCKET_CONTEXT _pCtxtListenSocket;
-	PPER_SOCKET_CONTEXT _pCtxtList;
-	HANDLE              _ThreadHandles[MAX_WORKER_THREAD];
+	int                 _epollFD;
+	struct epoll_event *_Events;
+	struct epoll_event  _setEvent;    
+#elif EVENT_IOCP
 	HANDLE              _IOCP;
 	WSAEVENT            _CleanupEvent[1];
 	CRITICAL_SECTION    _CriticalSection;

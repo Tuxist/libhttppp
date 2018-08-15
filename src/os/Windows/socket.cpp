@@ -196,6 +196,21 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   return rval;
 }
 
+ssize_t libhttppp::ServerSocket::sendWSAData(ClientSocket *socket, WSABUF *data, DWORD size,DWORD flags,
+	                                         LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
+	                                         LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+  int	rval = WSASendTo(socket->getSocket(), data, size, numberofbytessend, flags, &socket->_ClientAddr, 
+	                     socket->_ClientAddrLen,lpOverlapped, lpCompletionRoutine);
+  if (rval == -1) {
+	char errbuf[255];
+	strerror_r(errno, errbuf, 255);
+	_httpexception.Error("Socket sendata:", errbuf);
+	if (errno != EAGAIN || errno != EWOULDBLOCK)
+		throw _httpexception;
+  }
+  return rval;
+}
+
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
    return recvData(socket,data,size,0);
 }
@@ -217,4 +232,19 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     }
   }
   return recvsize;
+}
+
+ssize_t libhttppp::ServerSocket::recvWSAData(ClientSocket *socket, WSABUF *data, DWORD size, LPDWORD flags,
+	LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
+	LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+	ssize_t recvsize = WSARecvFrom(socket->getSocket(), data, size, numberofbytessend, flags, &socket->_ClientAddr,
+		(LPINT)socket->_ClientAddrLen, lpOverlapped, lpCompletionRoutine);
+	if (recvsize == -1) {
+		char errbuf[255];
+		strerror_r(errno, errbuf, 255);
+		_httpexception.Error("Socket sendata:", errbuf);
+		if (errno != EAGAIN || errno != EWOULDBLOCK)
+			throw _httpexception;
+	}
+	return recvsize;
 }

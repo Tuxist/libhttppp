@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SOCKET_H
 
 namespace libhttppp {
+
 class ClientSocket {
 public:
     ClientSocket();
@@ -49,7 +50,7 @@ private:
     SOCKET           _Socket;
     SSL             *_SSL;
     struct sockaddr  _ClientAddr;
-    socklen_t        _ClientAddrLen;
+	socklen_t        _ClientAddrLen;
     friend class ServerSocket;
 };
 
@@ -67,8 +68,15 @@ public:
     void          listenSocket();
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size);
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size,int flags);
+	ssize_t       sendWSAData(ClientSocket *socket,WSABUF *data, DWORD size,DWORD flags, 
+		                      LPDWORD numberofbytessend,LPWSAOVERLAPPED lpOverlapped,
+		                      LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
+
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size,int flags);
+	ssize_t       recvWSAData(ClientSocket *socket, WSABUF *data, DWORD size, LPDWORD flags,
+                              LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
+		                      LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
 private:
     struct addrinfo _SockAddr;
     SOCKET          _Socket;
