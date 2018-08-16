@@ -74,7 +74,8 @@ void libhttppp::Event::runEventloop() {
 	int srvssocket = _ServerSocket->getSocket();
 	int maxconnets = _ServerSocket->getMaxconnections();
 
-	
+	SYSInfo sysinfo;
+	DWORD threadcount = sysinfo.getNumberOfProcessors() * 2;
 
 	while (_EventEndloop) {
 		int n = epoll_wait(_epollFD, _Events, maxconnets, EPOLLWAIT);

@@ -8,6 +8,7 @@
   #include "Windows/inttype.h"
   #include "Windows/mutex.h"
   #include "Windows/thread.h"
+  #include "Windows/sysinfo.h"
 #else
   #include "Unix/socket.h"
   #include "Unix/inttype.h"
