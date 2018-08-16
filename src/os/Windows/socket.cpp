@@ -172,8 +172,6 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   return socket;
 }
 
-
-
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
   return sendData(socket,data,size,0);
 }
