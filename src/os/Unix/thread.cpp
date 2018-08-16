@@ -31,17 +31,21 @@ libhttppp::Thread::Thread(){
   _nextThread = NULL;
 }
 
+libhttppp::Thread::~Thread(){
+	delete _nextThread;
+}
+
 void libhttppp::Thread::Create(void *function(void*), void *arguments) {
 	int rth = pthread_create(&_Thread, NULL, function, arguments);
 	if (rth != 0) {
 		_httpexception.Critical("can't create thread");
 		throw _httpexception;
 	}
-	pthread_detach(_Thread);
+	
 }
 
-libhttppp::Thread::~Thread(){
-	delete _nextThread;
+void libhttppp::Thread::Detach(){
+    pthread_detach(_Thread);
 }
 
 int libhttppp::Thread::getThreadID() {

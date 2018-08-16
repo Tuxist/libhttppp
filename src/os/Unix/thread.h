@@ -37,6 +37,7 @@ namespace libhttppp {
     Thread();
     ~Thread();
 	void Create(void *function(void*), void *arguments);
+    void Detach();
 	int getThreadID();
   private:
     HTTPException   _httpexception;

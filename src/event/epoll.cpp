@@ -176,6 +176,7 @@ void libhttppp::Event::runEventloop() {
                 if(_Events[i].events & EPOLLIN) {
 					Thread *curthread = _ThreadPool->addThread();
 					curthread->Create(ReadEvent,curct);
+                    curthread->Detach();
                 }else{
                     CloseEvent(curct);
                 }
@@ -364,8 +365,8 @@ void *libhttppp::Event::WriteEvent(void* curcon){
                                     con->getSendData()->getDataSize());
       if(sended>0)
         con->resizeSendQueue(sended);
-      eventins->ResponseEvent(con);
     }
+    eventins->ResponseEvent(con);
   } catch(HTTPException &e) {
     CloseEvent(ccon);
   }
