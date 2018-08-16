@@ -37,3 +37,7 @@ libhttppp::Thread::Thread(LPTHREAD_START_ROUTINE function, void* arguments){
 
 libhttppp::Thread::~Thread(){
 }
+
+DWORD libhttppp::Thread::getThreadID() {
+  return _ThreadId;
+}

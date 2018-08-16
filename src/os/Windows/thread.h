@@ -37,6 +37,7 @@ namespace libhttppp {
   public:
     Thread(LPTHREAD_START_ROUTINE function,void *arguments);
     ~Thread();
+	DWORD getThreadID();
   private:
     HANDLE          _Thread;
     DWORD           _ThreadId;

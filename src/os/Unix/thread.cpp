@@ -28,8 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "thread.h"
 
 libhttppp::Thread::Thread(void* function(void*), void* arguments){
-  int thc = pthread_create(&_Thread, NULL, function,arguments);
-  if( thc != 0 ) {
+  _ThreadID = pthread_create(&_Thread, NULL, function,arguments);
+  if(_ThreadID != 0 ) {
     _httpexception.Critical("can't create thread");
     throw _httpexception;
   }
@@ -37,4 +37,8 @@ libhttppp::Thread::Thread(void* function(void*), void* arguments){
 }
 
 libhttppp::Thread::~Thread(){
+}
+
+int libhttppp::Thread::getThreadID() {
+	return _ThreadID;
 }

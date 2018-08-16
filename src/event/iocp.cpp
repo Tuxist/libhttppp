@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <errno.h>
 #include "os/os.h"
 
+
 #define READEVENT 0
 #define SENDEVENT 1
 
@@ -69,15 +70,11 @@ void libhttppp::Event::runEventloop() {
 			GetLastError());
 		throw _httpexception;
 	}
-	_setEvent.data.fd = _ServerSocket->getSocket();
-
-	if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &_setEvent) < 0) {
-		_httpexception.Critical("can't create epoll");
-		throw _httpexception;
-	}
 
 	int srvssocket = _ServerSocket->getSocket();
 	int maxconnets = _ServerSocket->getMaxconnections();
+
+	
 
 	while (_EventEndloop) {
 		int n = epoll_wait(_epollFD, _Events, maxconnets, EPOLLWAIT);
