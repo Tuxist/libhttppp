@@ -89,12 +89,17 @@ namespace libhttppp {
     virtual void DisconnectEvent(Connection *curcon);
 	/*Run Mainloop*/
 	virtual void runEventloop();
-       
+
+#ifdef EVENT_IOCP
+	static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
+#endif
+
 #ifdef Windows
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
 #else
         static  void  CtrlHandler(int signum);
 #endif
+
   private:
 #ifdef EVENT_EPOLL
 	int                 _epollFD;

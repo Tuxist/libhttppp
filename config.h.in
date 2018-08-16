@@ -32,5 +32,3 @@
 #define NEWLINE "\r\n"
 
 #define DEBUG
-
-#define MAX_WORKER_THREAD 16

@@ -31,6 +31,9 @@ libhttppp::Thread::Thread(){
   _ThreadId = -1;
 }
 
+libhttppp::Thread::~Thread(){
+}
+
 void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments) {
 	_Thread = CreateThread(NULL, 0, function, arguments, 0, &_ThreadId);
 	if (_Thread == NULL) {
@@ -39,9 +42,14 @@ void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments)
 	}
 }
 
-libhttppp::Thread::~Thread(){
+void libhttppp::Thread::Detach() {
+	_httpexception.Note("Detach not support by this OS");
 }
 
 DWORD libhttppp::Thread::getThreadID() {
   return _ThreadId;
+}
+
+HANDLE libhttppp::Thread::getHandle() {
+	return _Thread;
 }

@@ -115,7 +115,9 @@ void libhttppp::Event::runEventloop() {
 		}
 
 		for (DWORD dwCPU = 0; dwCPU < threadcount; dwCPU++) {
-
+			Thread  hThread;
+			hThread.Create(WorkerThread, this);
+//			g_ThreadHandles[dwCPU] = hThread.getHandle();
 		}
 
 		/*
@@ -208,6 +210,174 @@ void libhttppp::Event::runEventloop() {
 		}*/
 		
 	}
+}
+
+DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
+	HTTPException httpexepction;
+	Event *curenv= (Event*)WorkThreadContext;
+	HANDLE hIOCP = curenv->_IOCP;
+	BOOL bSuccess = FALSE;
+	int nRet = 0;
+	LPWSAOVERLAPPED lpOverlapped = NULL;
+	WSABUF buffRecv;
+	WSABUF buffSend;
+	DWORD dwRecvNumBytes = 0;
+	DWORD dwSendNumBytes = 0;
+	DWORD dwFlags = 0;
+	DWORD dwIoSize = 0;
+	HRESULT hRet;
+
+	while (TRUE) {
+
+		//
+		// continually loop to service io completion packets
+		//
+		bSuccess = GetQueuedCompletionStatus(
+			hIOCP,
+			&dwIoSize,
+			(PDWORD_PTR)&lpPerSocketContext,
+			(LPOVERLAPPED *)&lpOverlapped,
+			INFINITE
+		);
+		if (!bSuccess)
+			httpexepction.Error("GetQueuedCompletionStatus() failed:",(const char*)GetLastError());
+
+		if (curenv->_EventEndloop) {
+			return(0);
+		}
+
+		lpIOContext = (PPER_IO_CONTEXT)lpOverlapped;
+
+		//
+		//We should never skip the loop and not post another AcceptEx if the current
+		//completion packet is for previous AcceptEx
+		//
+		if (lpIOContext->IOOperation != ClientIoAccept) {
+			if (!bSuccess || (bSuccess && (0 == dwIoSize))) {
+
+				//
+				// client connection dropped, continue to service remaining (and possibly 
+				// new) client connections
+				//
+				CloseClient(lpPerSocketContext, FALSE);
+				continue;
+			}
+		}
+
+		//
+		// determine what type of IO packet has completed by checking the PER_IO_CONTEXT 
+		// associated with this socket.  This will determine what action to take.
+		//
+		switch (lpIOContext->IOOperation) {
+		case ClientIoAccept:
+
+			//
+			// When the AcceptEx function returns, the socket sAcceptSocket is 
+			// in the default state for a connected socket. The socket sAcceptSocket 
+			// does not inherit the properties of the socket associated with 
+			// sListenSocket parameter until SO_UPDATE_ACCEPT_CONTEXT is set on 
+			// the socket. Use the setsockopt function to set the SO_UPDATE_ACCEPT_CONTEXT 
+			// option, specifying sAcceptSocket as the socket handle and sListenSocket 
+			// as the option value. 
+			//
+
+			SOCKET sock = curenv->_ServerSocket->getSocket();
+
+			nRet = setsockopt(
+				lpPerSocketContext->pIOContext->SocketAccept,
+				SOL_SOCKET,
+				SO_UPDATE_ACCEPT_CONTEXT,
+				(char *)&sock,
+				sizeof(sock)
+			);
+
+			if (nRet == SOCKET_ERROR) {
+
+				//
+				//just warn user here.
+				//
+				myprintf("setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed to update accept socket\n");
+				WSASetEvent(g_hCleanupEvent[0]);
+				return(0);
+			}
+
+			lpAcceptSocketContext = UpdateCompletionPort(
+				lpPerSocketContext->pIOContext->SocketAccept,
+				ClientIoAccept, TRUE);
+
+			if (lpAcceptSocketContext == NULL) {
+
+				//
+				//just warn user here.
+				//
+				myprintf("failed to update accept socket to IOCP\n");
+				WSASetEvent(g_hCleanupEvent[0]);
+				return(0);
+			}
+
+			if (dwIoSize) {
+				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoWrite;
+				lpAcceptSocketContext->pIOContext->nTotalBytes = dwIoSize;
+				lpAcceptSocketContext->pIOContext->nSentBytes = 0;
+				lpAcceptSocketContext->pIOContext->wsabuf.len = dwIoSize;
+				hRet = StringCbCopyN(lpAcceptSocketContext->pIOContext->Buffer,
+					MAX_BUFF_SIZE,
+					lpPerSocketContext->pIOContext->Buffer,
+					sizeof(lpPerSocketContext->pIOContext->Buffer)
+				);
+				lpAcceptSocketContext->pIOContext->wsabuf.buf = lpAcceptSocketContext->pIOContext->Buffer;
+
+				nRet = WSASend(
+					lpPerSocketContext->pIOContext->SocketAccept,
+					&lpAcceptSocketContext->pIOContext->wsabuf, 1,
+					&dwSendNumBytes,
+					0,
+					&(lpAcceptSocketContext->pIOContext->Overlapped), NULL);
+
+				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+					myprintf("WSASend() failed: %d\n", WSAGetLastError());
+					CloseClient(lpAcceptSocketContext, FALSE);
+				}
+				else if (g_bVerbose) {
+					myprintf("WorkerThread %d: Socket(%d) AcceptEx completed (%d bytes), Send posted\n",
+						GetCurrentThreadId(), lpPerSocketContext->Socket, dwIoSize);
+				}
+			}
+			else {
+
+				//
+				// AcceptEx completes but doesn't read any data so we need to post
+				// an outstanding overlapped read.
+				//
+				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoRead;
+				dwRecvNumBytes = 0;
+				dwFlags = 0;
+				buffRecv.buf = lpAcceptSocketContext->pIOContext->Buffer,
+					buffRecv.len = MAX_BUFF_SIZE;
+				nRet = WSARecv(
+					lpAcceptSocketContext->Socket,
+					&buffRecv, 1,
+					&dwRecvNumBytes,
+					&dwFlags,
+					&lpAcceptSocketContext->pIOContext->Overlapped, NULL);
+				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+					myprintf("WSARecv() failed: %d\n", WSAGetLastError());
+					CloseClient(lpAcceptSocketContext, FALSE);
+				}
+			}
+
+			//
+			//Time to post another outstanding AcceptEx
+			//
+			if (!CreateAcceptSocket(FALSE)) {
+				myprintf("Please shut down and reboot the server.\n");
+				WSASetEvent(curenv->_hCleanupEvent[0]);
+				return(0);
+			}
+			break;
+		} //switch
+	} //while
+	return(0);
 }
 
 BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
