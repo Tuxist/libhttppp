@@ -39,7 +39,6 @@ namespace libhttppp {
 	int getThreadID();
   private:
     HTTPException   _httpexception;
-	int             _ThreadID;
     pthread_t       _Thread;
   };
 }
