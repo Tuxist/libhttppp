@@ -62,7 +62,7 @@ libhttppp::Event::~Event() {
   delete[] _Events;
   delete   _firstConnectionContext;
   delete   _Mutex;
-  delete   _Threadpool;
+  delete   _ThreadPool;
   _lastConnectionContext=NULL;
 }
 
@@ -174,7 +174,7 @@ void libhttppp::Event::runEventloop() {
             } else {
                 curct=(ConnectionContext*)_Events[i].data.ptr;
                 if(_Events[i].events & EPOLLIN) {
-					Thread *curthread = ThreadPool->addThread();
+					Thread *curthread = _ThreadPool->addThread();
 					curthread->Create(ReadEvent,curct);
                 }else{
                     CloseEvent(curct);

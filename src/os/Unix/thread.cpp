@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "thread.h"
 
-libhttppp::Thread::Thread(void* function(void*), void* arguments){
+libhttppp::Thread::Thread(){
   _nextThread = NULL;
 }
 

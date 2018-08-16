@@ -118,7 +118,7 @@ namespace libhttppp {
     ServerSocket       *_ServerSocket;
     bool                _EventEndloop;
     bool                _EventRestartloop;
-	ThreadPool          _ThreadPool;
+	ThreadPool         *_ThreadPool;
     ConnectionPool     *_Cpool;
   };
 }
