@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 #include "connections.h"
 #include "os/os.h"
-#include "threadpool.h"
 #include <config.h>
 
 #ifdef Windows
@@ -118,7 +117,6 @@ namespace libhttppp {
     ServerSocket       *_ServerSocket;
     bool                _EventEndloop;
     bool                _EventRestartloop;
-	ThreadPool         *_ThreadPool;
     ConnectionPool     *_Cpool;
   };
 }

@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "thread.h" 
 
 libhttppp::Thread::Thread(){
-  _nextThread = NULL;
   _ThreadId = -1;
 }
 
@@ -41,7 +40,6 @@ void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments)
 }
 
 libhttppp::Thread::~Thread(){
-	delete _nextThread;
 }
 
 DWORD libhttppp::Thread::getThreadID() {

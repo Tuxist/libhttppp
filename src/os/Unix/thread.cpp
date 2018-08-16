@@ -28,11 +28,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "thread.h"
 
 libhttppp::Thread::Thread(){
-  _nextThread = NULL;
 }
 
 libhttppp::Thread::~Thread(){
-	delete _nextThread;
 }
 
 void libhttppp::Thread::Create(void *function(void*), void *arguments) {

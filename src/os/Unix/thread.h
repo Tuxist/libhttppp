@@ -42,8 +42,6 @@ namespace libhttppp {
   private:
     HTTPException   _httpexception;
     pthread_t       _Thread;
-	Thread         *_nextThread;
-	friend class     ThreadPool;
   };
 }
 #endif

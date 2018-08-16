@@ -43,8 +43,6 @@ namespace libhttppp {
     HANDLE          _Thread;
     DWORD           _ThreadId;
     HTTPException   _httpexception;
-	Thread         *_nextThread;
-	friend class     ThreadPool;
   };
 };
 
