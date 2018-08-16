@@ -35,13 +35,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
   class Thread{
   public:
-    Thread(LPTHREAD_START_ROUTINE function,void *arguments);
+    Thread();
     ~Thread();
+	void Create(LPTHREAD_START_ROUTINE function, void *arguments);
 	DWORD getThreadID();
   private:
     HANDLE          _Thread;
     DWORD           _ThreadId;
     HTTPException   _httpexception;
+	Thread         *_nextThread;
+	friend class     ThreadPool;
   };
 };
 

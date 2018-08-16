@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 #include "connections.h"
 #include "os/os.h"
+#include "threadpool.h"
 #include <config.h>
 
 #ifdef Windows
@@ -86,7 +87,7 @@ namespace libhttppp {
 	virtual void RequestEvent(Connection *curcon);
 	virtual void ResponseEvent(libhttppp::Connection *curcon);
 	virtual void ConnectEvent(libhttppp::Connection *curcon);
-        virtual void DisconnectEvent(Connection *curcon);
+    virtual void DisconnectEvent(Connection *curcon);
 	/*Run Mainloop*/
 	virtual void runEventloop();
        
@@ -102,7 +103,7 @@ namespace libhttppp {
 	struct epoll_event  _setEvent;    
 #elif EVENT_IOCP
 	HANDLE              _IOCP;
-	WSAEVENT            _CleanupEvent[1];
+	WSAEVENT            _hCleanupEvent[1];
 	CRITICAL_SECTION    _CriticalSection;
 #endif
     
@@ -117,6 +118,7 @@ namespace libhttppp {
     ServerSocket       *_ServerSocket;
     bool                _EventEndloop;
     bool                _EventRestartloop;
+	ThreadPool          _ThreadPool;
     ConnectionPool     *_Cpool;
   };
 }

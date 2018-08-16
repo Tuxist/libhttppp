@@ -34,12 +34,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
   class Thread{
   public:
-    Thread(void *function(void*),void *arguments);
+    Thread();
     ~Thread();
+	Create(void *function(void*), void *arguments);
 	int getThreadID();
   private:
     HTTPException   _httpexception;
     pthread_t       _Thread;
+	Thread         *_nextThread;
+	friend class     ThreadPool;
   };
 }
 #endif

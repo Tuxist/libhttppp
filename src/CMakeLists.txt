@@ -12,6 +12,7 @@ set(libhttpSrcs
   httpd.cpp
   https.cpp
   base64.cpp
+  threadpool.cpp
 )
 
 #os dependencies
@@ -81,6 +82,7 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
+			  threadpool.h
               "${CMAKE_BINARY_DIR}/config.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp
@@ -97,6 +99,7 @@ install(FILES os/Windows/inttype.h
               os/Windows/socket.h
               os/Windows/mutex.h
               os/Windows/thread.h
+			  os/Windows/sysinfo.h
         DESTINATION include/httppp/os/Windows
         COMPONENT Devel
 )

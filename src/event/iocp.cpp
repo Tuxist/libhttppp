@@ -64,20 +64,61 @@ libhttppp::Event::~Event() {
 libhttppp::Event* _EventIns = NULL;
 
 void libhttppp::Event::runEventloop() {
-	_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
-	if (_IOCP == NULL) {
-		_httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port: %d\n",
-			GetLastError());
-		throw _httpexception;
-	}
-
 	int srvssocket = _ServerSocket->getSocket();
 	int maxconnets = _ServerSocket->getMaxconnections();
 
 	SYSInfo sysinfo;
 	DWORD threadcount = sysinfo.getNumberOfProcessors() * 2;
 
-	while (_EventEndloop) {
+	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent()))
+	{
+		_httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
+		throw _httpexception;
+	}
+
+	WSADATA wsaData;
+	int nRet = 0;
+
+	if ((nRet = WSAStartup(0x202, &wsaData)) != 0) {
+		_httpexception.Critical("WSAStartup() failed: %d\n", nRet);
+		SetConsoleCtrlHandler(CtrlHandler, FALSE);
+		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
+			WSACloseEvent(_hCleanupEvent[0]);
+			_hCleanupEvent[0] = WSA_INVALID_EVENT;
+		}
+		throw _httpexception;
+	}
+
+	try{
+		InitializeCriticalSection(&_CriticalSection);
+	}catch (...){
+		HTTPException hexception;
+		hexception.Critical("InitializeCriticalSection raised an exception.\n");
+		SetConsoleCtrlHandler(CtrlHandler, FALSE);
+		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
+			WSACloseEvent(_hCleanupEvent[0]);
+			_hCleanupEvent[0] = WSA_INVALID_EVENT;
+		}
+		throw _httpexception;
+	}
+	while (_EventRestartloop) {
+		_EventIns = this;
+		_EventRestartloop = true;
+		_EventEndloop = true;
+		WSAResetEvent(_hCleanupEvent[0]);
+
+		_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+		if (_IOCP == NULL) {
+			_httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",
+				GetLastError());
+			throw _httpexception;
+		}
+
+		for (DWORD dwCPU = 0; dwCPU < threadcount; dwCPU++) {
+
+		}
+
+		/*
 		int n = epoll_wait(_epollFD, _Events, maxconnets, EPOLLWAIT);
 		if (n < 0) {
 			if (errno == EINTR) {
@@ -93,9 +134,6 @@ void libhttppp::Event::runEventloop() {
 			ConnectionContext *curct = NULL;
 			if (_Events[i].data.fd == srvssocket) {
 				try {
-					/*will create warning debug mode that normally because the check already connection
-					 * with this socket if getconnection throw they will be create a new one
-					 */
 #ifdef DEBUG_MUTEX
 					_httpexception.Note("runeventloop", "Lock MainMutex");
 #endif
@@ -167,9 +205,31 @@ void libhttppp::Event::runEventloop() {
 					CloseEvent(curct);
 				}
 			}
-		}
-		_EventIns = this;
+		}*/
+		
 	}
+}
+
+BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
+	switch (dwEvent) {
+	case CTRL_BREAK_EVENT:
+		_EventIns->_EventRestartloop = true;
+	case CTRL_C_EVENT:
+	case CTRL_LOGOFF_EVENT:
+	case CTRL_SHUTDOWN_EVENT:
+	case CTRL_CLOSE_EVENT:
+		_EventIns->_EventEndloop = true;
+		WSASetEvent(_EventIns->_hCleanupEvent[0]);
+		break;
+
+	default:
+		//
+		// unknown type--better pass it on.
+		//
+
+		return(FALSE);
+	}
+	return(TRUE);
 }
 
 libhttppp::Event::ConnectionContext::ConnectionContext() {
@@ -381,7 +441,7 @@ void *libhttppp::Event::CloseEvent(void *curcon) {
 #endif
 	ccon->_Mutex->unlock();
 	try {
-		epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
+//		epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
 		eventins->delConnection(con);
 		curcon = NULL;
 		eventins->_httpexception.Note("Connection shutdown!");

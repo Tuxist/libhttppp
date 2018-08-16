@@ -46,6 +46,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _ServerSocket->listenSocket();
     _EventEndloop =true;
     _Cpool= new ConnectionPool(_ServerSocket);
+	_ThreadPool = new ThreadPool;
     _Events = new epoll_event[(_ServerSocket->getMaxconnections())];
     _Mutex = new Mutex;
     _firstConnectionContext=NULL;
@@ -61,6 +62,7 @@ libhttppp::Event::~Event() {
   delete[] _Events;
   delete   _firstConnectionContext;
   delete   _Mutex;
+  delete   _Threadpool;
   _lastConnectionContext=NULL;
 }
 
@@ -172,7 +174,8 @@ void libhttppp::Event::runEventloop() {
             } else {
                 curct=(ConnectionContext*)_Events[i].data.ptr;
                 if(_Events[i].events & EPOLLIN) {
-                    Thread(ReadEvent,curct);
+					Thread *curthread = ThreadPool->addThread();
+					curthread->Create(ReadEvent,curct);
                 }else{
                     CloseEvent(curct);
                 }
