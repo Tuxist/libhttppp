@@ -390,7 +390,7 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   ccon->_Mutex->unlock();
   try {
     epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
-    eventins->delConnection(con);
+    eventins->delConnectionContext(con);
     curcon=NULL;
     eventins->_httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {
