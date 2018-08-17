@@ -64,6 +64,8 @@ namespace libhttppp {
 #ifdef EVENT_IOCP
 			/*Acceptex for iocp*/
 			LPFN_ACCEPTEX          fnAcceptEx;
+			/*WSA Ovlerlapped*/
+			WSAOVERLAPPED          Overlapped;
 #endif
             /*Indefier Connection*/
             Connection             *_CurConnection;

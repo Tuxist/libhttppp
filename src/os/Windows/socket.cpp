@@ -42,7 +42,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::ClientSocket::ClientSocket(){
   _Socket= WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (_Socket == INVALID_SOCKET) {
-	  _httpexception.Error("WSASocket(sdSocket) failed: ",WSAGetLastError());
+	  _httpexception.Critical("WSASocket(sdSocket) failed: ",WSAGetLastError());
+	  throw _httpexception;
   }
   _SSL=NULL;
 }
@@ -61,7 +62,8 @@ void libhttppp::ClientSocket::disableBuffer(){
 	int nzero = 0;
 	int nRet = setsockopt(_Socket, SOL_SOCKET, SO_SNDBUF, (char *)&nzero, sizeof(nzero));
 	if (nRet == SOCKET_ERROR) {
-		_httpexception.Error("setsockopt(SNDBUF) failed: ", WSAGetLastError());
+		_httpexception.Critical("setsockopt(SNDBUF) failed: ", WSAGetLastError());
+		throw _httpexception;
 	}
 }
 

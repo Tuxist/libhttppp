@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <iostream>
+
 #include <fcntl.h>
 #include <cstdlib>
 #include <config.h>
@@ -149,8 +151,48 @@ void libhttppp::Event::runEventloop() {
 			throw _httpexception;
 		}
 
+		/*Disable Buffer in Clientsocket*/
+		try {
+			ClientSocket *lsock = curcxt->_CurConnection->getClientSocket();
+			lsock->disableBuffer();
+		}catch(HTTPException &e){
+			if (e.isCritical()) {
+				throw e;
+			}
+		}
+
+		//
+		// pay close attention to these parameters and buffer lengths
+		//
+
+		char buf[BLOCKSIZE];
+		nRet = curcxt->fnAcceptEx(_ServerSocket->getSocket(), 
+			curcxt->_CurConnection->getClientSocket()->getSocket(),
+			(LPVOID)(buf),
+			BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
+			sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
+			&dwRecvNumBytes,
+			(LPOVERLAPPED) &(curcxt->Overlapped)); //buggy needs impletend in event.h
+
+		if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+			_httpexception.Critical("AcceptEx() failed: %d\n", WSAGetLastError());
+			throw _httpexception;
+		}
+
+		ConnectionData *cdat = curcxt->_CurConnection->addRecvQueue(buf, dwRecvNumBytes);
+
 		WSAWaitForMultipleEvents(1,_hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 	}
+
+	DeleteCriticalSection(&_CriticalSection);
+
+	if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
+		WSACloseEvent(_hCleanupEvent[0]);
+		_hCleanupEvent[0] = WSA_INVALID_EVENT;
+	}
+
+	WSACleanup();
+	SetConsoleCtrlHandler(CtrlHandler, FALSE);
 }
 
 DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
@@ -172,7 +214,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 			INFINITE
 		);
 		if (!bSuccess)
-			httpexception.Error("GetQueuedCompletionStatus() failed: %d\n",(const char*)GetLastError());
+			httpexception.Error("GetQueuedCompletionStatus() failed: ",GetLastError());
 
 		if (curcxt == NULL) {
 			return(0);
@@ -181,6 +223,8 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 		if (curenv->_EventEndloop) {
 			return(0);
 		}
+		std::cout << "test\n";
+		std::cout << curcxt->_CurConnection->getRecvData()->getData();
 	}
 	return(0);
 }
