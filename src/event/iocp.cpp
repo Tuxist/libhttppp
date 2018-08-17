@@ -156,7 +156,32 @@ void libhttppp::Event::runEventloop() {
 DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 	HTTPException httpexepction;
 	Event *curenv= (Event*)WorkThreadContext;
+	ConnectionContext *curcxt = NULL;
 	HANDLE hIOCP = curenv->_IOCP;
+	HTTPException httpexception;
+	httpexception.Note("Worker starting");
+	BOOL bSuccess = FALSE;
+	DWORD dwIoSize = 0;
+	LPWSAOVERLAPPED lpOverlapped = NULL;
+	for(;;) {
+		bSuccess = GetQueuedCompletionStatus(
+			hIOCP,
+			&dwIoSize,
+			(PDWORD_PTR)&curcxt,
+			(LPOVERLAPPED *)&lpOverlapped,
+			INFINITE
+		);
+		if (!bSuccess)
+			httpexception.Error("GetQueuedCompletionStatus() failed: %d\n",(const char*)GetLastError());
+
+		if (curcxt == NULL) {
+			return(0);
+		}
+
+		if (curenv->_EventEndloop) {
+			return(0);
+		}
+	}
 	return(0);
 }
 

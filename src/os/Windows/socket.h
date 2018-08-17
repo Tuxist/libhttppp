@@ -66,6 +66,7 @@ public:
     int           getMaxconnections();
     void          setnonblocking();
     void          listenSocket();
+
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size);
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size,int flags);
 	/*Needed for iocp*/

@@ -40,11 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/x509.h>
 
 libhttppp::ClientSocket::ClientSocket(){
-#ifdef Windows
   _Socket= INVALID_SOCKET;
-#else
-  _Socket = 0;
-#endif
   _SSL=NULL;
 }
 
