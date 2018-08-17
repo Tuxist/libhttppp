@@ -40,7 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/x509.h>
 
 libhttppp::ClientSocket::ClientSocket(){
-  _Socket= INVALID_SOCKET;
+  _Socket= WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
+  if (_Socket == INVALID_SOCKET) {
+	  _httpexception.Error("WSASocket(sdSocket) failed: ",WSAGetLastError());
+  }
   _SSL=NULL;
 }
 
@@ -52,6 +55,14 @@ libhttppp::ClientSocket::~ClientSocket(){
 void libhttppp::ClientSocket::setnonblocking(){
   u_long bmode=1;
   ioctlsocket(_Socket,FIONBIO,&bmode);
+}
+
+void libhttppp::ClientSocket::disableBuffer(){
+	int nzero = 0;
+	int nRet = setsockopt(_Socket, SOL_SOCKET, SO_SNDBUF, (char *)&nzero, sizeof(nzero));
+	if (nRet == SOCKET_ERROR) {
+		_httpexception.Error("setsockopt(SNDBUF) failed: ", WSAGetLastError());
+	}
 }
 
 SOCKET libhttppp::ClientSocket::getSocket(){

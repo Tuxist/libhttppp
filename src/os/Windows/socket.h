@@ -44,6 +44,7 @@ public:
     ClientSocket();
     ~ClientSocket();
     void              setnonblocking();
+	void              disableBuffer();
     SOCKET            getSocket();
     void              setSocket(SOCKET socket);
 private:
@@ -51,6 +52,7 @@ private:
     SSL             *_SSL;
     struct sockaddr  _ClientAddr;
 	socklen_t        _ClientAddrLen;
+	HTTPException    _httpexception;
     friend class ServerSocket;
 };
 

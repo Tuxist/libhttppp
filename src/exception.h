@@ -92,7 +92,11 @@ namespace libhttppp {
     virtual const char* Error(const char *desc,const char *msg = NULL){
       return ErrorTemplate(TError,_Buffer,"HTTP Error: %s %s \r\n",desc, msg);
     }
-  
+
+	virtual const char* Error(const char *desc, int msg) {
+		return ErrorTemplate(TCritical, _Buffer, "HTTP Error: %s %d \r\n", desc, msg);
+	}
+
     virtual const char* Critical(const char *desc,const char *msg = NULL){
       return ErrorTemplate(TCritical,_Buffer,"HTTP Cirtical: %s %s \r\n",desc, msg);
     }
