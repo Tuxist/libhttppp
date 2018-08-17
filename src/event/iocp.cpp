@@ -116,10 +116,17 @@ void libhttppp::Event::runEventloop() {
 		GUID acceptex_guid = WSAID_ACCEPTEX;
 #endif
 
-		addC
+		ConnectionContext *curcxt = addConnectionContext();
 
-		g_pCtxtListenSocket = UpdateCompletionPort(_ServerSocket->getSocket(), ClientIoAccept, FALSE);
-		if (g_pCtxtListenSocket == NULL) {
+
+		_IOCP = CreateIoCompletionPort((HANDLE)_ServerSocket->getSocket(), _IOCP, (DWORD_PTR)curcxt, 0);
+		if (_IOCP == NULL) {
+			_httpexception.Critical("CreateIoCompletionPort() failed: %d\n", GetLastError());
+			delConnectionContext(curcxt->_CurConnection);
+			throw _httpexception;
+		}
+
+		if (curcxt == NULL) {
 			_httpexception.Critical("failed to update listen socket to IOCP\n");
 			throw _httpexception;
 		}
@@ -130,8 +137,8 @@ void libhttppp::Event::runEventloop() {
 			SIO_GET_EXTENSION_FUNCTION_POINTER,
 			&acceptex_guid,
 			sizeof(acceptex_guid),
-			&g_pCtxtListenSocket->fnAcceptEx,
-			sizeof(g_pCtxtListenSocket->fnAcceptEx),
+			&curcxt->fnAcceptEx,
+			sizeof(curcxt->fnAcceptEx),
 			&bytes,
 			NULL,
 			NULL
@@ -194,7 +201,7 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
 }
 
 
-libhttppp::Event::ConnectionContext * libhttppp::Event::addConnection() {
+libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext() {
 	if (!_firstConnectionContext) {
 		_firstConnectionContext = new ConnectionContext();
 #ifdef DEBUG_MUTEX
@@ -227,7 +234,7 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::addConnection() {
 	return _lastConnectionContext;
 }
 
-libhttppp::Event::ConnectionContext * libhttppp::Event::delConnection(libhttppp::Connection* delcon) {
+libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(libhttppp::Connection* delcon) {
 	ConnectionContext *prevcontext = NULL;
 #ifdef DEBUG_MUTEX
 	_httpexception.Note("delConnection", "Lock MainMutex");
@@ -385,7 +392,7 @@ void *libhttppp::Event::CloseEvent(void *curcon) {
 	ccon->_Mutex->unlock();
 	try {
 //		epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
-		eventins->delConnection(con);
+		eventins->delConnectionContext(con);
 		curcon = NULL;
 		eventins->_httpexception.Note("Connection shutdown!");
 	}
