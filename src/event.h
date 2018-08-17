@@ -60,6 +60,11 @@ namespace libhttppp {
         private:
             ConnectionContext();
             ~ConnectionContext();
+			
+#ifdef EVENT_IOCP
+			/*Acceptex for iocp*/
+			LPFN_ACCEPTEX          fnAcceptEx;
+#endif
             /*Indefier Connection*/
             Connection             *_CurConnection;
             /*Linking to CurrentConnectionpoll*/
@@ -75,8 +80,8 @@ namespace libhttppp {
             friend class Event;
         };
         
-        ConnectionContext *addConnection();
-        ConnectionContext *delConnection(Connection *delcon);
+        ConnectionContext *addConnectionContext();
+        ConnectionContext *delConnectionContext(Connection *delcon);
         
         static void *ReadEvent(void *curcon);
         static void *WriteEvent(void *curcon);

@@ -76,19 +76,6 @@ void libhttppp::Event::runEventloop() {
 		throw _httpexception;
 	}
 
-	WSADATA wsaData;
-	int nRet = 0;
-
-	if ((nRet = WSAStartup(0x202, &wsaData)) != 0) {
-		_httpexception.Critical("WSAStartup() failed: %d\n", nRet);
-		SetConsoleCtrlHandler(CtrlHandler, FALSE);
-		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
-			WSACloseEvent(_hCleanupEvent[0]);
-			_hCleanupEvent[0] = WSA_INVALID_EVENT;
-		}
-		throw _httpexception;
-	}
-
 	try{
 		InitializeCriticalSection(&_CriticalSection);
 	}catch (...){
@@ -101,6 +88,7 @@ void libhttppp::Event::runEventloop() {
 		}
 		throw _httpexception;
 	}
+
 	while (_EventRestartloop) {
 		_EventIns = this;
 		_EventRestartloop = true;
@@ -120,95 +108,41 @@ void libhttppp::Event::runEventloop() {
 //			g_ThreadHandles[dwCPU] = hThread.getHandle();
 		}
 
-		/*
-		int n = epoll_wait(_epollFD, _Events, maxconnets, EPOLLWAIT);
-		if (n < 0) {
-			if (errno == EINTR) {
-				continue;
-			}
-			else {
-				_httpexception.Critical("epoll wait failure");
-				throw _httpexception;
-			}
+		int nRet = 0;
+		DWORD dwRecvNumBytes = 0;
+		DWORD bytes = 0;
 
+#ifdef Windows
+		GUID acceptex_guid = WSAID_ACCEPTEX;
+#endif
+
+		addC
+
+		g_pCtxtListenSocket = UpdateCompletionPort(_ServerSocket->getSocket(), ClientIoAccept, FALSE);
+		if (g_pCtxtListenSocket == NULL) {
+			_httpexception.Critical("failed to update listen socket to IOCP\n");
+			throw _httpexception;
 		}
-		for (int i = 0; i < n; i++) {
-			ConnectionContext *curct = NULL;
-			if (_Events[i].data.fd == srvssocket) {
-				try {
-#ifdef DEBUG_MUTEX
-					_httpexception.Note("runeventloop", "Lock MainMutex");
-#endif
-					_Mutex->lock();
-					curct = addConnection();
-#ifdef DEBUG_MUTEX
-					_httpexception.Note("runeventloop", "Unlock MainMutex");
-#endif
-					_Mutex->unlock();
-#ifdef DEBUG_MUTEX
-					_httpexception.Note("runeventloop", "Lock ConnectionMutex");
-#endif
-					curct->_Mutex->lock();
-					ClientSocket *clientsocket = curct->_CurConnection->getClientSocket();
-					int fd = _ServerSocket->acceptEvent(clientsocket);
-					clientsocket->setnonblocking();
-					if (fd > 0) {
-						_setEvent.data.ptr = (void*)curct;
-						_setEvent.events = EPOLLIN | EPOLLET;
-						if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, fd, &_setEvent) == -1 && errno == EEXIST)
-							epoll_ctl(_epollFD, EPOLL_CTL_MOD, fd, &_setEvent);
-						ConnectEvent(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-						_httpexception.Note("runeventloop", "Unlock ConnectionMutex");
-#endif
-						curct->_Mutex->unlock();
-					}
-					else {
-#ifdef DEBUG_MUTEX
-						_httpexception.Note("runeventloop", "Unlock ConnectionMutex");
-#endif
-						curct->_Mutex->unlock();
-#ifdef DEBUG_MUTEX
-						_httpexception.Note("runeventloop", "Lock MainMutex");
-#endif
-						_Mutex->lock();
-						delConnection(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-						_httpexception.Note("runeventloop", "Unlock MainMutex");
-#endif
-						_Mutex->unlock();
-					}
 
-				}
-				catch (HTTPException &e) {
-#ifdef DEBUG_MUTEX
-					_httpexception.Note("runeventloop", "Lock MainMutex");
-#endif
-					_Mutex->lock();
-#ifdef DEBUG_MUTEX
-					_httpexception.Note("runeventloop", "Unlock ConnectionMutex");
-#endif
-					curct->_Mutex->unlock();
-					delConnection(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-					_httpexception.Note("runeventloop", "Unlock MainMutex");
-#endif
-					_Mutex->unlock();
-					if (e.isCritical())
-						throw e;
-				}
-			}
-			else {
-				curct = (ConnectionContext*)_Events[i].data.ptr;
-				if (_Events[i].events & EPOLLIN) {
-					Thread(ReadEvent, curct);
-				}
-				else {
-					CloseEvent(curct);
-				}
-			}
-		}*/
-		
+		// Load the AcceptEx extension function from the provider for this socket
+		nRet = WSAIoctl(
+			_ServerSocket->getSocket(),
+			SIO_GET_EXTENSION_FUNCTION_POINTER,
+			&acceptex_guid,
+			sizeof(acceptex_guid),
+			&g_pCtxtListenSocket->fnAcceptEx,
+			sizeof(g_pCtxtListenSocket->fnAcceptEx),
+			&bytes,
+			NULL,
+			NULL
+		);
+
+		if (nRet == SOCKET_ERROR){
+			_httpexception.Critical("failed to load AcceptEx: %d\n", WSAGetLastError());
+			throw _httpexception;
+		}
+
+		WSAWaitForMultipleEvents(1,_hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 	}
 }
 
@@ -216,167 +150,6 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 	HTTPException httpexepction;
 	Event *curenv= (Event*)WorkThreadContext;
 	HANDLE hIOCP = curenv->_IOCP;
-	BOOL bSuccess = FALSE;
-	int nRet = 0;
-	LPWSAOVERLAPPED lpOverlapped = NULL;
-	WSABUF buffRecv;
-	WSABUF buffSend;
-	DWORD dwRecvNumBytes = 0;
-	DWORD dwSendNumBytes = 0;
-	DWORD dwFlags = 0;
-	DWORD dwIoSize = 0;
-	HRESULT hRet;
-
-	while (TRUE) {
-
-		//
-		// continually loop to service io completion packets
-		//
-		bSuccess = GetQueuedCompletionStatus(
-			hIOCP,
-			&dwIoSize,
-			(PDWORD_PTR)&lpPerSocketContext,
-			(LPOVERLAPPED *)&lpOverlapped,
-			INFINITE
-		);
-		if (!bSuccess)
-			httpexepction.Error("GetQueuedCompletionStatus() failed:",(const char*)GetLastError());
-
-		if (curenv->_EventEndloop) {
-			return(0);
-		}
-
-		lpIOContext = (PPER_IO_CONTEXT)lpOverlapped;
-
-		//
-		//We should never skip the loop and not post another AcceptEx if the current
-		//completion packet is for previous AcceptEx
-		//
-		if (lpIOContext->IOOperation != ClientIoAccept) {
-			if (!bSuccess || (bSuccess && (0 == dwIoSize))) {
-
-				//
-				// client connection dropped, continue to service remaining (and possibly 
-				// new) client connections
-				//
-				CloseClient(lpPerSocketContext, FALSE);
-				continue;
-			}
-		}
-
-		//
-		// determine what type of IO packet has completed by checking the PER_IO_CONTEXT 
-		// associated with this socket.  This will determine what action to take.
-		//
-		switch (lpIOContext->IOOperation) {
-		case ClientIoAccept:
-
-			//
-			// When the AcceptEx function returns, the socket sAcceptSocket is 
-			// in the default state for a connected socket. The socket sAcceptSocket 
-			// does not inherit the properties of the socket associated with 
-			// sListenSocket parameter until SO_UPDATE_ACCEPT_CONTEXT is set on 
-			// the socket. Use the setsockopt function to set the SO_UPDATE_ACCEPT_CONTEXT 
-			// option, specifying sAcceptSocket as the socket handle and sListenSocket 
-			// as the option value. 
-			//
-
-			SOCKET sock = curenv->_ServerSocket->getSocket();
-
-			nRet = setsockopt(
-				lpPerSocketContext->pIOContext->SocketAccept,
-				SOL_SOCKET,
-				SO_UPDATE_ACCEPT_CONTEXT,
-				(char *)&sock,
-				sizeof(sock)
-			);
-
-			if (nRet == SOCKET_ERROR) {
-
-				//
-				//just warn user here.
-				//
-				myprintf("setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed to update accept socket\n");
-				WSASetEvent(g_hCleanupEvent[0]);
-				return(0);
-			}
-
-			lpAcceptSocketContext = UpdateCompletionPort(
-				lpPerSocketContext->pIOContext->SocketAccept,
-				ClientIoAccept, TRUE);
-
-			if (lpAcceptSocketContext == NULL) {
-
-				//
-				//just warn user here.
-				//
-				myprintf("failed to update accept socket to IOCP\n");
-				WSASetEvent(g_hCleanupEvent[0]);
-				return(0);
-			}
-
-			if (dwIoSize) {
-				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoWrite;
-				lpAcceptSocketContext->pIOContext->nTotalBytes = dwIoSize;
-				lpAcceptSocketContext->pIOContext->nSentBytes = 0;
-				lpAcceptSocketContext->pIOContext->wsabuf.len = dwIoSize;
-				hRet = StringCbCopyN(lpAcceptSocketContext->pIOContext->Buffer,
-					MAX_BUFF_SIZE,
-					lpPerSocketContext->pIOContext->Buffer,
-					sizeof(lpPerSocketContext->pIOContext->Buffer)
-				);
-				lpAcceptSocketContext->pIOContext->wsabuf.buf = lpAcceptSocketContext->pIOContext->Buffer;
-
-				nRet = WSASend(
-					lpPerSocketContext->pIOContext->SocketAccept,
-					&lpAcceptSocketContext->pIOContext->wsabuf, 1,
-					&dwSendNumBytes,
-					0,
-					&(lpAcceptSocketContext->pIOContext->Overlapped), NULL);
-
-				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-					myprintf("WSASend() failed: %d\n", WSAGetLastError());
-					CloseClient(lpAcceptSocketContext, FALSE);
-				}
-				else if (g_bVerbose) {
-					myprintf("WorkerThread %d: Socket(%d) AcceptEx completed (%d bytes), Send posted\n",
-						GetCurrentThreadId(), lpPerSocketContext->Socket, dwIoSize);
-				}
-			}
-			else {
-
-				//
-				// AcceptEx completes but doesn't read any data so we need to post
-				// an outstanding overlapped read.
-				//
-				lpAcceptSocketContext->pIOContext->IOOperation = ClientIoRead;
-				dwRecvNumBytes = 0;
-				dwFlags = 0;
-				buffRecv.buf = lpAcceptSocketContext->pIOContext->Buffer,
-					buffRecv.len = MAX_BUFF_SIZE;
-				nRet = WSARecv(
-					lpAcceptSocketContext->Socket,
-					&buffRecv, 1,
-					&dwRecvNumBytes,
-					&dwFlags,
-					&lpAcceptSocketContext->pIOContext->Overlapped, NULL);
-				if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-					myprintf("WSARecv() failed: %d\n", WSAGetLastError());
-					CloseClient(lpAcceptSocketContext, FALSE);
-				}
-			}
-
-			//
-			//Time to post another outstanding AcceptEx
-			//
-			if (!CreateAcceptSocket(FALSE)) {
-				myprintf("Please shut down and reboot the server.\n");
-				WSASetEvent(curenv->_hCleanupEvent[0]);
-				return(0);
-			}
-			break;
-		} //switch
-	} //while
 	return(0);
 }
 
