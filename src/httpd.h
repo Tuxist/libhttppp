@@ -78,6 +78,7 @@ namespace libhttppp {
     HttpD(int argc, char** argv);
     ~HttpD();
     ServerSocket       *getServerSocket();
+  protected:
     HTTPDCmdController *_CmdController;
   private:
     ServerSocket   *_ServerSocket;
