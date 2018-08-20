@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <windows.h>
 
-#include "exception.h"
+#include "../../exception.h"
 
 #ifndef THREAD_H
 #define THREAD_H

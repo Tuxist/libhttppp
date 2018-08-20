@@ -36,8 +36,8 @@ extern "C" {
   #include <netdb.h>
 }
 
-#include "https.h"
-#include "exception.h"
+#include "../../https.h"
+#include "../../exception.h"
 
 #ifndef SOCKET_H
 #define SOCKET_H
