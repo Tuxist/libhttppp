@@ -79,7 +79,7 @@ namespace libhttppp {
     ~HttpD();
     ServerSocket       *getServerSocket();
   protected:
-    HTTPDCmdController *_CmdController;
+    HTTPDCmdController *CmdController;
   private:
     ServerSocket   *_ServerSocket;
     HTTPException   _httpexception;
