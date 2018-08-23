@@ -24,9 +24,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
-#include <algorithm>
 #include <cstring>
+#include <cstdlib>
 
+#include "utils.h"
 #include "httpd.h"
 
 #define KTKEY 0
@@ -105,12 +106,12 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
 			/*set new value*/
 			delete[] curhttpdcmd->_Value;
 			curhttpdcmd->_Value = new char[strlen(defaultvalue)+1];
-			std::copy(defaultvalue, defaultvalue+strlen(defaultvalue),curhttpdcmd->_Value);
+			scopy(defaultvalue, defaultvalue+strlen(defaultvalue),curhttpdcmd->_Value);
 			curhttpdcmd->_Value[strlen(defaultvalue)] = '\0';
 			/*set new help*/
 			delete[] curhttpdcmd->_Help;
 			curhttpdcmd->_Help = new char[strlen(help) + 1];
-			std::copy(help, help + strlen(help), curhttpdcmd->_Help);
+			scopy(help, help + strlen(help), curhttpdcmd->_Help);
 			curhttpdcmd->_Help[strlen(help)] = '\0';
 			return;
 		}
@@ -126,7 +127,7 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
 	}
 	/*set new key*/
 	_lastHTTPDCmd->_Key = new char[strlen(key) + 1];
-	std::copy(key,key+strlen(key),_lastHTTPDCmd->_Key);
+	scopy(key,key+strlen(key),_lastHTTPDCmd->_Key);
 	_lastHTTPDCmd->_Key[strlen(key)] = '\0';
 	/*set new shortkey*/
 	_lastHTTPDCmd->_SKey = skey;
@@ -135,12 +136,12 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
 	/*set new value*/
 	if (defaultvalue) {
 		_lastHTTPDCmd->_Value = new char[strlen(defaultvalue) + 1];
-		std::copy(defaultvalue, defaultvalue + strlen(defaultvalue), _lastHTTPDCmd->_Value);
+		scopy(defaultvalue, defaultvalue + strlen(defaultvalue), _lastHTTPDCmd->_Value);
 		_lastHTTPDCmd->_Value[strlen(defaultvalue)] = '\0';
 	}
 	/*set new help*/
 	_lastHTTPDCmd->_Help = new char[strlen(help) + 1];
-	std::copy(help, help + strlen(help), _lastHTTPDCmd->_Help);
+	scopy(help, help + strlen(help), _lastHTTPDCmd->_Help);
 	_lastHTTPDCmd->_Help[strlen(help)] = '\0';
 
 }
@@ -181,7 +182,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
 		char skey = '0';
 		if (keytype == KTKEY) {
 			key = new char[kendpos-1];
-			std::copy(argv[args] +2, argv[args] +kendpos, key);
+			scopy(argv[args] +2, argv[args] +kendpos, key);
 			key[kendpos - 2] = '\0';
 		} else if (keytype == KTSKEY){
 			skey = argv[args][1];
@@ -195,7 +196,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
 					if (valuesize > 0) {
 						delete[] curhttpdcmd->_Value;
 						curhttpdcmd->_Value = new char[valuesize+1];
-						std::copy(argv[args]+(kendpos+1), argv[args] + strlen(argv[args]),curhttpdcmd->_Value);
+						scopy(argv[args]+(kendpos+1), argv[args] + strlen(argv[args]),curhttpdcmd->_Value);
 						curhttpdcmd->_Value[valuesize] = '\0';
 					}
 				}
@@ -206,7 +207,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
 					if (valuesize > 0) {
 						delete[] curhttpdcmd->_Value;
 						curhttpdcmd->_Value = new char[valuesize + 1];
-						std::copy(argv[args] + (kendpos + 1), argv[args] + strlen(argv[args]), curhttpdcmd->_Value);
+						scopy(argv[args] + (kendpos + 1), argv[args] + strlen(argv[args]), curhttpdcmd->_Value);
 						curhttpdcmd->_Value[valuesize] = '\0';
 					}
 				}

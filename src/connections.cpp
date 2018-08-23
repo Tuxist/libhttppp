@@ -25,11 +25,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <algorithm>
 #include <cstring>
 #include <config.h>
 
 #include "connections.h"
+#include "utils.h"
 
 const char* libhttppp::ConnectionData::getData(){
   return _Data;
@@ -45,7 +45,7 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
 
 libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
   _nextConnectionData=NULL;
-  std::copy(data,data+datasize,_Data);
+  scopy(data,data+datasize,_Data);
   _DataSize=datasize;
 }
 
@@ -157,7 +157,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
     }else{
        delsize=size;
        firstdat->_DataSize-=size;
-       std::copy(firstdat->_Data+delsize,firstdat->_Data+BLOCKSIZE,firstdat->_Data);
+       scopy(firstdat->_Data+delsize,firstdat->_Data+BLOCKSIZE,firstdat->_Data);
        firstdat->_Data[firstdat->_DataSize]='\0';
     }
     size-=delsize;
@@ -182,15 +182,15 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
   buf = new char[(copysize+1)]; //one more for termination
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
     if(curdat==startblock && curdat==endblock){
-      std::copy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
+      scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
     }else if(curdat==startblock){
-      std::copy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
+      scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
       copypos+=curdat->getDataSize()-startpos;
     }else if(curdat==endblock){
-      std::copy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
+      scopy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
       copypos+=endpos;
     }else{
-      std::copy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
+      scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
       copypos+=curdat->getDataSize();
     }
     if(curdat==endblock)

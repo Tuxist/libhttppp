@@ -12,6 +12,7 @@ set(libhttpSrcs
   httpd.cpp
   https.cpp
   base64.cpp
+  utils.cpp
 )
 
 #os dependencies
@@ -81,6 +82,7 @@ install(FILES connections.h
               event.h
               https.h
               mimetypes.h
+              utils.h
               "${CMAKE_BINARY_DIR}/config.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp
