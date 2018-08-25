@@ -25,14 +25,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <sys/types.h>
-#include <sys/event.h>
-#include <sys/time.h>
+#include <fcntl.h>
+#include <cstdlib>
+#include <config.h>
 #include <errno.h>
-#include <err.h>
-#include <pthread.h>
-#include <unistd.h>
 #include <signal.h>
+#include "os/os.h"
+
+#define READEVENT 0
+#define SENDEVENT 1
+
+//#define DEBUG_MUTEX
 
 #include "../event.h"
 
@@ -41,10 +44,23 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _ServerSocket->setnonblocking();
     _ServerSocket->listenSocket();
     _EventEndloop =true;
+    _Cpool= new ConnectionPool(_ServerSocket);
+    _Events = new struct kevent[(_ServerSocket->getMaxconnections())];
+    _Mutex = new Mutex;
+    _firstConnectionContext=NULL;
+    _lastConnectionContext=NULL;
 }
 
 libhttppp::Event::~Event() {
-    
+#ifdef DEBUG_MUTEX
+   _httpexception.Note("~Event","Lock MainMutex");
+#endif
+  _Mutex->lock();
+  delete   _Cpool;
+  delete[] _Events;
+  delete   _firstConnectionContext;
+  delete   _Mutex;
+  _lastConnectionContext=NULL;
 }
 
 libhttppp::Event* _EventIns=NULL;
@@ -54,154 +70,340 @@ void libhttppp::Event::CtrlHandler(int signum) {
 }
 
 void libhttppp::Event::runEventloop() {
-    int threadcount=1;
-    pthread_t threads[threadcount];
-    for(int i=0; i<threadcount; i++){
-        int thc = pthread_create( &threads[i], NULL, &WorkerThread,(void*) this);
-        if( thc != 0 ) {
-            _httpexception.Critical("can't create thread");
-            throw _httpexception;
-        }
-    }
-    for(int i=0; i<threadcount; i++){
-        pthread_join(threads[i], NULL);
-    }
-}
+    int srvssocket=_ServerSocket->getSocket();
+    int maxconnets=_ServerSocket->getMaxconnections();
+    int nev = 0;
+    _setEvent = (struct kevent){0};
+    _Kq = kqueue();
+    EV_SET(&_setEvent, srvssocket, EVFILT_READ, EV_ADD, 0, 0, NULL);
+    if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1)
+      _httpexception.Critical("runeventloop","can't create kqueue!");
+    signal(SIGPIPE, SIG_IGN);
 
-void *libhttppp::Event::WorkerThread(void *instance){
-    Event *eventins=(Event *)instance;
-    ConnectionPool cpool(eventins->_ServerSocket);
-    int srvssocket=eventins->_ServerSocket->getSocket();
-    int maxconnets=eventins->_ServerSocket->getMaxconnections();
-    
-    struct kevent setevent;
-    struct kevent *events;
-    events = new struct kevent[(maxconnets*sizeof(struct kevent))];
-    int kq = kqueue();
-    if (kq    == -1){
-        eventins->_httpexception.Critical("can't create kqueue");
-        throw eventins->_httpexception;
-    }
-    /* Initialize kevent structure. */
-    EV_SET(&setevent,srvssocket, EVFILT_READ | EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0,0,NULL);
-    /* Attach event to the    kqueue.    */
-    int ret = kevent(kq, &setevent, 1, events, maxconnets, NULL);
-    if (ret == -1){
-        eventins->_httpexception.Critical("can't attach event kqueue");
-        throw eventins->_httpexception;
-    }
-    
-    if (setevent.flags & EV_ERROR){
-        eventins->_httpexception.Critical("everror on event kqueue");
-        throw eventins->_httpexception;
-    }
-    
-    
-    while(eventins->_EventEndloop) {
-        printf("test\n");
-        ret = kevent(kq, NULL, 0, events, maxconnets, NULL);
-        printf("ret: %d \n",ret);
-        for(int i=0; i<ret; i++) {
-            printf("loop\n");
-            Connection *curcon=NULL;
-            if((int)events[i].ident == srvssocket) {
-                try {
-                    /*will create warning debug mode that normally because the check already connection
-                     * with this socket if getconnection throw they will be create a new one
-                     */
-                    printf("connecting\n");
-                    curcon=cpool.addConnection();
-                    ClientSocket *clientsocket=curcon->getClientSocket();
-                    int fd=eventins->_ServerSocket->acceptEvent(clientsocket);
-                    clientsocket->setnonblocking();
-                    if(fd>0) {
-                        events[i].udata=(void*)curcon;
-                        eventins->ConnectEvent(curcon);
-                    } else {
-                        cpool.delConnection(curcon);
-                    }
-                } catch(HTTPException &e) {
-                    cpool.delConnection(curcon);
-                    if(e.isCritical())
-                        throw e;
-                }
-            } else {
-                curcon=(Connection*)events[i].udata;
-            }
-            if(events[i].flags & EVFILT_READ) {
-                try {
-                    char buf[BLOCKSIZE];
-                    int rcvsize=0;
-                    rcvsize=eventins->_ServerSocket->recvData(curcon->getClientSocket(),buf,BLOCKSIZE);
-                    if(rcvsize>0) {
-                        curcon->addRecvQueue(buf,rcvsize);
-                        eventins->RequestEvent(curcon);
-                    }else{
-                        continue;
-                    }
-                } catch(HTTPException &e) {
-                    if(e.isCritical()) {
-                        throw e;
-                    }
-                    if(e.isError()){
-                        printf("socket: %d \n",curcon->getClientSocket()->getSocket());
-                        goto CloseConnection;
-                    }
-                    
-                }
-            }else if(events[i].flags & EV_EOF) {
-            CloseConnection:
-                eventins->DisconnectEvent(curcon);
-                try {
-                    cpool.delConnection(curcon);
-                    curcon=NULL;
-                    eventins->_httpexception.Note("Connection shutdown!");
-                    continue;
-                } catch(HTTPException &e) {
-                    eventins->_httpexception.Note("Can't do Connection shutdown!");
-                }
-                ;
-            }else if(events[i].flags & EVFILT_WRITE) {
-                try {
-                    if(curcon->getSendData()) {
-                        ssize_t sended=0;
-                        sended=eventins->_ServerSocket->sendData(curcon->getClientSocket(),
-                                                              (void*)curcon->getSendData()->getData(),
-                                                              curcon->getSendData()->getDataSize());
-                        
-                        
-                        if(sended>0){
-                            curcon->resizeSendQueue(sended);
-                            eventins->ResponseEvent(curcon);
-                        }
-                    }
-                } catch(HTTPException &e) {
-                    curcon->cleanSendData();
-                    goto CloseConnection;
-                }
+    while(_EventEndloop) {
+	nev = kevent(_Kq, NULL, 0, _Events,maxconnets, NULL);
+        if(nev<0){
+            if(errno== EINTR){
+                continue;
             }else{
-                goto CloseConnection;
+                 _httpexception.Critical("epoll wait failure");
+                 throw _httpexception;
             }
+                
         }
-        _EventIns=eventins;
+        for(int i=0; i<nev; i++) {
+            ConnectionContext *curct=NULL;
+            if(_Events[i].ident == srvssocket) {
+              try {
+              /*will create warning debug mode that normally because the check already connection
+               * with this socket if getconnection throw they will be create a new one
+               */
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Lock MainMutex");
+#endif
+                _Mutex->lock();
+                curct=addConnectionContext();
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Unlock MainMutex");
+#endif
+                _Mutex->unlock();
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Lock ConnectionMutex");
+#endif
+                curct->_Mutex->lock();
+                ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
+                int fd=_ServerSocket->acceptEvent(clientsocket);
+                clientsocket->setnonblocking();
+                if(fd>0) {
+                  _setEvent.udata = (void*) curct;
+                  EV_SET(&_setEvent, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+                  if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1){
+                    _httpexception.Error("runeventloop","can't accep't in  kqueue!");
+                  }else{
+                    ConnectEvent(curct->_CurConnection);
+                  }
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+#endif
+                  curct->_Mutex->unlock();
+                } else {
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+#endif
+                   curct->_Mutex->unlock();
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Lock MainMutex");
+#endif
+                  _Mutex->lock();
+                  delConnectionContext(curct->_CurConnection);
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Unlock MainMutex");
+#endif
+                  _Mutex->unlock();
+                }
+                
+              } catch(HTTPException &e) {
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Lock MainMutex");
+#endif
+                _Mutex->lock();
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+#endif
+                curct->_Mutex->unlock();
+                delConnectionContext(curct->_CurConnection);
+#ifdef DEBUG_MUTEX
+                _httpexception.Note("runeventloop","Unlock MainMutex");
+#endif
+                _Mutex->unlock();
+                if(e.isCritical())
+                  throw e;
+              }
+            } else {
+                curct=(ConnectionContext*)_Events[i].udata;
+                if(_Events[i].filter == EVFILT_READ) {
+		    Thread curthread;
+		    curthread.Create(ReadEvent,curct);
+                    curthread.Detach();
+                }else{
+                    CloseEvent(curct);
+                }
+            } 
+        }
+        _EventIns=this;
         signal(SIGINT, CtrlHandler);
     }
-    delete[] events;
-    return NULL;
 }
 
-void libhttppp::Event::RequestEvent(Connection *curcon) {
+libhttppp::Event::ConnectionContext::ConnectionContext(){
+  _CurConnection=NULL;
+  _CurCPool=NULL;
+  _CurEvent=NULL;
+  _Mutex=new Mutex;
+  _nextConnectionContext=NULL;    
+}
+
+libhttppp::Event::ConnectionContext::~ConnectionContext(){
+  delete _Mutex;
+  delete _nextConnectionContext;
+}
+
+
+libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextConnectionContext(){
+  return _nextConnectionContext;    
+}
+
+
+libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
+  if(!_firstConnectionContext){      
+    _firstConnectionContext=new ConnectionContext();
+#ifdef DEBUG_MUTEX
+    _httpexception.Note("addConnection","Lock ConnectionMutex");
+#endif
+    _firstConnectionContext->_Mutex->lock();
+    _lastConnectionContext=_firstConnectionContext;
+#ifdef DEBUG_MUTEX
+    _httpexception.Note("addConnection","Unlock ConnectionMutex");
+#endif
+    _firstConnectionContext->_Mutex->unlock();
+  }else{
+#ifdef DEBUG_MUTEX
+    _httpexception.Note("addConnection","Lock ConnectionMutex");
+#endif
+    ConnectionContext *prevcon=_lastConnectionContext;
+    prevcon->_Mutex->lock();
+    _lastConnectionContext->_nextConnectionContext=new ConnectionContext();
+    _lastConnectionContext=_lastConnectionContext->_nextConnectionContext;
+#ifdef DEBUG_MUTEX
+    _httpexception.Note("addConnection","Unlock ConnectionMutex");
+#endif
+    prevcon->_Mutex->unlock();
+  }
+  _lastConnectionContext->_CurConnection=_Cpool->addConnection();
+  _lastConnectionContext->_CurCPool=_Cpool;
+  _lastConnectionContext->_CurEvent=this;
+  
+  return _lastConnectionContext;
+}
+
+libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(libhttppp::Connection* delcon){
+  ConnectionContext *prevcontext=NULL;
+#ifdef DEBUG_MUTEX
+  _httpexception.Note("delConnection","Lock MainMutex");
+#endif
+  _Mutex->lock();
+  for(ConnectionContext *curcontext=_firstConnectionContext; curcontext; 
+      curcontext=curcontext->nextConnectionContext()){
+    if(curcontext->_CurConnection==delcon){
+#ifdef DEBUG_MUTEX
+      _httpexception.Note("delConnection","Lock ConnectionMutex");
+#endif
+      curcontext->_Mutex->lock();
+      _Cpool->delConnection(delcon);
+      if(prevcontext){
+#ifdef DEBUG_MUTEX
+        _httpexception.Note("delConnection","Lock prevConnectionMutex");
+#endif
+        prevcontext->_Mutex->lock();
+        prevcontext->_nextConnectionContext=curcontext->_nextConnectionContext;
+        if(_lastConnectionContext==curcontext){
+          _lastConnectionContext=prevcontext;
+        }
+#ifdef DEBUG_MUTEX
+        _httpexception.Note("delConnection","unlock prevConnectionMutex");
+#endif
+        prevcontext->_Mutex->unlock();
+      }else{
+#ifdef DEBUG_MUTEX
+        _httpexception.Note("delConnection","lock firstConnectionMutex");
+#endif
+        _firstConnectionContext->_Mutex->lock();
+#ifdef DEBUG_MUTEX
+        _httpexception.Note("delConnection","lock lastConnectionMutex");
+#endif
+        _lastConnectionContext->_Mutex->lock();
+        _firstConnectionContext=curcontext->_nextConnectionContext;
+        if(_lastConnectionContext->_CurConnection==delcon)
+          _lastConnectionContext=_firstConnectionContext;
+        if(_firstConnectionContext){
+#ifdef DEBUG_MUTEX
+        _httpexception.Note("delConnection","unlock firstConnectionMutex");
+#endif
+        _firstConnectionContext->_Mutex->unlock();
+        }
+        if(_lastConnectionContext){
+#ifdef DEBUG_MUTEX
+     _httpexception.Note("delConnection","unlock lastConnectionMutex");
+#endif
+        _lastConnectionContext->_Mutex->unlock();
+        }
+      }
+      curcontext->_nextConnectionContext=NULL;
+      delete curcontext;
+      break;
+    }
+    prevcontext=curcontext;
+  }
+#ifdef DEBUG_MUTEX
+  _httpexception.Note("delConnection","unlock MainMutex");
+#endif
+  _Mutex->unlock();
+  if(prevcontext && prevcontext->_nextConnectionContext){
+    return prevcontext->_nextConnectionContext;
+  }else{
+    ConnectionContext *fcontext=_firstConnectionContext;
+    return fcontext;
+  }
+}
+
+
+
+/*Workers*/
+void *libhttppp::Event::ReadEvent(void *curcon){
+  ConnectionContext *ccon=(ConnectionContext*)curcon;
+  Event *eventins=ccon->_CurEvent;
+#ifdef DEBUG_MUTEX
+  ccon->_httpexception.Note("ReadEvent","lock ConnectionMutex");
+#endif  
+  ccon->_Mutex->lock();
+  Connection *con=(Connection*)ccon->_CurConnection;
+  try {
+    char buf[BLOCKSIZE];
+    int rcvsize=0;
+    do{
+      rcvsize=eventins->_ServerSocket->recvData(con->getClientSocket(),buf,BLOCKSIZE);
+      if(rcvsize>0)
+        con->addRecvQueue(buf,rcvsize);
+    }while(rcvsize>0);
+    eventins->RequestEvent(con);
+#ifdef DEBUG_MUTEX
+  ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
+#endif 
+    ccon->_Mutex->unlock(); 
+    WriteEvent(ccon);
+  } catch(HTTPException &e) {
+#ifdef DEBUG_MUTEX
+      ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
+#endif 
+      ccon->_Mutex->unlock();
+       if(e.isCritical()) {
+         throw e;
+       }
+       if(e.isError()){
+          con->cleanRecvData();
+          CloseEvent(ccon);
+       }
+  }
+  return NULL;
+}
+
+void *libhttppp::Event::WriteEvent(void* curcon){
+  ConnectionContext *ccon=(ConnectionContext*)curcon;
+  Event *eventins=ccon->_CurEvent;
+#ifdef DEBUG_MUTEX
+  ccon->_httpexception.Note("WriteEvent","lock ConnectionMutex");
+#endif
+  ccon->_Mutex->lock();
+  Connection *con=(Connection*)ccon->_CurConnection;
+  try {
+    ssize_t sended=0;
+    while(con->getSendData()){
+      sended=eventins->_ServerSocket->sendData(con->getClientSocket(),
+                                    (void*)con->getSendData()->getData(),
+                                    con->getSendData()->getDataSize());
+      if(sended>0)
+        con->resizeSendQueue(sended);
+    }
+    eventins->ResponseEvent(con);
+  } catch(HTTPException &e) {
+    CloseEvent(ccon);
+  }
+#ifdef DEBUG_MUTEX
+  ccon->_httpexception.Note("WriteEvent","unlock ConnectionMutex");
+#endif
+  ccon->_Mutex->unlock();
+  return NULL;
+}
+
+void *libhttppp::Event::CloseEvent(void *curcon){
+  ConnectionContext *ccon=(ConnectionContext*)curcon;
+  Event *eventins=ccon->_CurEvent;
+#ifdef DEBUG_MUTEX
+  ccon->_httpexception.Note("CloseEvent","ConnectionMutex");
+#endif
+  ccon->_Mutex->lock();
+  Connection *con=(Connection*)ccon->_CurConnection;  
+  eventins->DisconnectEvent(con);
+#ifdef DEBUG_MUTEX
+  ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
+#endif
+  ccon->_Mutex->unlock();
+  try {
+    EV_SET(&eventins->_setEvent,con->getClientSocket()->getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    if (kevent(eventins->_Kq,&eventins->_setEvent, 1, NULL, 0, NULL) == -1)
+      eventins->_httpexception.Error("Connection can't delete from kqueue");                
+    eventins->delConnectionContext(con);
+    curcon=NULL;
+    eventins->_httpexception.Note("Connection shutdown!");
+  } catch(HTTPException &e) {
+    eventins->_httpexception.Note("Can't do Connection shutdown!");
+  }
+  return NULL;
+}
+
+/*Event Handlers*/
+void libhttppp::Event::RequestEvent(libhttppp::Connection *curcon) {
     return;
 }
 
 void libhttppp::Event::ResponseEvent(libhttppp::Connection *curcon) {
     return;
-};
+}
 
 void libhttppp::Event::ConnectEvent(libhttppp::Connection *curcon) {
     return;
-};
+}
 
-void libhttppp::Event::DisconnectEvent(Connection *curcon) {
+void libhttppp::Event::DisconnectEvent(libhttppp::Connection *curcon) {
     return;
 }

@@ -40,6 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <sys/epoll.h>
 #endif
 
+#ifdef EVENT_KQUEUE
+  #include <sys/event.h>
+#endif
+
 #ifndef EVENT_H
 #define EVENT_H
 
@@ -93,7 +97,7 @@ namespace libhttppp {
 	virtual void RequestEvent(Connection *curcon);
 	virtual void ResponseEvent(libhttppp::Connection *curcon);
 	virtual void ConnectEvent(libhttppp::Connection *curcon);
-    virtual void DisconnectEvent(Connection *curcon);
+    	virtual void DisconnectEvent(Connection *curcon);
 	/*Run Mainloop*/
 	virtual void runEventloop();
 
@@ -102,7 +106,7 @@ namespace libhttppp {
 #endif
 
 #ifdef Windows
-		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
+	static BOOL WINAPI CtrlHandler(DWORD dwEvent);
 #else
         static  void  CtrlHandler(int signum);
 #endif
@@ -112,6 +116,10 @@ namespace libhttppp {
 	int                 _epollFD;
 	struct epoll_event *_Events;
 	struct epoll_event  _setEvent;    
+#elif EVENT_KQUEUE
+	int                 _Kq;
+	struct kevent      *_Events;
+        struct kevent       _setEvent;	
 #elif EVENT_IOCP
 	HANDLE              _IOCP;
 	WSAEVENT            _hCleanupEvent[1];
