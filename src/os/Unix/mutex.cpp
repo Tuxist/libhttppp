@@ -35,6 +35,7 @@ libhttppp::Mutex::Mutex(){
 
 libhttppp::Mutex::~Mutex(){
   pthread_mutex_destroy(_CMutex);
+  delete _CMutex;
 }
 
 
