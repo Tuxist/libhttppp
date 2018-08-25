@@ -162,10 +162,9 @@ void libhttppp::Event::runEventloop() {
             } else {
                 curct=(ConnectionContext*)_Events[i].udata;
                 if(_Events[i].filter == EVFILT_READ) {
-		    //Thread curthread;
-		    ReadEvent(curct);
-		    //curthread.Create(ReadEvent,curct);
-                    //curthread.Detach();
+		    Thread curthread;
+		    curthread.Create(ReadEvent,curct);
+                    curthread.Detach();
                 }else{
                     CloseEvent(curct);
                 }

@@ -213,7 +213,6 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   }else{
     rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
   }
-
   if(rval==-1){
 #ifdef __GLIBCXX__
     char errbuf[255];
