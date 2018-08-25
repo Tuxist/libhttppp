@@ -28,29 +28,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "mutex.h"
 
 libhttppp::Mutex::Mutex(){
-   _CMutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+   _CMutex = new pthread_mutex_t;
+   *_CMutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
+   pthread_mutex_init(_CMutex, NULL);
 }
 
 libhttppp::Mutex::~Mutex(){
+  pthread_mutex_destroy(_CMutex);
 }
 
 
 bool libhttppp::Mutex::lock(){
-  if(pthread_mutex_lock(&_CMutex)==0)
+  if(pthread_mutex_lock(_CMutex)==0)
     return true;
   else
     return false; 
 }
 
 bool libhttppp::Mutex::trylock(){
-  if(pthread_mutex_trylock(&_CMutex)==0)
+  if(pthread_mutex_trylock(_CMutex)==0)
     return true;
   else
     return false; 
 }
 
 bool libhttppp::Mutex::unlock(){
-  if(pthread_mutex_unlock(&_CMutex)==0)
+  if(pthread_mutex_unlock(_CMutex)==0)
     return true;
   else
     return false; 

@@ -41,7 +41,7 @@ namespace libhttppp {
     bool            lock();
     bool            unlock();
   private:
-    pthread_mutex_t  _CMutex;
+    pthread_mutex_t *_CMutex;
     HTTPException    _httpexception;
   };
 }
