@@ -115,8 +115,7 @@ void libhttppp::Event::runEventloop() {
                 int fd=_ServerSocket->acceptEvent(clientsocket);
                 clientsocket->setnonblocking();
                 if(fd>0) {
-                  _setEvent.udata = (void*) curct;
-                  EV_SET(&_setEvent, fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+                  EV_SET(&_setEvent, fd, EVFILT_READ, EV_ADD, 0, 0, (void*) curct);
                   if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1){
                     _httpexception.Error("runeventloop","can't accep't in  kqueue!");
                   }else{
