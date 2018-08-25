@@ -195,6 +195,10 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
 
 
 libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
+#ifdef DEBUG_MUTEX
+  _httpexception.Note("addConnection","Lock MainMutex");
+#endif
+  _Mutex->lock();
   if(!_firstConnectionContext){      
     _firstConnectionContext=new ConnectionContext();
 #ifdef DEBUG_MUTEX
@@ -222,7 +226,10 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
   _lastConnectionContext->_CurConnection=_Cpool->addConnection();
   _lastConnectionContext->_CurCPool=_Cpool;
   _lastConnectionContext->_CurEvent=this;
-  
+#ifdef DEBUG_MUTEX
+  _httpexception.Note("addConnection","unlock MainMutex");
+#endif
+  _Mutex->unlock();
   return _lastConnectionContext;
 }
 

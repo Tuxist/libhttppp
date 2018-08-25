@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <cstring>
 #include <exception.h>
 
 #include "header_png.h"

@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <sstream>
+#include <cstring>
 #include "../src/exception.h"
 
 #include "http.h"

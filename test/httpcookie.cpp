@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <iostream>
 #include <sstream>
+#include <cstring>
 #include <cstdlib>
 
 #include "../src/exception.h"
