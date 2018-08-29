@@ -10,11 +10,11 @@
 - Https
 - epoll (linux support)
 - Multithreading
+- kqueue (Mac OS BSD support)
 
 ## On Work
 - Httpdigestauth
 - iocp (Windows support)
-- kqueue (Mac OS BSD support)
 
 ## Todo:
 - Httpntlmauth
