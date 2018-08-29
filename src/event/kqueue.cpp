@@ -328,7 +328,7 @@ void *libhttppp::Event::ReadEvent(void *curcon){
       if(rcvsize>0)
         con->addRecvQueue(buf,rcvsize);
     }while(rcvsize>0);
-    eventins->RequestEvent(con);
+  eventins->RequestEvent(con);
 #ifdef DEBUG_MUTEX
   ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif 
@@ -371,11 +371,13 @@ void *libhttppp::Event::WriteEvent(void* curcon){
     eventins->ResponseEvent(con);
   } catch(HTTPException &e) {
     CloseEvent(ccon);
+    return NULL;
   }
 #ifdef DEBUG_MUTEX
   httpexception.Note("WriteEvent","unlock ConnectionMutex");
 #endif
-  ccon->_Mutex->unlock();
+  if(ccon)
+    ccon->_Mutex->unlock();
   return NULL;
 }
 
