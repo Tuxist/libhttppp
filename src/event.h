@@ -70,6 +70,9 @@ namespace libhttppp {
 			LPFN_ACCEPTEX          fnAcceptEx;
 			/*WSA Ovlerlapped*/
 			WSAOVERLAPPED          Overlapped;
+#elif EVENT_KQUEUE
+	    /*counter for Events*/
+            ssize_t                  _EventCounter;
 #endif
             /*Indefier Connection*/
             Connection             *_CurConnection;

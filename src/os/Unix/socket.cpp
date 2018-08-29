@@ -43,11 +43,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::ClientSocket::ClientSocket(){
   _Socket = 0;
   _SSL=NULL;
+  _ClientAddr = new struct sockaddr;
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
   shutdown(_Socket,SHUT_RDWR);
-  SSL_free(_SSL);
+  if(_SSL)
+    SSL_free(_SSL);
+  delete _ClientAddr;
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
@@ -177,7 +180,7 @@ int libhttppp::ServerSocket::getMaxconnections(){
 
 int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
-  int socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
+  int socket = accept(_Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket==-1){
 #ifdef __GLIBCXX__
     char errbuf[255];
@@ -211,7 +214,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
   }else{
-    rval=sendto(socket->getSocket(),data, size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
+    rval=sendto(socket->getSocket(),data, size,flags,socket->_ClientAddr, socket->_ClientAddrLen);
   }
   if(rval==-1){
 #ifdef __GLIBCXX__
@@ -238,7 +241,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     recvsize=SSL_read(socket->_SSL,data,size);
   }else{
     recvsize=recvfrom(socket->getSocket(),data, size,flags,
-                              &socket->_ClientAddr, &socket->_ClientAddrLen);
+                              socket->_ClientAddr, &socket->_ClientAddrLen);
   }
   if(recvsize==-1){
 #ifdef __GLIBCXX__ 

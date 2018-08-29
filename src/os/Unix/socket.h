@@ -43,23 +43,23 @@ extern "C" {
 #define SOCKET_H
 
 namespace libhttppp {
-class ClientSocket {
-public:
+  class ClientSocket {
+  public:
     ClientSocket();
     ~ClientSocket();
     void              setnonblocking();
     int               getSocket();
     void              setSocket(int socket);
-private:
+  private:
     int              _Socket;
     SSL             *_SSL;
-    struct sockaddr  _ClientAddr;
+    struct sockaddr *_ClientAddr;
     socklen_t        _ClientAddrLen;
     friend class ServerSocket;
-};
+  };
 
-class ServerSocket : public HTTPS {
-public:
+  class ServerSocket : public HTTPS {
+  public:
     ServerSocket(int socket);
     ServerSocket(const char *uxsocket,int maxconnections);
     int           acceptEvent(ClientSocket *clientsocket);
@@ -74,13 +74,13 @@ public:
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size,int flags);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size,int flags);
-private:
+  private:
     struct addrinfo _SockAddr;
     sockaddr_un    *_UXSocketAddr;
     int             _Socket;
     int             _Port;
     int             _Maxconnections;
     HTTPException   _httpexception;
-};
+  };
 };
 #endif

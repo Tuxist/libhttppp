@@ -55,12 +55,12 @@ libhttppp::Event::~Event() {
 #ifdef DEBUG_MUTEX
    _httpexception.Note("~Event","Lock MainMutex");
 #endif
-  _Mutex->lock();
-  delete   _Cpool;
-  delete[] _Events;
-  delete   _firstConnectionContext;
-  delete   _Mutex;
-  _lastConnectionContext=NULL;
+  _Mutex->lock(); 
+  delete _Cpool; 
+  delete _Events; 
+  delete _firstConnectionContext; 
+  _lastConnectionContext=NULL; 
+  delete _Mutex;
 }
 
 libhttppp::Event* _EventIns=NULL;
@@ -93,7 +93,7 @@ void libhttppp::Event::runEventloop() {
         }
         for(int i=0; i<nev; i++) {
             ConnectionContext *curct=NULL;
-            if(_Events[i].ident == srvssocket) {
+            if(_Events[i].ident == (uintptr_t)srvssocket) {
               try {
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
@@ -114,8 +114,13 @@ void libhttppp::Event::runEventloop() {
                 ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
                 int fd=_ServerSocket->acceptEvent(clientsocket);
                 clientsocket->setnonblocking();
+                curct->_EventCounter=i;
                 if(fd>0) {
+                  _setEvent.fflags=0;
+                  _setEvent.filter=EVFILT_READ;
+                  _setEvent.flags=EV_ADD;
 		  _setEvent.udata=(void*) curct;
+		  _setEvent.ident=(uintptr_t)fd;
                   EV_SET(&_setEvent, fd, EVFILT_READ, EV_ADD, 0, 0, (void*) curct);
                   if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1){
                     _httpexception.Error("runeventloop","can't accep't in  kqueue!");
@@ -181,6 +186,7 @@ libhttppp::Event::ConnectionContext::ConnectionContext(){
   _CurEvent=NULL;
   _Mutex=new Mutex;
   _nextConnectionContext=NULL;    
+  _EventCounter=-1;
 }
 
 libhttppp::Event::ConnectionContext::~ConnectionContext(){
@@ -347,11 +353,12 @@ void *libhttppp::Event::ReadEvent(void *curcon){
 void *libhttppp::Event::WriteEvent(void* curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  HTTPException httpexception;
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("WriteEvent","lock ConnectionMutex");
+  httpexception.Note("WriteEvent","lock ConnectionMutex");
 #endif
   ccon->_Mutex->lock();
-  Connection *con=(Connection*)ccon->_CurConnection;
+  Connection *con=ccon->_CurConnection;
   try {
     ssize_t sended=0;
     while(con->getSendData()){
@@ -366,7 +373,7 @@ void *libhttppp::Event::WriteEvent(void* curcon){
     CloseEvent(ccon);
   }
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("WriteEvent","unlock ConnectionMutex");
+  httpexception.Note("WriteEvent","unlock ConnectionMutex");
 #endif
   ccon->_Mutex->unlock();
   return NULL;
@@ -386,7 +393,9 @@ void *libhttppp::Event::CloseEvent(void *curcon){
 #endif
   ccon->_Mutex->unlock();
   try {
-    EV_SET(&eventins->_setEvent,con->getClientSocket()->getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    EV_SET(&eventins->_setEvent,con->getClientSocket()->getSocket(),
+           eventins->_Events[ccon->_EventCounter].filter, 
+           EV_DELETE, 0, 0, NULL);
     if (kevent(eventins->_Kq,&eventins->_setEvent, 1, NULL, 0, NULL) == -1)
       eventins->_httpexception.Error("Connection can't delete from kqueue");                
     eventins->delConnectionContext(con);
