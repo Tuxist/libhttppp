@@ -214,7 +214,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
   }else{
-    rval=sendto(socket->getSocket(),data, size,flags,socket->_ClientAddr, socket->_ClientAddrLen);
+      rval=sendto(socket->getSocket(),data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
   }
   if(rval==-1){
 #ifdef __GLIBCXX__

@@ -345,6 +345,7 @@ void *libhttppp::Event::ReadEvent(void *curcon){
        if(e.isError()){
           con->cleanRecvData();
           CloseEvent(ccon);
+          return NULL;
        }
   }
   return NULL;
