@@ -110,15 +110,8 @@ void libhttppp::Event::runEventloop() {
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
                */
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock MainMutex");
-#endif
-                _Mutex->lock();
                 curct=addConnectionContext();
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock MainMutex");
-#endif
-                _Mutex->unlock();
+
 #ifdef DEBUG_MUTEX
                 _httpexception.Note("runeventloop","Lock ConnectionMutex");
 #endif
