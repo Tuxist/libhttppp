@@ -364,12 +364,12 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
-#ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
-#endif
-  ccon->_Mutex->unlock();
   try {
     epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
+#ifdef DEBUG_MUTEX
+    ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
+#endif
+    ccon->_Mutex->unlock();
     eventins->delConnectionContext(con);
     curcon=NULL;
     eventins->_httpexception.Note("Connection shutdown!");
