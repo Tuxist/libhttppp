@@ -75,7 +75,7 @@ void libhttppp::Event::runEventloop() {
     int nev = 0;
     _setEvent = (struct kevent){0};
     _Kq = kqueue();
-    EV_SET(&_setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR || EV_ONESHOT, 0, 0, NULL);
+    EV_SET(&_setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR , 0, 0, NULL);
     if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1)
       _httpexception.Critical("runeventloop","can't create kqueue!");
     signal(SIGPIPE, SIG_IGN);
@@ -128,31 +128,15 @@ void libhttppp::Event::runEventloop() {
                 _httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                    curct->_Mutex->unlock();
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock MainMutex");
-#endif
-                  _Mutex->lock();
-                  delConnectionContext(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock MainMutex");
-#endif
-                  _Mutex->unlock();
+                   delConnectionContext(curct->_CurConnection);
                 }
                 
               } catch(HTTPException &e) {
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock MainMutex");
-#endif
-                _Mutex->lock();
 #ifdef DEBUG_MUTEX
                 _httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                 curct->_Mutex->unlock();
                 delConnectionContext(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock MainMutex");
-#endif
-                _Mutex->unlock();
                 if(e.isCritical())
                   throw e;
               }
