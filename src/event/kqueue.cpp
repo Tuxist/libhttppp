@@ -291,8 +291,9 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(lib
 void *libhttppp::Event::ReadEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  HTTPException httpexception;
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("ReadEvent","lock ConnectionMutex");
+  httpexception.Note("ReadEvent","lock ConnectionMutex");
 #endif  
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;
@@ -306,13 +307,13 @@ void *libhttppp::Event::ReadEvent(void *curcon){
     }while(rcvsize>0);
   eventins->RequestEvent(con);
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
+  httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif 
     ccon->_Mutex->unlock(); 
     WriteEvent(ccon);
   } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-      ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
+      httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif 
       ccon->_Mutex->unlock();
        if(e.isCritical()) {
@@ -361,8 +362,9 @@ void *libhttppp::Event::WriteEvent(void* curcon){
 void *libhttppp::Event::CloseEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  HTTPException httpexception;
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("CloseEvent","ConnectionMutex");
+  httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;  
@@ -374,14 +376,14 @@ void *libhttppp::Event::CloseEvent(void *curcon){
     if (kevent(eventins->_Kq,&eventins->_setEvent, 1, NULL, 0, NULL) == -1)
       eventins->_httpexception.Error("Connection can't delete from kqueue");                
 #ifdef DEBUG_MUTEX
-    ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
+    httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
     ccon->_Mutex->unlock();
     eventins->delConnectionContext(con);
     curcon=NULL;
-    eventins->_httpexception.Note("Connection shutdown!");
+    httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {
-    eventins->_httpexception.Note("Can't do Connection shutdown!");
+    httpexception.Note("Can't do Connection shutdown!");
   }
   return NULL;
 }
