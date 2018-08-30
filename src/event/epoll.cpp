@@ -358,16 +358,19 @@ void *libhttppp::Event::WriteEvent(void* curcon){
 void *libhttppp::Event::CloseEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  HTTPException httpexception;
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("CloseEvent","ConnectionMutex");
+  httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
   try {
-    epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
+    int ect=epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
+    if(ect==-1)
+      httpexception.Note("CloseEvent","can't delete Connection from epoll");
 #ifdef DEBUG_MUTEX
-    ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
+    httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
     ccon->_Mutex->unlock();
     eventins->delConnectionContext(con);
