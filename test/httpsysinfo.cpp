@@ -56,6 +56,10 @@ public:
     tdat << "<tr><td>" << key << "</td><td>" << value <<"</td></tr>";
   }
 
+  void createRow(const char* key,int value){
+    tdat << "<tr><td>" << key << "</td><td>" << value <<"</td></tr>";
+  }
+  
   const char *getTable(){
     tdat << "</table>";
     buffer=tdat.str();
@@ -103,17 +107,9 @@ public:
   void CPUInfo(){
 #ifndef Windows
     sysstream << "<h2>CPUInfo:</h2>";
-    std::string line;
-    std::ifstream cpufile ("/proc/cpuinfo");
     HtmlTable cputable;
-    if (cpufile.is_open()){
-      while ( getline (cpufile,line) ){
-          size_t delimter=line.find(":");
-          if(delimter!=std::string::npos)
-             cputable.createRow(line.substr(0,delimter).c_str(),line.substr(delimter+1,(line.size()-(delimter+1))).c_str());
-      }
-      cpufile.close();
-    }
+    int cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    cputable.createRow("Cores ",cpus);
     sysstream << cputable.getTable();
 #endif      
   }
