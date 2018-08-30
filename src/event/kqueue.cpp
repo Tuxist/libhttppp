@@ -367,16 +367,16 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
-#ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
-#endif
-  ccon->_Mutex->unlock();
   try {
     EV_SET(&eventins->_setEvent,con->getClientSocket()->getSocket(),
            eventins->_Events[ccon->_EventCounter].filter, 
            EV_DELETE, 0, 0, NULL);
     if (kevent(eventins->_Kq,&eventins->_setEvent, 1, NULL, 0, NULL) == -1)
       eventins->_httpexception.Error("Connection can't delete from kqueue");                
+#ifdef DEBUG_MUTEX
+    ccon->_httpexception.Note("CloseEvent","unlock ConnectionMutex");
+#endif
+    ccon->_Mutex->unlock();
     eventins->delConnectionContext(con);
     curcon=NULL;
     eventins->_httpexception.Note("Connection shutdown!");
