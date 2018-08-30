@@ -134,30 +134,16 @@ void libhttppp::Event::runEventloop() {
                 _httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                    curct->_Mutex->unlock();
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock MainMutex");
-#endif
-                  _Mutex->lock();
                   delConnectionContext(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock MainMutex");
-#endif
                   _Mutex->unlock();
                 }
                 
               } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock MainMutex");
-#endif
-                _Mutex->lock();
-#ifdef DEBUG_MUTEX
                 _httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                 curct->_Mutex->unlock();
                 delConnectionContext(curct->_CurConnection);
-#ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock MainMutex");
-#endif
                 _Mutex->unlock();
                 if(e.isCritical())
                   throw e;
