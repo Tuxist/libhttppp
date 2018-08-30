@@ -121,7 +121,7 @@ void libhttppp::Event::runEventloop() {
                 clientsocket->setnonblocking();
                 if(fd>0) {
                   _setEvent.data.ptr = (void*) curct;
-                  _setEvent.events = EPOLLIN|EPOLLET;
+                  _setEvent.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
                   if(epoll_ctl(_epollFD, EPOLL_CTL_ADD, fd, &_setEvent)==-1 && errno==EEXIST)
                     epoll_ctl(_epollFD, EPOLL_CTL_MOD,fd, &_setEvent);
                   ConnectEvent(curct->_CurConnection);
@@ -335,6 +335,7 @@ void *libhttppp::Event::ReadEvent(void *curcon){
        if(e.isError()){
           con->cleanRecvData();
           CloseEvent(ccon);
+          return NULL;
        }
   }
   return NULL;
