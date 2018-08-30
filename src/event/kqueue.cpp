@@ -56,11 +56,11 @@ libhttppp::Event::~Event() {
    _httpexception.Note("~Event","Lock MainMutex");
 #endif
   _Mutex->lock(); 
-  delete _Cpool; 
-  delete _Events; 
-  delete _firstConnectionContext; 
+  delete   _Cpool; 
+  delete[] _Events; 
+  delete   _firstConnectionContext; 
   _lastConnectionContext=NULL; 
-  delete _Mutex;
+  delete   _Mutex;
 }
 
 libhttppp::Event* _EventIns=NULL;
