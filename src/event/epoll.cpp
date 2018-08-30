@@ -291,8 +291,9 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(lib
 void *libhttppp::Event::ReadEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  HTTPException httpexception;
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("ReadEvent","lock ConnectionMutex");
+  httpexception.Note("ReadEvent","lock ConnectionMutex");
 #endif  
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;
@@ -306,7 +307,7 @@ void *libhttppp::Event::ReadEvent(void *curcon){
     }while(rcvsize>0);
     eventins->RequestEvent(con);
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
+  httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif 
     ccon->_Mutex->unlock(); 
     WriteEvent(ccon);
@@ -330,8 +331,9 @@ void *libhttppp::Event::ReadEvent(void *curcon){
 void *libhttppp::Event::WriteEvent(void* curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  HTTPException httpexception;
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("WriteEvent","lock ConnectionMutex");
+  httpexception.Note("WriteEvent","lock ConnectionMutex");
 #endif
   ccon->_Mutex->lock();
   Connection *con=(Connection*)ccon->_CurConnection;
@@ -349,7 +351,7 @@ void *libhttppp::Event::WriteEvent(void* curcon){
     CloseEvent(ccon);
   }
 #ifdef DEBUG_MUTEX
-  ccon->_httpexception.Note("WriteEvent","unlock ConnectionMutex");
+  httpexception.Note("WriteEvent","unlock ConnectionMutex");
 #endif
   ccon->_Mutex->unlock();
   return NULL;
