@@ -268,6 +268,10 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(lib
         }
       }
       curcontext->_nextConnectionContext=NULL;
+#ifdef DEBUG_MUTEX
+      _httpexception.Note("delConnection","Unlock ConnectionMutex");
+#endif
+      curcontext->_Mutex->unlock();
       delete curcontext;
       break;
     }
