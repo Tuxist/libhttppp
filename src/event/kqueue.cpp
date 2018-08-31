@@ -52,10 +52,6 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 }
 
 libhttppp::Event::~Event() {
-#ifdef DEBUG_MUTEX
-   _httpexception.Note("~Event","Lock MainMutex");
-#endif
-  _Mutex->lock(); 
   delete   _Cpool; 
   delete[] _Events; 
   delete   _firstConnectionContext; 
