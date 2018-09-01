@@ -383,6 +383,10 @@ void *libhttppp::Event::CloseEvent(void *curcon){
     curcon=NULL;
     eventins->_httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {
+#ifdef DEBUG_MUTEX
+    httpexception.Note("CloseEvent","unlock ConnectionMutex");
+#endif
+    ccon->_Mutex->unlock();
     eventins->_httpexception.Note("Can't do Connection shutdown!");
   }
   return NULL;
