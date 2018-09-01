@@ -348,6 +348,10 @@ void *libhttppp::Event::WriteEvent(void* curcon){
     }
     eventins->ResponseEvent(con);
   } catch(HTTPException &e) {
+#ifdef DEBUG_MUTEX
+    httpexception.Note("WriteEvent","unlock ConnectionMutex");
+#endif
+    ccon->_Mutex->unlock();  
     CloseEvent(ccon);
   }
 #ifdef DEBUG_MUTEX
