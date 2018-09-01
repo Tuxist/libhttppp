@@ -41,11 +41,11 @@ void libhttppp::Thread::Create(void *function(void*), void *arguments) {
   if (rth != 0) {
 #ifdef __GLIBCXX__
     char errbuf[255];
-    _httpexception.Critical("Thread Create",strerror_r(errno, errbuf, 255));
+    _httpexception.Error("Thread Create",strerror_r(errno, errbuf, 255));
 #else
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    _httpexception.Critical("Thread Create",errbuf);
+    _httpexception.Error("Thread Create",errbuf);
 #endif
     throw _httpexception;
   }
