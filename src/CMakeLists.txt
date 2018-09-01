@@ -6,6 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 include(GenerateExportHeader)
 
 set(libhttpSrcs
+  threadpool.cpp
   exception.cpp
   connections.cpp
   http.cpp
@@ -25,6 +26,7 @@ ELSE()
   list(APPEND libhttpSrcs "os/Unix/socket.cpp")
   list(APPEND libhttpSrcs "os/Unix/mutex.cpp")
   list(APPEND libhttpSrcs "os/Unix/thread.cpp")
+  list(APPEND libhttpSrcs "os/Unix/sysinfo.cpp")
 ENDIF()
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -74,7 +76,8 @@ install(TARGETS httppp EXPORT httpppTargets
   INCLUDES DESTINATION include
 )
 
-install(FILES connections.h         
+install(FILES connections.h
+              threadpool.h
               httpd.h
               http.h
               httpdefinitions.h
@@ -108,6 +111,7 @@ install(FILES os/Unix/inttype.h
               os/Unix/socket.h
               os/Unix/mutex.h
               os/Unix/thread.h
+              os/Unix/sysinfo.h
         DESTINATION include/httppp/os/Unix
         COMPONENT Devel
 )

@@ -107,9 +107,9 @@ namespace libhttppp {
 #endif
 
 #ifdef Windows
-	static BOOL WINAPI CtrlHandler(DWORD dwEvent);
+    static BOOL WINAPI CtrlHandler(DWORD dwEvent);
 #else
-        static  void  CtrlHandler(int signum);
+    static  void  CtrlHandler(int signum);
 #endif
 
   private:
@@ -120,7 +120,7 @@ namespace libhttppp {
 #elif EVENT_KQUEUE
 	int                 _Kq;
 	struct kevent      *_Events;
-        struct kevent       _setEvent;	
+    struct kevent       _setEvent;	
 #elif EVENT_IOCP
 	HANDLE              _IOCP;
 	WSAEVENT            _hCleanupEvent[1];

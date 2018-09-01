@@ -31,23 +31,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 libhttppp::Thread::Thread(){
+  _Pid=-1;
 }
 
 libhttppp::Thread::~Thread(){
 }
 
 void libhttppp::Thread::Create(void *function(void*), void *arguments) {
+  HTTPException httpexception;
   int rth = pthread_create(&_Thread, NULL, function, arguments);
   if (rth != 0) {
 #ifdef __GLIBCXX__
     char errbuf[255];
-    _httpexception.Error("Thread Create",strerror_r(errno, errbuf, 255));
+    httpexception.Error("Thread Create",strerror_r(errno, errbuf, 255));
 #else
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    _httpexception.Error("Thread Create",errbuf);
+    httpexception.Error("Thread Create",errbuf);
 #endif
-    throw _httpexception;
+    throw httpexception;
   }
 }
 
@@ -56,6 +58,16 @@ void libhttppp::Thread::Detach(){
 }
 
 int libhttppp::Thread::getThreadID() {
-	_httpexception.Note("ThreadID not support by this OS");
+    HTTPException httpexception;
+	httpexception.Note("ThreadID not support by this OS");
 	return -1;
 }
+
+int libhttppp::Thread::getPid(){
+  return _Pid;  
+}
+
+void libhttppp::Thread::setPid(int pid){
+  _Pid=pid;
+}
+

@@ -37,6 +37,7 @@ namespace libhttppp {
 		SYSInfo();
 		~SYSInfo();
 		DWORD getNumberOfProcessors();
+        int getPid();
 	private:
 		SYSTEM_INFO *_SystemInfo;
 	};

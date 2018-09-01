@@ -39,3 +39,7 @@ libhttppp::SYSInfo::~SYSInfo() {
 DWORD libhttppp::SYSInfo::getNumberOfProcessors() {
 	return _SystemInfo->dwNumberOfProcessors;
 }
+
+int libhttppp::SYSInfo::getPid() {
+	return _getpid();
+}
