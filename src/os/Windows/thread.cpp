@@ -58,6 +58,7 @@ HANDLE libhttppp::Thread::getHandle() {
 }
 
 void libhttppp::Thread::Join(){
+    WaitForSingleObject(_Thread, INFINITE);
 }
 
 
