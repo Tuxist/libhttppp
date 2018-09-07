@@ -27,4 +27,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "threadpool.h"
 
+libhttppp::ThreadPool::ThreadPool(){
+    _firstThread=NULL;
+    _lastThread=NULL;
+    _guardThread=NULL;
+    _guardPid=-1;
+}
+
+libhttppp::ThreadPool::~ThreadPool(){
+    delete _guardThread;
+    delete _firstThread;
+    _lastThread=NULL;
+}
+
+libhttppp::Thread *libhttppp::ThreadPool::addThread(){
+    if(!_firstThread){
+        _firstThread= new Thread;
+        _lastThread=_firstThread;
+    }else{
+        _lastThread->_nextThread=new Thread;
+        _lastThread=_lastThread->_nextThread;
+    }
+    return _lastThread;  
+}
+
+libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *thread){
+    return NULL;
+}
+
+void libhttppp::ThreadPool::threadGuard(bool endguard){
+}
+
 

@@ -29,21 +29,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::Thread::Thread(){
   _ThreadId = -1;
+  _nextThread=NULL;
 }
 
 libhttppp::Thread::~Thread(){
 }
 
 void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments) {
+    HTTPException  httpexception;
 	_Thread = CreateThread(NULL, 0, function, arguments, 0, &_ThreadId);
 	if (_Thread == NULL) {
-		_httpexception.Critical("Can't create Thread!", GetLastError());
-		throw _httpexception;
+		httpexception.Critical("Can't create Thread!", GetLastError());
+		throw httpexception;
 	}
 }
 
 void libhttppp::Thread::Detach() {
-	_httpexception.Note("Detach not support by this OS");
+    HTTPException   httpexception;
+	httpexception.Note("Detach not support by this OS");
 }
 
 DWORD libhttppp::Thread::getThreadID() {
@@ -52,4 +55,8 @@ DWORD libhttppp::Thread::getThreadID() {
 
 HANDLE libhttppp::Thread::getHandle() {
 	return _Thread;
+}
+
+libhttppp::Thread *libhttppp::Thread::nextThread(){
+    return _nextThread;
 }

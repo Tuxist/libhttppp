@@ -35,17 +35,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
    class ThreadPool {
    public:
-     ThreadPool(bool eventendloop);
+     ThreadPool();
      ~ThreadPool();
      Thread *addThread();
      Thread *delThread(Thread *thread);
+     void    threadGuard(bool endguard);
    private:
      Thread *_firstThread;
      Thread *_lastThread;
      
      Thread *_guardThread;
      int     _guardPid;
-     void    _ThreadGuard(); 
    };
 };
 

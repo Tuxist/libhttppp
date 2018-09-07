@@ -33,6 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define THREAD_H
 
 namespace libhttppp {
+  class ThreadPool;
+
   class Thread{
   public:
     Thread();
@@ -41,10 +43,12 @@ namespace libhttppp {
 	void Detach();
 	DWORD getThreadID();
 	HANDLE getHandle();
+    Thread *nextThread();
   private:
     HANDLE          _Thread;
     DWORD           _ThreadId;
-    HTTPException   _httpexception;
+    Thread         *_nextThread;
+    friend class ThreadPool;
   };
 };
 

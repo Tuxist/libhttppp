@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::Thread::Thread(){
   _Pid=-1;
+  _nextThread=NULL;
 }
 
 libhttppp::Thread::~Thread(){
@@ -71,3 +72,6 @@ void libhttppp::Thread::setPid(int pid){
   _Pid=pid;
 }
 
+libhttppp::Thread *libhttppp::Thread::nextThread(){
+    return _nextThread;
+}

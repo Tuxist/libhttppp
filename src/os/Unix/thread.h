@@ -26,12 +26,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "../../exception.h"
+
 #include <pthread.h>
 
 #ifndef THREAD_H
 #define THREAD_H
 
 namespace libhttppp {
+  class ThreadPool;
+  
   class Thread{
   public:
     Thread();
@@ -41,9 +44,12 @@ namespace libhttppp {
 	int getThreadID();
     void setPid(int pid);
     int  getPid();
+    Thread *nextThread();
   private:
     int             _Pid;
     pthread_t       _Thread;
+    Thread         *_nextThread;
+    friend class ThreadPool;
   };
 }
 #endif
