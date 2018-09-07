@@ -72,6 +72,22 @@ void libhttppp::Thread::setPid(int pid){
   _Pid=pid;
 }
 
+void libhttppp::Thread::Join(){
+  if(pthread_join(_Thread,&_Retval)==0){
+    return;  
+  }else{
+    HTTPException httpexception;    
+#ifdef __GLIBCXX__
+    char errbuf[255];
+    httpexception.Error("Can't join Thread",strerror_r(errno, errbuf, 255));
+#else
+    char errbuf[255];
+    strerror_r(errno, errbuf, 255);
+    httpexception.Error("Can't join Thread",errbuf);
+#endif  
+  }
+}
+
 libhttppp::Thread *libhttppp::Thread::nextThread(){
     return _nextThread;
 }

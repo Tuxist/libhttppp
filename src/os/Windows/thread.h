@@ -43,6 +43,7 @@ namespace libhttppp {
 	void Detach();
 	DWORD getThreadID();
 	HANDLE getHandle();
+    void Join();
     Thread *nextThread();
   private:
     HANDLE          _Thread;

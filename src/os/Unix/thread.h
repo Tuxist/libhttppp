@@ -44,10 +44,12 @@ namespace libhttppp {
 	int getThreadID();
     void setPid(int pid);
     int  getPid();
+    void Join();
     Thread *nextThread();
   private:
     int             _Pid;
     pthread_t       _Thread;
+    void           *_Retval;
     Thread         *_nextThread;
     friend class ThreadPool;
   };

@@ -57,6 +57,10 @@ HANDLE libhttppp::Thread::getHandle() {
 	return _Thread;
 }
 
+void libhttppp::Thread::Join(){
+}
+
+
 libhttppp::Thread *libhttppp::Thread::nextThread(){
     return _nextThread;
 }
