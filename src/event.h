@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_H
 
 namespace libhttppp {
+    class ThreadPool;
 #ifdef MSVC
 	class __declspec(dllexport)  Event {
 #else
@@ -86,24 +87,39 @@ namespace libhttppp {
             ConnectionContext      *_nextConnectionContext;
             friend class Event;
         };
-        
+   
         ConnectionContext *addConnectionContext();
         ConnectionContext *delConnectionContext(Connection *delcon);
+        
+        class WorkerContext {
+        private:
+            WorkerContext();
+            ~WorkerContext();
+            Event         *_CurEvent;
+            Thread        *_CurThread;
+            WorkerContext *_nextWorkerContext;
+            friend class Event;
+        };
+        
+        WorkerContext *addWorkerContext();
+        WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
         
         static void *ReadEvent(void *curcon);
         static void *WriteEvent(void *curcon);
         static void *CloseEvent(void *curcon);
         
-	/*API Events*/
-	virtual void RequestEvent(Connection *curcon);
-	virtual void ResponseEvent(libhttppp::Connection *curcon);
-	virtual void ConnectEvent(libhttppp::Connection *curcon);
-    	virtual void DisconnectEvent(Connection *curcon);
-	/*Run Mainloop*/
-	virtual void runEventloop();
+    /*API Events*/
+    virtual void RequestEvent(Connection *curcon);
+    virtual void ResponseEvent(libhttppp::Connection *curcon);
+    virtual void ConnectEvent(libhttppp::Connection *curcon);
+    virtual void DisconnectEvent(Connection *curcon);
+    /*Run Mainloop*/
+    virtual void runEventloop();
 
 #ifdef EVENT_IOCP
 	static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
+#else
+    static void *WorkerThread(void *wrkevent);
 #endif
 
 #ifdef Windows
@@ -116,7 +132,6 @@ namespace libhttppp {
 #ifdef EVENT_EPOLL
 	int                 _epollFD;
 	struct epoll_event *_Events;
-	struct epoll_event  _setEvent;    
 #elif EVENT_KQUEUE
 	int                 _Kq;
 	struct kevent      *_Events;
@@ -131,14 +146,18 @@ namespace libhttppp {
     ConnectionContext *_firstConnectionContext;
     ConnectionContext *_lastConnectionContext;
     
+    /*Threadpools*/
+    ThreadPool        *_WorkerPool;
+    WorkerContext     *_firstWorkerContext;
+    WorkerContext     *_lastWorkerContext;
     /*Thread Monitor*/
-    Mutex              *_Mutex;
-    
-    HTTPException       _httpexception;
-    ServerSocket       *_ServerSocket;
-    bool                _EventEndloop;
-    bool                _EventRestartloop;
-    ConnectionPool     *_Cpool;
+    Mutex             *_Mutex;
+        
+    HTTPException      _httpexception;
+    ServerSocket      *_ServerSocket;
+    bool               _EventEndloop;
+    bool               _EventRestartloop;
+    ConnectionPool    *_Cpool;
   };
 }
 

@@ -14,6 +14,7 @@ set(libhttpSrcs
   https.cpp
   base64.cpp
   utils.cpp
+  event.cpp
 )
 
 #os dependencies

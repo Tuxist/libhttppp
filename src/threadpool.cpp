@@ -57,8 +57,28 @@ libhttppp::Thread *libhttppp::ThreadPool::addThread(){
     return _lastThread;  
 }
 
-libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *thread){
-    return NULL;
+libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread){
+    Thread *prevthr=NULL;
+    for(Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread()){
+        if(curthr==delthread){
+            if(prevthr){
+                prevthr->_nextThread=curthr->_nextThread;
+            }
+            if(curthr==_firstThread){
+              _firstThread=curthr->nextThread();  
+            }
+            if(curthr==_lastThread){
+              _lastThread=prevthr;
+            }
+            curthr->_nextThread=NULL;
+            delete curthr;
+        }
+        prevthr=curthr;
+    }
+    if(prevthr)
+        return prevthr->nextThread();
+    else
+        return _firstThread;
 }
 
 void libhttppp::ThreadPool::threadGuard(bool endguard){

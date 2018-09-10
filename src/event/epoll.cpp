@@ -31,7 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include <errno.h>
 #include <signal.h>
+
 #include "os/os.h"
+#include "threadpool.h"
 
 #define READEVENT 0
 #define SENDEVENT 1
@@ -47,15 +49,21 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _EventEndloop =true;
     _Cpool= new ConnectionPool(_ServerSocket);
     _Events = new epoll_event[(_ServerSocket->getMaxconnections())];
+    _WorkerPool = new ThreadPool;
     _Mutex = new Mutex;
     _firstConnectionContext=NULL;
     _lastConnectionContext=NULL;
+    _firstWorkerContext=NULL;
+    _lastWorkerContext=NULL;
 }
 
 libhttppp::Event::~Event() {
   delete   _Cpool;
   delete[] _Events;
   delete   _firstConnectionContext;
+  delete   _WorkerPool;
+  delete   _firstWorkerContext;
+  _lastWorkerContext=NULL;
   delete   _Mutex;
   _lastConnectionContext=NULL;
 }
@@ -67,7 +75,7 @@ void libhttppp::Event::CtrlHandler(int signum) {
 }
 
 void libhttppp::Event::runEventloop() {
-    _setEvent = (struct epoll_event){0};
+    struct epoll_event setevent= (struct epoll_event){0};
     for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
         _Events[i].data.fd = -1;
     _epollFD = epoll_create1(0);
@@ -77,76 +85,90 @@ void libhttppp::Event::runEventloop() {
         throw _httpexception;
     }
 
-    _setEvent.events = EPOLLIN;
-    _setEvent.data.fd = _ServerSocket->getSocket();
+    setevent.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
+    setevent.data.fd = _ServerSocket->getSocket();
     
-    if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &_setEvent) < 0) {
+    if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
         _httpexception.Critical("can't create epoll");
         throw _httpexception;
     }
-    
-    int srvssocket=_ServerSocket->getSocket();
-    int maxconnets=_ServerSocket->getMaxconnections();
+    _EventIns=this;
     signal(SIGPIPE, SIG_IGN);
-    while(_EventEndloop) {
-        int n = epoll_wait(_epollFD,_Events,maxconnets, EPOLLWAIT);
+    SYSInfo sysinfo;
+    size_t thrs = sysinfo.getNumberOfProcessors();
+    for(size_t i=0; i<thrs; i++){
+        WorkerContext *curwrkctx=addWorkerContext();
+        curwrkctx->_CurThread->Create(WorkerThread,curwrkctx);
+    }
+}
+
+void *libhttppp::Event::WorkerThread(void *wrkevent){
+    HTTPException httpexception;
+    WorkerContext *wctx=(WorkerContext*)wrkevent;
+    Event *wevent=wctx->_CurEvent;
+    SYSInfo sysinfo;
+    wctx->_CurThread->setPid(sysinfo.getPid());
+    int srvssocket=wevent->_ServerSocket->getSocket();
+    int maxconnets=wevent->_ServerSocket->getMaxconnections();
+    struct epoll_event setevent= (struct epoll_event){0};
+    
+       while(wevent->_EventEndloop) {
+        int n = epoll_wait(wevent->_epollFD,wevent->_Events,maxconnets, EPOLLWAIT);
         if(n<0){
             if(errno== EINTR){
                 continue;
             }else{
-                 _httpexception.Critical("epoll wait failure");
-                 throw _httpexception;
+                 httpexception.Critical("epoll wait failure");
+                 throw httpexception;
             }
                 
         }
         for(int i=0; i<n; i++) {
             ConnectionContext *curct=NULL;
-            if(_Events[i].data.fd == srvssocket) {
+            if(wevent->_Events[i].data.fd == srvssocket) {
               try {
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
                */
-                curct=addConnectionContext();
+                curct=wevent->addConnectionContext();
 
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock ConnectionMutex");
+                httpexception.Note("runeventloop","Lock ConnectionMutex");
 #endif
                 curct->_Mutex->lock();
                 ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
-                int fd=_ServerSocket->acceptEvent(clientsocket);
+                int fd=wevent->_ServerSocket->acceptEvent(clientsocket);
                 clientsocket->setnonblocking();
                 if(fd>0) {
-                  _setEvent.data.ptr = (void*) curct;
-                  _setEvent.events = EPOLLIN|EPOLLET;
-                  if(epoll_ctl(_epollFD, EPOLL_CTL_ADD, fd, &_setEvent)==-1 && errno==EEXIST)
-                    epoll_ctl(_epollFD, EPOLL_CTL_MOD,fd, &_setEvent);
-                  ConnectEvent(curct->_CurConnection);
+                  setevent.data.ptr = (void*) curct;
+                  setevent.events = EPOLLIN|EPOLLET;
+                  if(epoll_ctl(wevent->_epollFD, EPOLL_CTL_ADD, fd, &setevent)==-1 && errno==EEXIST)
+                    epoll_ctl(wevent->_epollFD, EPOLL_CTL_MOD,fd, &setevent);
+                  wevent->ConnectEvent(curct->_CurConnection);
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+                httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                   curct->_Mutex->unlock();
                 } else {
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+                httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
-                   curct->_Mutex->unlock();
-                  delConnectionContext(curct->_CurConnection);
-                  _Mutex->unlock();
+                  curct->_Mutex->unlock();
+                  wevent->delConnectionContext(curct->_CurConnection);
                 }
                 
               } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+                httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                 curct->_Mutex->unlock();
-                delConnectionContext(curct->_CurConnection);
-                _Mutex->unlock();
+                wevent->delConnectionContext(curct->_CurConnection);
                 if(e.isCritical())
                   throw e;
               }
             } else {
-                curct=(ConnectionContext*)_Events[i].data.ptr;
-                if(_Events[i].events & EPOLLIN) {
+                curct=(ConnectionContext*)wevent->_Events[i].data.ptr;
+                if(wevent->_Events[i].events & EPOLLIN) {
 					Thread curthread;
 					curthread.Create(ReadEvent,curct);
                     curthread.Detach();
@@ -155,136 +177,10 @@ void libhttppp::Event::runEventloop() {
                 }
             } 
         }
-        _EventIns=this;
         signal(SIGINT, CtrlHandler);
     }
+    return NULL;
 }
-
-libhttppp::Event::ConnectionContext::ConnectionContext(){
-  _CurConnection=NULL;
-  _CurCPool=NULL;
-  _CurEvent=NULL;
-  _Mutex=new Mutex;
-  _nextConnectionContext=NULL;    
-}
-
-libhttppp::Event::ConnectionContext::~ConnectionContext(){
-  delete _Mutex;
-  delete _nextConnectionContext;
-}
-
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextConnectionContext(){
-  return _nextConnectionContext;    
-}
-
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
-  if(!_firstConnectionContext){      
-    _firstConnectionContext=new ConnectionContext();
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Lock ConnectionMutex");
-#endif
-    _firstConnectionContext->_Mutex->lock();
-    _lastConnectionContext=_firstConnectionContext;
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Unlock ConnectionMutex");
-#endif
-    _firstConnectionContext->_Mutex->unlock();
-  }else{
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Lock ConnectionMutex");
-#endif
-    ConnectionContext *prevcon=_lastConnectionContext;
-    prevcon->_Mutex->lock();
-    _lastConnectionContext->_nextConnectionContext=new ConnectionContext();
-    _lastConnectionContext=_lastConnectionContext->_nextConnectionContext;
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Unlock ConnectionMutex");
-#endif
-    prevcon->_Mutex->unlock();
-  }
-  _lastConnectionContext->_CurConnection=_Cpool->addConnection();
-  _lastConnectionContext->_CurCPool=_Cpool;
-  _lastConnectionContext->_CurEvent=this;
-  
-  return _lastConnectionContext;
-}
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(libhttppp::Connection* delcon){
-  ConnectionContext *prevcontext=NULL;
-#ifdef DEBUG_MUTEX
-  _httpexception.Note("delConnection","Lock MainMutex");
-#endif
-  _Mutex->lock();
-  for(ConnectionContext *curcontext=_firstConnectionContext; curcontext; 
-      curcontext=curcontext->nextConnectionContext()){
-    if(curcontext->_CurConnection==delcon){
-#ifdef DEBUG_MUTEX
-      _httpexception.Note("delConnection","Lock ConnectionMutex");
-#endif
-      curcontext->_Mutex->lock();
-      _Cpool->delConnection(delcon);
-      if(prevcontext){
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","Lock prevConnectionMutex");
-#endif
-        prevcontext->_Mutex->lock();
-        prevcontext->_nextConnectionContext=curcontext->_nextConnectionContext;
-        if(_lastConnectionContext==curcontext){
-          _lastConnectionContext=prevcontext;
-        }
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","unlock prevConnectionMutex");
-#endif
-        prevcontext->_Mutex->unlock();
-      }else{
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","lock firstConnectionMutex");
-#endif
-        _firstConnectionContext->_Mutex->lock();
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","lock lastConnectionMutex");
-#endif
-        _lastConnectionContext->_Mutex->lock();
-        _firstConnectionContext=curcontext->_nextConnectionContext;
-        if(_lastConnectionContext->_CurConnection==delcon)
-          _lastConnectionContext=_firstConnectionContext;
-        if(_firstConnectionContext){
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","unlock firstConnectionMutex");
-#endif
-        _firstConnectionContext->_Mutex->unlock();
-        }
-        if(_lastConnectionContext){
-#ifdef DEBUG_MUTEX
-     _httpexception.Note("delConnection","unlock lastConnectionMutex");
-#endif
-        _lastConnectionContext->_Mutex->unlock();
-        }
-      }
-#ifdef DEBUG_MUTEX
-      _httpexception.Note("delConnection","Unlock ConnectionMutex");
-#endif
-      curcontext->_Mutex->unlock();
-      curcontext->_nextConnectionContext=NULL;
-      delete curcontext;
-      break;
-    }
-    prevcontext=curcontext;
-  }
-#ifdef DEBUG_MUTEX
-  _httpexception.Note("delConnection","unlock MainMutex");
-#endif
-  _Mutex->unlock();
-  if(prevcontext && prevcontext->_nextConnectionContext){
-    return prevcontext->_nextConnectionContext;
-  }else{
-    ConnectionContext *fcontext=_firstConnectionContext;
-    return fcontext;
-  }
-}
-
 
 
 /*Workers*/
@@ -364,6 +260,7 @@ void *libhttppp::Event::WriteEvent(void* curcon){
 void *libhttppp::Event::CloseEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  struct epoll_event setevent= (struct epoll_event){0};
   HTTPException httpexception;
 #ifdef DEBUG_MUTEX
   httpexception.Note("CloseEvent","ConnectionMutex");
@@ -372,7 +269,7 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
   try {
-    int ect=epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
+    int ect=epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &setevent);
     if(ect==-1)
       httpexception.Note("CloseEvent","can't delete Connection from epoll");
 #ifdef DEBUG_MUTEX
@@ -392,19 +289,4 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   return NULL;
 }
 
-/*Event Handlers*/
-void libhttppp::Event::RequestEvent(libhttppp::Connection *curcon) {
-    return;
-}
 
-void libhttppp::Event::ResponseEvent(libhttppp::Connection *curcon) {
-    return;
-}
-
-void libhttppp::Event::ConnectEvent(libhttppp::Connection *curcon) {
-    return;
-}
-
-void libhttppp::Event::DisconnectEvent(libhttppp::Connection *curcon) {
-    return;
-}

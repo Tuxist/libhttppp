@@ -30,7 +30,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <config.h>
 #include <errno.h>
 #include <signal.h>
+
 #include "os/os.h"
+#include "threadpool.h"
 
 #define READEVENT 0
 #define SENDEVENT 1
@@ -46,15 +48,21 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _EventEndloop =true;
     _Cpool= new ConnectionPool(_ServerSocket);
     _Events = new struct kevent[(_ServerSocket->getMaxconnections())];
+    _WorkerPool = new ThreadPool;
     _Mutex = new Mutex;
     _firstConnectionContext=NULL;
     _lastConnectionContext=NULL;
+    _firstWorkerContext=NULL;
+    _lastWorkerContext=NULL;
 }
 
 libhttppp::Event::~Event() {
   delete   _Cpool; 
   delete[] _Events; 
-  delete   _firstConnectionContext; 
+  delete   _firstConnectionContext;
+  delete   _WorkerPool;
+  delete   _firstWorkerContext;
+  _lastWorkerContext=NULL;
   _lastConnectionContext=NULL; 
   delete   _Mutex;
 }
@@ -151,141 +159,6 @@ void libhttppp::Event::runEventloop() {
         signal(SIGINT, CtrlHandler);
     }
 }
-
-libhttppp::Event::ConnectionContext::ConnectionContext(){
-  _CurConnection=NULL;
-  _CurCPool=NULL;
-  _CurEvent=NULL;
-  _Mutex=new Mutex;
-  _nextConnectionContext=NULL;    
-  _EventCounter=-1;
-}
-
-libhttppp::Event::ConnectionContext::~ConnectionContext(){
-  delete _Mutex;
-  delete _nextConnectionContext;
-}
-
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextConnectionContext(){
-  return _nextConnectionContext;    
-}
-
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
-#ifdef DEBUG_MUTEX
-  _httpexception.Note("addConnection","Lock MainMutex");
-#endif
-  _Mutex->lock();
-  if(!_firstConnectionContext){      
-    _firstConnectionContext=new ConnectionContext();
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Lock ConnectionMutex");
-#endif
-    _firstConnectionContext->_Mutex->lock();
-    _lastConnectionContext=_firstConnectionContext;
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Unlock ConnectionMutex");
-#endif
-    _firstConnectionContext->_Mutex->unlock();
-  }else{
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Lock ConnectionMutex");
-#endif
-    ConnectionContext *prevcon=_lastConnectionContext;
-    prevcon->_Mutex->lock();
-    _lastConnectionContext->_nextConnectionContext=new ConnectionContext();
-    _lastConnectionContext=_lastConnectionContext->_nextConnectionContext;
-#ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Unlock ConnectionMutex");
-#endif
-    prevcon->_Mutex->unlock();
-  }
-  _lastConnectionContext->_CurConnection=_Cpool->addConnection();
-  _lastConnectionContext->_CurCPool=_Cpool;
-  _lastConnectionContext->_CurEvent=this;
-#ifdef DEBUG_MUTEX
-  _httpexception.Note("addConnection","unlock MainMutex");
-#endif
-  _Mutex->unlock();
-  return _lastConnectionContext;
-}
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(libhttppp::Connection* delcon){
-  ConnectionContext *prevcontext=NULL;
-#ifdef DEBUG_MUTEX
-  _httpexception.Note("delConnection","Lock MainMutex");
-#endif
-  _Mutex->lock();
-  for(ConnectionContext *curcontext=_firstConnectionContext; curcontext; 
-      curcontext=curcontext->nextConnectionContext()){
-    if(curcontext->_CurConnection==delcon){
-#ifdef DEBUG_MUTEX
-      _httpexception.Note("delConnection","Lock ConnectionMutex");
-#endif
-      curcontext->_Mutex->lock();
-      _Cpool->delConnection(delcon);
-      if(prevcontext){
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","Lock prevConnectionMutex");
-#endif
-        prevcontext->_Mutex->lock();
-        prevcontext->_nextConnectionContext=curcontext->_nextConnectionContext;
-        if(_lastConnectionContext==curcontext){
-          _lastConnectionContext=prevcontext;
-        }
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","unlock prevConnectionMutex");
-#endif
-        prevcontext->_Mutex->unlock();
-      }else{
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","lock firstConnectionMutex");
-#endif
-        _firstConnectionContext->_Mutex->lock();
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","lock lastConnectionMutex");
-#endif
-        _lastConnectionContext->_Mutex->lock();
-        _firstConnectionContext=curcontext->_nextConnectionContext;
-        if(_lastConnectionContext->_CurConnection==delcon)
-          _lastConnectionContext=_firstConnectionContext;
-        if(_firstConnectionContext){
-#ifdef DEBUG_MUTEX
-        _httpexception.Note("delConnection","unlock firstConnectionMutex");
-#endif
-        _firstConnectionContext->_Mutex->unlock();
-        }
-        if(_lastConnectionContext){
-#ifdef DEBUG_MUTEX
-     _httpexception.Note("delConnection","unlock lastConnectionMutex");
-#endif
-        _lastConnectionContext->_Mutex->unlock();
-        }
-      }
-      curcontext->_nextConnectionContext=NULL;
-#ifdef DEBUG_MUTEX
-      _httpexception.Note("delConnection","Unlock ConnectionMutex");
-#endif
-      curcontext->_Mutex->unlock();
-      delete curcontext;
-      break;
-    }
-    prevcontext=curcontext;
-  }
-#ifdef DEBUG_MUTEX
-  _httpexception.Note("delConnection","unlock MainMutex");
-#endif
-  _Mutex->unlock();
-  if(prevcontext && prevcontext->_nextConnectionContext){
-    return prevcontext->_nextConnectionContext;
-  }else{
-    ConnectionContext *fcontext=_firstConnectionContext;
-    return fcontext;
-  }
-}
-
-
 
 /*Workers*/
 void *libhttppp::Event::ReadEvent(void *curcon){
@@ -394,21 +267,4 @@ void *libhttppp::Event::CloseEvent(void *curcon){
     httpexception.Note("Can't do Connection shutdown!");
   }
   return NULL;
-}
-
-/*Event Handlers*/
-void libhttppp::Event::RequestEvent(libhttppp::Connection *curcon) {
-    return;
-}
-
-void libhttppp::Event::ResponseEvent(libhttppp::Connection *curcon) {
-    return;
-}
-
-void libhttppp::Event::ConnectEvent(libhttppp::Connection *curcon) {
-    return;
-}
-
-void libhttppp::Event::DisconnectEvent(libhttppp::Connection *curcon) {
-    return;
 }
