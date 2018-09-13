@@ -135,7 +135,6 @@ namespace libhttppp {
 #elif EVENT_KQUEUE
 	int                 _Kq;
 	struct kevent      *_Events;
-    struct kevent       _setEvent;	
 #elif EVENT_IOCP
 	HANDLE              _IOCP;
 	WSAEVENT            _hCleanupEvent[1];

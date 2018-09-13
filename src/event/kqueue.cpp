@@ -76,88 +76,108 @@ void libhttppp::Event::CtrlHandler(int signum) {
 void libhttppp::Event::runEventloop() {
     int srvssocket=_ServerSocket->getSocket();
     int maxconnets=_ServerSocket->getMaxconnections();
-    int nev = 0;
-    _setEvent = (struct kevent){0};
+    struct kevent setEvent=(struct kevent){0};
     _Kq = kqueue();
-    EV_SET(&_setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR , 0, 0, NULL);
-    if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1)
+    EV_SET(&setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR , 0, 0, NULL);
+    if (kevent(_Kq, &setEvent, 1, NULL, 0, NULL) == -1)
       _httpexception.Critical("runeventloop","can't create kqueue!");
-    signal(SIGPIPE, SIG_IGN);
+     _EventIns=this;
+    signal(SIGPIPE, SIG_IGN);   
+    SYSInfo sysinfo;
+    size_t thrs = sysinfo.getNumberOfProcessors();
+    for(size_t i=0; i<thrs; i++){
+        WorkerContext *curwrkctx=addWorkerContext();
+        curwrkctx->_CurThread->Create(WorkerThread,curwrkctx);
+    }
+    for(WorkerContext *curth=_firstWorkerContext; curth; curth=curth->_nextWorkerContext){
+        curth->_CurThread->Join();
+    }
+}
 
-    while(_EventEndloop) {
-	nev = kevent(_Kq, NULL, 0, _Events,maxconnets, NULL);
+void *libhttppp::Event::WorkerThread(void *wrkevent){
+    HTTPException httpexception;
+    WorkerContext *wctx=(WorkerContext*)wrkevent;
+    Event *wevent=wctx->_CurEvent;
+    int srvssocket=wevent->_ServerSocket->getSocket();
+    int maxconnets=wevent->_ServerSocket->getMaxconnections();
+    SYSInfo sysinfo;
+    wctx->_CurThread->setPid(sysinfo.getPid());
+    struct kevent setEvent=(struct kevent){0};
+    int nev = 0;
+    while(wevent->_EventEndloop) {
+	   nev = kevent(wevent->_Kq, NULL, 0, wevent->_Events,maxconnets, NULL);
         if(nev<0){
             if(errno== EINTR){
                 continue;
             }else{
-                 _httpexception.Critical("epoll wait failure");
-                 throw _httpexception;
+                 httpexception.Critical("epoll wait failure");
+                 throw httpexception;
             }
                 
         }
         for(int i=0; i<nev; i++) {
             ConnectionContext *curct=NULL;
-            if(_Events[i].ident == (uintptr_t)srvssocket) {
+            if(wevent->_Events[i].ident == (uintptr_t)srvssocket) {
               try {
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
                */
-                curct=addConnectionContext();
+                wevent->addConnectionContext(&curct);
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Lock ConnectionMutex");
+                httpexception.Note("runeventloop","Lock ConnectionMutex");
 #endif
                 curct->_Mutex->lock();
                 ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
-                int fd=_ServerSocket->acceptEvent(clientsocket);
+                int fd=wevent->_ServerSocket->acceptEvent(clientsocket);
                 clientsocket->setnonblocking();
                 curct->_EventCounter=i;
                 if(fd>0) {
-                  _setEvent.fflags=0;
-                  _setEvent.filter=EVFILT_READ;
-                  _setEvent.flags=EV_ADD;
-		  _setEvent.udata=(void*) curct;
-		  _setEvent.ident=(uintptr_t)fd;
-                  EV_SET(&_setEvent, fd, EVFILT_READ, EV_ADD, 0, 0, (void*) curct);
-                  if (kevent(_Kq, &_setEvent, 1, NULL, 0, NULL) == -1){
-                    _httpexception.Error("runeventloop","can't accep't in  kqueue!");
+                  setEvent.fflags=0;
+                  setEvent.filter=EVFILT_READ;
+                  setEvent.flags=EV_ADD;
+		          setEvent.udata=(void*) curct;
+                  setEvent.ident=(uintptr_t)fd;
+                  EV_SET(&setEvent, fd, EVFILT_READ, EV_ADD, 0, 0, (void*) curct);
+                  if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1){
+                    httpexception.Error("runeventloop","can't accep't in  kqueue!");
                   }else{
-                    ConnectEvent(curct->_CurConnection);
+                    wevent->ConnectEvent(curct->_CurConnection);
                   }
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+                httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                   curct->_Mutex->unlock();
                 } else {
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+                httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                    curct->_Mutex->unlock();
-                   delConnectionContext(curct->_CurConnection);
+                   wevent->delConnectionContext(curct->_CurConnection,NULL);
                 }
                 
               } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-                _httpexception.Note("runeventloop","Unlock ConnectionMutex");
+                httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                 curct->_Mutex->unlock();
-                delConnectionContext(curct->_CurConnection);
+                wevent->delConnectionContext(curct->_CurConnection,NULL);
                 if(e.isCritical())
                   throw e;
               }
             } else {
-                curct=(ConnectionContext*)_Events[i].udata;
-                if(_Events[i].filter == EVFILT_READ) {
-		    Thread curthread;
-		    curthread.Create(ReadEvent,curct);
+                curct=(ConnectionContext*)wevent->_Events[i].udata;
+                if(wevent->_Events[i].filter == EVFILT_READ) {
+                    Thread curthread;
+                    curthread.Create(ReadEvent,curct);
                     curthread.Detach();
                 }else{
                     CloseEvent(curct);
                 }
             } 
         }
-        _EventIns=this;
         signal(SIGINT, CtrlHandler);
     }
+    return NULL;
 }
 
 /*Workers*/
@@ -239,6 +259,7 @@ void *libhttppp::Event::WriteEvent(void* curcon){
 void *libhttppp::Event::CloseEvent(void *curcon){
   ConnectionContext *ccon=(ConnectionContext*)curcon;
   Event *eventins=ccon->_CurEvent;
+  struct kevent setEvent=(struct kevent){0};
   HTTPException httpexception;
 #ifdef DEBUG_MUTEX
   httpexception.Note("CloseEvent","ConnectionMutex");
@@ -247,16 +268,16 @@ void *libhttppp::Event::CloseEvent(void *curcon){
   Connection *con=(Connection*)ccon->_CurConnection;  
   eventins->DisconnectEvent(con);
   try {
-    EV_SET(&eventins->_setEvent,con->getClientSocket()->getSocket(),
+    EV_SET(&setEvent,con->getClientSocket()->getSocket(),
            eventins->_Events[ccon->_EventCounter].filter, 
            EV_DELETE, 0, 0, NULL);
-    if (kevent(eventins->_Kq,&eventins->_setEvent, 1, NULL, 0, NULL) == -1)
+    if (kevent(eventins->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
       eventins->_httpexception.Error("Connection can't delete from kqueue");                
 #ifdef DEBUG_MUTEX
     httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
     ccon->_Mutex->unlock();
-    eventins->delConnectionContext(con);
+    eventins->delConnectionContext(con,NULL);
     curcon=NULL;
     httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {
