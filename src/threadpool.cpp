@@ -35,9 +35,6 @@ libhttppp::ThreadPool::ThreadPool(){
 }
 
 libhttppp::ThreadPool::~ThreadPool(){
-    for(Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread()){
-        curthr->Join();
-    }
     if(_guardThread){
       _guardThread->Join();  
     }
