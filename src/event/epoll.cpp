@@ -100,6 +100,9 @@ void libhttppp::Event::runEventloop() {
         WorkerContext *curwrkctx=addWorkerContext();
         curwrkctx->_CurThread->Create(WorkerThread,curwrkctx);
     }
+    for(WorkerContext *curth=_firstWorkerContext; curth; curth=curth->_nextWorkerContext){
+        curth->_CurThread->Join();
+    }
 }
 
 void *libhttppp::Event::WorkerThread(void *wrkevent){
@@ -130,7 +133,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent){
               /*will create warning debug mode that normally because the check already connection
                * with this socket if getconnection throw they will be create a new one
                */
-                curct=wevent->addConnectionContext();
+                wevent->addConnectionContext(&curct);
 
 #ifdef DEBUG_MUTEX
                 httpexception.Note("runeventloop","Lock ConnectionMutex");
@@ -154,7 +157,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent){
                 httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                   curct->_Mutex->unlock();
-                  wevent->delConnectionContext(curct->_CurConnection);
+                  wevent->delConnectionContext(curct->_CurConnection,NULL);
                 }
                 
               } catch(HTTPException &e) {
@@ -162,7 +165,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent){
                 httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                 curct->_Mutex->unlock();
-                wevent->delConnectionContext(curct->_CurConnection);
+                wevent->delConnectionContext(curct->_CurConnection,NULL);
                 if(e.isCritical())
                   throw e;
               }
@@ -276,7 +279,7 @@ void *libhttppp::Event::CloseEvent(void *curcon){
     httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
     ccon->_Mutex->unlock();
-    eventins->delConnectionContext(con);
+    eventins->delConnectionContext(con,NULL);
     curcon=NULL;
     eventins->_httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {

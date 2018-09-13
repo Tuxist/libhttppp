@@ -46,18 +46,21 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
   return _nextConnectionContext;    
 }
 
-libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
+void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext **addcon){
   if(!_firstConnectionContext){      
     _firstConnectionContext=new ConnectionContext();
 #ifdef DEBUG_MUTEX
     _httpexception.Note("addConnection","Lock ConnectionMutex");
 #endif
     _firstConnectionContext->_Mutex->lock();
+    if(_lastConnectionContext)
+      _lastConnectionContext->_Mutex->lock();
     _lastConnectionContext=_firstConnectionContext;
 #ifdef DEBUG_MUTEX
     _httpexception.Note("addConnection","Unlock ConnectionMutex");
 #endif
     _firstConnectionContext->_Mutex->unlock();
+    _lastConnectionContext->_Mutex->unlock();
   }else{
 #ifdef DEBUG_MUTEX
     _httpexception.Note("addConnection","Lock ConnectionMutex");
@@ -71,14 +74,21 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::addConnectionContext(){
 #endif
     prevcon->_Mutex->unlock();
   }
+ #ifdef DEBUG_MUTEX
+    _httpexception.Note("addConnection","Lock ConnectionMutex");
+#endif
+  _lastConnectionContext->_Mutex->lock(); 
   _lastConnectionContext->_CurConnection=_Cpool->addConnection();
   _lastConnectionContext->_CurCPool=_Cpool;
   _lastConnectionContext->_CurEvent=this;
-  
-  return _lastConnectionContext;
+  *addcon=_lastConnectionContext;
+#ifdef DEBUG_MUTEX
+    _httpexception.Note("addConnection","Unlock ConnectionMutex");
+#endif
+  _lastConnectionContext->_Mutex->unlock();
 }
 
-libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(libhttppp::Connection* delcon){
+void libhttppp::Event::delConnectionContext(libhttppp::Connection* delcon,libhttppp::Event::ConnectionContext **nextcxt){
   ConnectionContext *prevcontext=NULL;
 #ifdef DEBUG_MUTEX
   _httpexception.Note("delConnection","Lock MainMutex");
@@ -145,10 +155,9 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::delConnectionContext(lib
 #endif
   _Mutex->unlock();
   if(prevcontext && prevcontext->_nextConnectionContext){
-    return prevcontext->_nextConnectionContext;
+    *nextcxt= prevcontext->_nextConnectionContext;
   }else{
-    ConnectionContext *fcontext=_firstConnectionContext;
-    return fcontext;
+    *nextcxt=_firstConnectionContext;
   }
 }
 

@@ -88,8 +88,8 @@ namespace libhttppp {
             friend class Event;
         };
    
-        ConnectionContext *addConnectionContext();
-        ConnectionContext *delConnectionContext(Connection *delcon);
+        void addConnectionContext(ConnectionContext **addcon);
+        void delConnectionContext(Connection *delcon,ConnectionContext **nextcxt);
         
         class WorkerContext {
         private:

@@ -270,8 +270,7 @@ libhttppp::Connection* libhttppp::ConnectionPool::addConnection(){
     _lastConnection->_nextConnection=new Connection;
     _lastConnection=_lastConnection->_nextConnection;
   }
-  Connection *rcon=_lastConnection;
-  return rcon;
+  return _lastConnection;
 }
 
 libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *clientsocket){
@@ -300,8 +299,7 @@ libhttppp::Connection* libhttppp::ConnectionPool::delConnection(Connection *delc
   if(prevcon && prevcon->_nextConnection){
     return prevcon->_nextConnection;
   }else{
-    Connection *fcon=_firstConnection;
-    return fcon;
+    return _firstConnection;
   }
 }
 
