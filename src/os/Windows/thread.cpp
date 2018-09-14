@@ -33,6 +33,7 @@ libhttppp::Thread::Thread(){
 }
 
 libhttppp::Thread::~Thread(){
+  delete _nextThread;
 }
 
 void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments) {

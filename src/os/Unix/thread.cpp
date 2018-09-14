@@ -36,6 +36,7 @@ libhttppp::Thread::Thread(){
 }
 
 libhttppp::Thread::~Thread(){
+  delete _nextThread;
 }
 
 void libhttppp::Thread::Create(void *function(void*), void *arguments) {
