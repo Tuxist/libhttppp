@@ -157,7 +157,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent){
                 httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                   curct->_Mutex->unlock();
-                  wevent->delConnectionContext(curct->_CurConnection,NULL);
+                  wevent->delConnectionContext(curct,NULL);
                 }
                 
               } catch(HTTPException &e) {
@@ -165,7 +165,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent){
                 httpexception.Note("runeventloop","Unlock ConnectionMutex");
 #endif
                 curct->_Mutex->unlock();
-                wevent->delConnectionContext(curct->_CurConnection,NULL);
+                wevent->delConnectionContext(curct,NULL);
                 if(e.isCritical())
                   throw e;
               }
@@ -279,7 +279,7 @@ void *libhttppp::Event::CloseEvent(void *curcon){
     httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
     ccon->_Mutex->unlock();
-    eventins->delConnectionContext(con,NULL);
+    eventins->delConnectionContext(ccon,NULL);
     curcon=NULL;
     eventins->_httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {

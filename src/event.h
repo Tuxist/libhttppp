@@ -89,7 +89,7 @@ namespace libhttppp {
         };
    
         void addConnectionContext(ConnectionContext **addcon);
-        void delConnectionContext(Connection *delcon,ConnectionContext **nextcxt);
+        void delConnectionContext(ConnectionContext *delctx,ConnectionContext **nextcxt);
         
         class WorkerContext {
         private:
