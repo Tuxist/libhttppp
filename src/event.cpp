@@ -47,20 +47,17 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
 }
 
 void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext **addcon){
-  if(!_firstConnectionContext){      
-    _firstConnectionContext=new ConnectionContext();
+if(!_firstConnectionContext){
 #ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Lock ConnectionMutex");
+    _httpexception.Note("delConnection","Lock MainMutex");
 #endif
-    _firstConnectionContext->_Mutex->lock();
-    if(_lastConnectionContext)
-      _lastConnectionContext->_Mutex->lock();
+    _Mutex->lock();
+    _firstConnectionContext=new ConnectionContext();
     _lastConnectionContext=_firstConnectionContext;
 #ifdef DEBUG_MUTEX
-    _httpexception.Note("addConnection","Unlock ConnectionMutex");
+    _httpexception.Note("delConnection","unlock MainMutex");
 #endif
-    _firstConnectionContext->_Mutex->unlock();
-    _lastConnectionContext->_Mutex->unlock();
+    _Mutex->unlock();
   }else{
 #ifdef DEBUG_MUTEX
     _httpexception.Note("addConnection","Lock ConnectionMutex");
