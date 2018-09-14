@@ -277,7 +277,7 @@ void *libhttppp::Event::CloseEvent(void *curcon){
     httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
     ccon->_Mutex->unlock();
-    eventins->delConnectionContext(con,NULL);
+    eventins->delConnectionContext(ccon,NULL);
     curcon=NULL;
     httpexception.Note("Connection shutdown!");
   } catch(HTTPException &e) {
