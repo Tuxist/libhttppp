@@ -30,15 +30,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::ThreadPool::ThreadPool(){
     _firstThread=NULL;
     _lastThread=NULL;
-    _guardThread=NULL;
-    _guardPid=-1;
 }
 
 libhttppp::ThreadPool::~ThreadPool(){
-    if(_guardThread){
-      _guardThread->Join();  
-    }
-    delete _guardThread;
     delete _firstThread;
     _lastThread=NULL;
 }
@@ -77,8 +71,4 @@ libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread
     else
         return _firstThread;
 }
-
-void libhttppp::ThreadPool::threadGuard(bool endguard){
-}
-
 

@@ -39,13 +39,9 @@ namespace libhttppp {
      ~ThreadPool();
      Thread *addThread();
      Thread *delThread(Thread *delthread);
-     void    threadGuard(bool endguard);
    private:
      Thread *_firstThread;
      Thread *_lastThread;
-     
-     Thread *_guardThread;
-     int     _guardPid;
    };
 };
 
