@@ -150,8 +150,8 @@ namespace libhttppp {
         
     HTTPException      _httpexception;
     ServerSocket      *_ServerSocket;
-    bool               _EventEndloop;
-    bool               _EventRestartloop;
+    static bool        _EventEndloop;
+    static bool        _EventRestartloop;
     ConnectionPool    *_Cpool;
   };
 }

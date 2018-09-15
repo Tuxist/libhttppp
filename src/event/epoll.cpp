@@ -68,10 +68,8 @@ libhttppp::Event::~Event() {
     _lastConnectionContext=NULL;
 }
 
-libhttppp::Event* _EventIns=NULL;
-
 void libhttppp::Event::CtrlHandler(int signum) {
-    _EventIns->_EventEndloop=false;
+    _EventEndloop=false;
 }
 
 void libhttppp::Event::runEventloop() {
@@ -94,7 +92,6 @@ void libhttppp::Event::runEventloop() {
         _httpexception.Critical("can't create epoll");
         throw _httpexception;
     }
-    _EventIns=this;
     signal(SIGPIPE, SIG_IGN);
     SYSInfo sysinfo;
     size_t thrs = sysinfo.getNumberOfProcessors();
@@ -177,7 +174,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                 curct=(ConnectionContext*)wevent->_Events[i].data.ptr;
                 ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
                 int fd=clientsocket->getSocket();
-                if(wevent->_Events[i].events & EPOLLIN) {
+                switch(wevent->_Events[i].events) {
+                case(EPOLLIN): {
 #ifdef DEBUG_MUTEX
                     httpexception.Note("ReadEvent","lock ConnectionMutex");
 #endif
@@ -221,7 +219,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                             curct->_CurConnection->cleanRecvData();
                         }
                     }
-                } else if(wevent->_Events[i].events & EPOLLOUT) {
+                }
+                case (EPOLLOUT): {
 #ifdef DEBUG_MUTEX
                     httpexception.Note("WriteEvent","lock ConnectionMutex");
 #endif
@@ -232,7 +231,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                             sended=wevent->_ServerSocket->sendData(clientsocket,
                                                                    (void*)curct->_CurConnection->getSendData()->getData(),
                                                                    curct->_CurConnection->getSendData()->getDataSize());
-                            if(sended>0){
+                            if(sended>0) {
                                 curct->_CurConnection->resizeSendQueue(sended);
                             }
                             setevent.events = EPOLLOUT | EPOLLET;
@@ -253,7 +252,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     httpexception.Note("WriteEvent","unlock ConnectionMutex");
 #endif
                     curct->_Mutex->unlock();
-                } else {
+                }
+                default: {
 ClOSECONNECTION:
 #ifdef DEBUG_MUTEX
                     httpexception.Note("CloseEvent","ConnectionMutex");
@@ -281,7 +281,7 @@ ClOSECONNECTION:
                     }
 
                 }
-
+                }
             }
             signal(SIGINT, CtrlHandler);
         }

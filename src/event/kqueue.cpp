@@ -67,10 +67,8 @@ libhttppp::Event::~Event() {
   delete   _Mutex;
 }
 
-libhttppp::Event* _EventIns=NULL;
-
 void libhttppp::Event::CtrlHandler(int signum) {
-    _EventIns->_EventEndloop=false;
+    _EventEndloop=false;
 }
 
 void libhttppp::Event::runEventloop() {
@@ -81,7 +79,6 @@ void libhttppp::Event::runEventloop() {
     EV_SET(&setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR , 0, 0, NULL);
     if (kevent(_Kq, &setEvent, 1, NULL, 0, NULL) == -1)
       _httpexception.Critical("runeventloop","can't create kqueue!");
-     _EventIns=this;
     signal(SIGPIPE, SIG_IGN);   
     SYSInfo sysinfo;
     size_t thrs = sysinfo.getNumberOfProcessors();
