@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define READEVENT 0
 #define SENDEVENT 1
 
-//#define DEBUG_MUTEX
+#define DEBUG_MUTEX
 
 #include "../event.h"
 
@@ -172,8 +172,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent){
             } else {
                 curct=(ConnectionContext*)wevent->_Events[i].data.ptr;
                 if(wevent->_Events[i].events & EPOLLIN) {
-					Thread curthread;
-					curthread.Create(ReadEvent,curct);
+                    Thread curthread;
+                    curthread.Create(ReadEvent,curct);
                     curthread.Detach();
                 }else{
                     CloseEvent(curct);
@@ -212,7 +212,7 @@ void *libhttppp::Event::ReadEvent(void *curcon){
     WriteEvent(ccon);
   } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-      ccon->_httpexception.Note("ReadEvent","unlock ConnectionMutex");
+     httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif 
       ccon->_Mutex->unlock();
        if(e.isCritical()) {
