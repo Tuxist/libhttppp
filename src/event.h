@@ -104,10 +104,6 @@ namespace libhttppp {
         WorkerContext *addWorkerContext();
         WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
         
-        static void *ReadEvent(void *curcon);
-        static void *WriteEvent(void *curcon);
-        static void *CloseEvent(void *curcon);
-        
     /*API Events*/
     virtual void RequestEvent(Connection *curcon);
     virtual void ResponseEvent(libhttppp::Connection *curcon);
