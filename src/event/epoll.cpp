@@ -85,7 +85,7 @@ void libhttppp::Event::runEventloop() {
         throw _httpexception;
     }
 
-    setevent.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
+    setevent.events = EPOLLIN|EPOLLET;
     setevent.data.fd = _ServerSocket->getSocket();
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
@@ -145,7 +145,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     clientsocket->setnonblocking();
                     if(fd>0) {
                         setevent.data.ptr = (void*) curct;
-                        setevent.events = EPOLLIN|EPOLLET;
+                        setevent.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
                         if(epoll_ctl(wevent->_epollFD, EPOLL_CTL_ADD, fd, &setevent)==-1 && errno==EEXIST)
                             epoll_ctl(wevent->_epollFD, EPOLL_CTL_MOD,fd, &setevent);
                         wevent->ConnectEvent(curct->_CurConnection);
@@ -172,14 +172,14 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                 }
             } else {
                 curct=(ConnectionContext*)wevent->_Events[i].data.ptr;
-                ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
-                int fd=clientsocket->getSocket();
                 switch(wevent->_Events[i].events) {
                 case(EPOLLIN): {
 #ifdef DEBUG_MUTEX
                     httpexception.Note("ReadEvent","lock ConnectionMutex");
 #endif
                     curct->_Mutex->lock();
+                    ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
+                    int fd=clientsocket->getSocket();
                     try {
                         char buf[BLOCKSIZE];
                         int rcvsize=0;
@@ -225,6 +225,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     httpexception.Note("WriteEvent","lock ConnectionMutex");
 #endif
                     curct->_Mutex->lock();
+                    ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
+                    int fd=clientsocket->getSocket();
                     try {
                         ssize_t sended=0;
                         if(curct->_CurConnection->getSendData()) {
@@ -233,6 +235,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                                                                    curct->_CurConnection->getSendData()->getDataSize());
                             if(sended>0) {
                                 curct->_CurConnection->resizeSendQueue(sended);
+                                wevent->ResponseEvent(curct->_CurConnection);
                             }
                             setevent.events = EPOLLOUT | EPOLLET;
                             epoll_ctl(wevent->_epollFD, EPOLL_CTL_MOD, fd, &setevent);
@@ -240,7 +243,6 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                             setevent.events = EPOLLIN | EPOLLET;
                             epoll_ctl(wevent->_epollFD, EPOLL_CTL_MOD, fd, &setevent);
                         }
-                        wevent->ResponseEvent(curct->_CurConnection);
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("WriteEvent","unlock ConnectionMutex");
@@ -253,16 +255,17 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
 #endif
                     curct->_Mutex->unlock();
                 }
-                default: {
+                case EPOLLERR|EPOLLHUP: {
 ClOSECONNECTION:
 #ifdef DEBUG_MUTEX
                     httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
                     curct->_Mutex->lock();
-                    Connection *con=(Connection*)curct->_CurConnection;
-                    wevent->DisconnectEvent(con);
+                    ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
+                    int fd=clientsocket->getSocket();
+                    wevent->DisconnectEvent(curct->_CurConnection);
                     try {
-                        int ect=epoll_ctl(wevent->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &setevent);
+                        int ect=epoll_ctl(wevent->_epollFD, EPOLL_CTL_DEL, fd, &setevent);
                         if(ect==-1)
                             httpexception.Note("CloseEvent","can't delete Connection from epoll");
 #ifdef DEBUG_MUTEX
