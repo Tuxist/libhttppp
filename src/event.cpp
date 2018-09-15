@@ -155,7 +155,10 @@ void libhttppp::Event::delConnectionContext(libhttppp::Event::ConnectionContext 
   if(prevcontext && prevcontext->_nextConnectionContext){
     *nextcxt= prevcontext->_nextConnectionContext;
   }else{
-    *nextcxt=_firstConnectionContext;
+      if(_firstConnectionContext)
+        *nextcxt=_firstConnectionContext;
+      else
+        *nextcxt=NULL;
   }
 }
 
