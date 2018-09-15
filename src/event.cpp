@@ -152,13 +152,12 @@ void libhttppp::Event::delConnectionContext(libhttppp::Event::ConnectionContext 
   _httpexception.Note("delConnection","unlock MainMutex");
 #endif
   _Mutex->unlock();
-  if(prevcontext && prevcontext->_nextConnectionContext){
-    *nextcxt= prevcontext->_nextConnectionContext;
-  }else{
-      if(_firstConnectionContext)
-        *nextcxt=_firstConnectionContext;
-      else
-        *nextcxt=NULL;
+  if(*nextcxt){
+    if(prevcontext && prevcontext->_nextConnectionContext){
+      *nextcxt= prevcontext->_nextConnectionContext;
+    }else{
+      *nextcxt=_firstConnectionContext;
+    }
   }
 }
 
