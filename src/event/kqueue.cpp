@@ -250,7 +250,7 @@ CLOSECONNECTION:
 #endif
                         curct->_Mutex->unlock();
                         wevent->delConnectionContext(curct,NULL);
-                        curcon=NULL;
+                        curct=NULL;
                         httpexception.Note("Connection shutdown!");
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
