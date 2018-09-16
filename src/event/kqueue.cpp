@@ -172,8 +172,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
 #ifdef DEBUG_MUTEX
                     httpexception.Note("ReadEvent","lock ConnectionMutex");
 #endif
-                    ccon->_Mutex->lock();
-                    Connection *con=(Connection*)ccon->_CurConnection;
+                    curct->_Mutex->lock();
+                    Connection *con=(Connection*)curct->_CurConnection;
                     try {
                         char buf[BLOCKSIZE];
                         int rcvsize=0;
@@ -186,13 +186,12 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif
-                        ccon->_Mutex->unlock();
-                        WriteEvent(ccon);
+                        curct->_Mutex->unlock();
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif
-                        ccon->_Mutex->unlock();
+                        curct->_Mutex->unlock();
                         if(e.isCritical()) {
                             throw e;
                         }
@@ -206,8 +205,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
 #ifdef DEBUG_MUTEX
                     httpexception.Note("WriteEvent","lock ConnectionMutex");
 #endif
-                    ccon->_Mutex->lock();
-                    Connection *con=ccon->_CurConnection;
+                    curct->_Mutex->lock();
+                    Connection *con=curct->_CurConnection;
                     try {
                         ssize_t sended=0;
                         while(con->getSendData()) {
@@ -222,14 +221,14 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("WriteEvent","unlock ConnectionMutex");
 #endif
-                        ccon->_Mutex->unlock();
+                        curct->_Mutex->unlock();
                         goto CLOSECONNECTION;
                     }
 #ifdef DEBUG_MUTEX
                     httpexception.Note("WriteEvent","unlock ConnectionMutex");
 #endif
-                    if(ccon)
-                        ccon->_Mutex->unlock();
+                    if(curct)
+                        curct->_Mutex->unlock();
                 }
                 }
                 if (wevent->_Events[i].flags & EV_ERROR) {
@@ -237,27 +236,28 @@ CLOSECONNECTION:
 #ifdef DEBUG_MUTEX
                     httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
-                    ccon->_Mutex->lock();
-                    Connection *con=(Connection*)ccon->_CurConnection;
+                    curct->_Mutex->lock();
+                    Connection *con=(Connection*)curct->_CurConnection;
                     eventins->DisconnectEvent(con);
                     try {
                         EV_SET(&setEvent,con->getClientSocket()->getSocket(),
-                               eventins->_Events[ccon->_EventCounter].filter,
+                               eventins->_Events[curct->_EventCounter].filter,
                                EV_DELETE, 0, 0, NULL);
                         if (kevent(eventins->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
                             eventins->_httpexception.Error("Connection can't delete from kqueue");
 #ifdef DEBUG_MUTEX
                         httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
-                        ccon->_Mutex->unlock();
-                        eventins->delConnectionContext(ccon,NULL);
+                        curct->_Mutex->unlock();
+                        eventins->delConnectionContext(curct,NULL);
                         curcon=NULL;
                         httpexception.Note("Connection shutdown!");
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
-                        ccon->_Mutex->unlock();
+                        if(curct)
+                            curct->_Mutex->unlock();
                         httpexception.Note("Can't do Connection shutdown!");
                     }
                 }
