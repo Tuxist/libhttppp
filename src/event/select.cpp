@@ -32,17 +32,14 @@ libhttppp::Event::Event(ServerSocket *serversocket) : ConnectionPool(serversocke
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
 	_EventEndloop = true;
-	_EventIns = this;
 }
 
 libhttppp::Event::~Event() {
 
 }
 
-libhttppp::Event* _EventIns = NULL;
-
 void libhttppp::Event::CtrlHandler(int signum) {
-	_EventIns->_EventEndloop = false;
+	_EventEndloop = false;
 }
 
 
