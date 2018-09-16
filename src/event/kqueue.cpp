@@ -173,97 +173,123 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     httpexception.Note("ReadEvent","lock ConnectionMutex");
 #endif
                     curct->_Mutex->lock();
-                    Connection *con=(Connection*)curct->_CurConnection;
+                    ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
+                    int fd=clientsocket->getSocket();
                     try {
                         char buf[BLOCKSIZE];
                         int rcvsize=0;
-                        do {
-                            rcvsize=wevent->_ServerSocket->recvData(con->getClientSocket(),buf,BLOCKSIZE);
-                            if(rcvsize>0)
-                                con->addRecvQueue(buf,rcvsize);
-                        } while(rcvsize>0);
-                        wevent->RequestEvent(con);
+                        rcvsize=wevent->_ServerSocket->recvData(clientsocket,buf,BLOCKSIZE);
+                        switch(rcvsize) {
+                        case -1: {
+                            setEvent.filter=EVFILT_READ;
+                            setEvent.flags=EV_MOD;
+                            EV_SET(&setEvent, fd, EVFILT_READ, EV_MOD, 0, 0, (void*) curct);
+                            if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
+                                httpexception.Error("runeventloop","can't mod  kqueue!");
+                            }
+                            case 0: {
+                                if(curct->_CurConnection->getSendSize()!=0) {
+                                    setEvent.filter=EVFILT_WRITE;
+                                    setEvent.flags=EV_MOD;
+                                    EV_SET(&setEvent, fd, EVFILT_WRITE, EV_MOD, 0, 0, (void*) curct);
+                                    if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
+                                        httpexception.Error("runeventloop","can't mod  kqueue!");
+                                    } else {
+                                        goto ClOSECONNECTION;
+                                    }
+                                }
+                                default: {
+                                    curct->_CurConnection->addRecvQueue(buf,rcvsize);
+                                    wevent->RequestEvent(curct->_CurConnection);
+                                    setEvent.filter=EVFILT_READ;
+                                    setEvent.flags=EV_MOD;
+                                    EV_SET(&setEvent, fd, EVFILT_READ, EV_MOD, 0, 0, (void*) curct);
+                                    if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
+                                        httpexception.Error("runeventloop","can't mod  kqueue!");
+                                    }
+                                }
 #ifdef DEBUG_MUTEX
-                        httpexception.Note("ReadEvent","unlock ConnectionMutex");
+                                httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif
-                        curct->_Mutex->unlock();
-                    } catch(HTTPException &e) {
+                                curct->_Mutex->unlock();
+                            }
+                            catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-                        httpexception.Note("ReadEvent","unlock ConnectionMutex");
+                                httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif
-                        curct->_Mutex->unlock();
-                        if(e.isCritical()) {
-                            throw e;
+                                curct->_Mutex->unlock();
+                                if(e.isCritical()) {
+                                    throw e;
+                                }
+                                if(e.isError()) {
+                                    curct->_CurConnection->cleanRecvData();
+                                    goto CLOSECONNECTION;
+                                }
+                            }
                         }
-                        if(e.isError()) {
-                            con->cleanRecvData();
-                            goto CLOSECONNECTION;
+                        case EVFILT_WRITE: {
+#ifdef DEBUG_MUTEX
+                            httpexception.Note("WriteEvent","lock ConnectionMutex");
+#endif
+                            curct->_Mutex->lock();
+                            Connection *con=curct->_CurConnection;
+                            try {
+                                ssize_t sended=0;
+                                while(con->getSendData()) {
+                                    sended=wevent->_ServerSocket->sendData(con->getClientSocket(),
+                                                                           (void*)con->getSendData()->getData(),
+                                                                           con->getSendData()->getDataSize());
+                                    if(sended>0)
+                                        con->resizeSendQueue(sended);
+                                }
+                                wevent->ResponseEvent(con);
+                            } catch(HTTPException &e) {
+#ifdef DEBUG_MUTEX
+                                httpexception.Note("WriteEvent","unlock ConnectionMutex");
+#endif
+                                curct->_Mutex->unlock();
+                                goto CLOSECONNECTION;
+                            }
+#ifdef DEBUG_MUTEX
+                            httpexception.Note("WriteEvent","unlock ConnectionMutex");
+#endif
+                            if(curct)
+                                curct->_Mutex->unlock();
                         }
-                    }
-                }
-                case EVFILT_WRITE: {
-#ifdef DEBUG_MUTEX
-                    httpexception.Note("WriteEvent","lock ConnectionMutex");
-#endif
-                    curct->_Mutex->lock();
-                    Connection *con=curct->_CurConnection;
-                    try {
-                        ssize_t sended=0;
-                        while(con->getSendData()) {
-                            sended=wevent->_ServerSocket->sendData(con->getClientSocket(),
-                                                                   (void*)con->getSendData()->getData(),
-                                                                   con->getSendData()->getDataSize());
-                            if(sended>0)
-                                con->resizeSendQueue(sended);
                         }
-                        wevent->ResponseEvent(con);
-                    } catch(HTTPException &e) {
-#ifdef DEBUG_MUTEX
-                        httpexception.Note("WriteEvent","unlock ConnectionMutex");
-#endif
-                        curct->_Mutex->unlock();
-                        goto CLOSECONNECTION;
-                    }
-#ifdef DEBUG_MUTEX
-                    httpexception.Note("WriteEvent","unlock ConnectionMutex");
-#endif
-                    if(curct)
-                        curct->_Mutex->unlock();
-                }
-                }
-                if (wevent->_Events[i].flags & EV_ERROR) {
+                        if (wevent->_Events[i].flags & EV_ERROR) {
 CLOSECONNECTION:
 #ifdef DEBUG_MUTEX
-                    httpexception.Note("CloseEvent","ConnectionMutex");
+                            httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
-                    curct->_Mutex->lock();
-                    Connection *con=(Connection*)curct->_CurConnection;
-                    wevent->DisconnectEvent(con);
-                    try {
-                        EV_SET(&setEvent,con->getClientSocket()->getSocket(),
-                               wevent->_Events[curct->_EventCounter].filter,
-                               EV_DELETE, 0, 0, NULL);
-                        if (kevent(wevent->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
-                            httpexception.Error("Connection can't delete from kqueue");
+                            curct->_Mutex->lock();
+                            Connection *con=(Connection*)curct->_CurConnection;
+                            wevent->DisconnectEvent(con);
+                            try {
+                                EV_SET(&setEvent,con->getClientSocket()->getSocket(),
+                                       wevent->_Events[curct->_EventCounter].filter,
+                                       EV_DELETE, 0, 0, NULL);
+                                if (kevent(wevent->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
+                                    httpexception.Error("Connection can't delete from kqueue");
 #ifdef DEBUG_MUTEX
-                        httpexception.Note("CloseEvent","unlock ConnectionMutex");
+                                httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
-                        curct->_Mutex->unlock();
-                        wevent->delConnectionContext(curct,NULL);
-                        curct=NULL;
-                        httpexception.Note("Connection shutdown!");
-                    } catch(HTTPException &e) {
+                                curct->_Mutex->unlock();
+                                wevent->delConnectionContext(curct,NULL);
+                                curct=NULL;
+                                httpexception.Note("Connection shutdown!");
+                            } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-                        httpexception.Note("CloseEvent","unlock ConnectionMutex");
+                                httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
-                        if(curct)
-                            curct->_Mutex->unlock();
-                        httpexception.Note("Can't do Connection shutdown!");
+                                if(curct)
+                                    curct->_Mutex->unlock();
+                                httpexception.Note("Can't do Connection shutdown!");
+                            }
+                        }
                     }
                 }
+                signal(SIGINT, CtrlHandler);
+                }
+                return NULL;
             }
-        }
-        signal(SIGINT, CtrlHandler);
-    }
-    return NULL;
-}
