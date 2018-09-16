@@ -196,7 +196,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                                 if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
                                     httpexception.Error("runeventloop","can't mod  kqueue!");
                                 } else {
-                                    goto ClOSECONNECTION;
+                                    goto CLOSECONNECTION;
                                 }
                             }
                         }
