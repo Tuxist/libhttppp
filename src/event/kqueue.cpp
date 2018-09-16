@@ -177,7 +177,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     int fd=clientsocket->getSocket();
                     try {
                         char buf[BLOCKSIZE];
-                        int rcvsize=wevent->_ServerSocket->recvData(clientsocket,buf,BLOCKSIZE);
+                        ssize_t rcvsize=wevent->_ServerSocket->recvData(clientsocket,buf,BLOCKSIZE);
                         switch(rcvsize) {
                         case -1: {
                             setEvent.filter=EVFILT_READ;
@@ -233,17 +233,26 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     httpexception.Note("WriteEvent","lock ConnectionMutex");
 #endif
                     curct->_Mutex->lock();
-                    Connection *con=curct->_CurConnection;
+                    ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
+                    int fd=clientsocket->getSocket();
                     try {
                         ssize_t sended=0;
-                        while(con->getSendData()) {
-                            sended=wevent->_ServerSocket->sendData(con->getClientSocket(),
-                                                                   (void*)con->getSendData()->getData(),
-                                                                   con->getSendData()->getDataSize());
-                            if(sended>0)
-                                con->resizeSendQueue(sended);
+                        if(curct->_CurConnection->getSendData()) {
+                            sended=wevent->_ServerSocket->sendData(clientsocket,
+                                                                   (void*)curct->_CurConnection->getSendData()->getData(),
+                                                                   curct->_CurConnection->getSendData()->getDataSize());
+                            if(sended>0) {
+                                curct->_CurConnection->resizeSendQueue(sended);
+                                wevent->ResponseEvent(curct->_CurConnection);
+                            }
+                            setEvent.filter=EVFILT_WRITE;
+                            setEvent.flags=EV_RECEIPT;
+                            EV_SET(&setEvent, fd, EVFILT_WRITE, EV_RECEIPT, 0, 0, (void*) curct);
+                        } else {
+                            setEvent.filter=EVFILT_READ;
+                            setEvent.flags=EV_RECEIPT;
+                            EV_SET(&setEvent, fd, EVFILT_READ, EV_RECEIPT, 0, 0, (void*) curct);
                         }
-                        wevent->ResponseEvent(con);
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("WriteEvent","unlock ConnectionMutex");
