@@ -178,11 +178,11 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         char buf[BLOCKSIZE];
                         int rcvsize=0;
                         do {
-                            rcvsize=eventins->_ServerSocket->recvData(con->getClientSocket(),buf,BLOCKSIZE);
+                            rcvsize=wevent->_ServerSocket->recvData(con->getClientSocket(),buf,BLOCKSIZE);
                             if(rcvsize>0)
                                 con->addRecvQueue(buf,rcvsize);
                         } while(rcvsize>0);
-                        eventins->RequestEvent(con);
+                        wevent->RequestEvent(con);
 #ifdef DEBUG_MUTEX
                         httpexception.Note("ReadEvent","unlock ConnectionMutex");
 #endif
@@ -210,13 +210,13 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     try {
                         ssize_t sended=0;
                         while(con->getSendData()) {
-                            sended=eventins->_ServerSocket->sendData(con->getClientSocket(),
+                            sended=wevent->_ServerSocket->sendData(con->getClientSocket(),
                                     (void*)con->getSendData()->getData(),
                                     con->getSendData()->getDataSize());
                             if(sended>0)
                                 con->resizeSendQueue(sended);
                         }
-                        eventins->ResponseEvent(con);
+                        wevent->ResponseEvent(con);
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("WriteEvent","unlock ConnectionMutex");
@@ -238,18 +238,18 @@ CLOSECONNECTION:
 #endif
                     curct->_Mutex->lock();
                     Connection *con=(Connection*)curct->_CurConnection;
-                    eventins->DisconnectEvent(con);
+                    wevent->DisconnectEvent(con);
                     try {
                         EV_SET(&setEvent,con->getClientSocket()->getSocket(),
-                               eventins->_Events[curct->_EventCounter].filter,
+                               wevent->_Events[curct->_EventCounter].filter,
                                EV_DELETE, 0, 0, NULL);
-                        if (kevent(eventins->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
-                            eventins->_httpexception.Error("Connection can't delete from kqueue");
+                        if (kevent(wevent->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
+                        httpexception.Error("Connection can't delete from kqueue");
 #ifdef DEBUG_MUTEX
                         httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
                         curct->_Mutex->unlock();
-                        eventins->delConnectionContext(curct,NULL);
+                        wevent->delConnectionContext(curct,NULL);
                         curcon=NULL;
                         httpexception.Note("Connection shutdown!");
                     } catch(HTTPException &e) {
