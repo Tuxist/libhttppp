@@ -211,8 +211,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         ssize_t sended=0;
                         while(con->getSendData()) {
                             sended=wevent->_ServerSocket->sendData(con->getClientSocket(),
-                                    (void*)con->getSendData()->getData(),
-                                    con->getSendData()->getDataSize());
+                                                                   (void*)con->getSendData()->getData(),
+                                                                   con->getSendData()->getDataSize());
                             if(sended>0)
                                 con->resizeSendQueue(sended);
                         }
@@ -244,7 +244,7 @@ CLOSECONNECTION:
                                wevent->_Events[curct->_EventCounter].filter,
                                EV_DELETE, 0, 0, NULL);
                         if (kevent(wevent->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
-                        httpexception.Error("Connection can't delete from kqueue");
+                            httpexception.Error("Connection can't delete from kqueue");
 #ifdef DEBUG_MUTEX
                         httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
@@ -262,7 +262,8 @@ CLOSECONNECTION:
                     }
                 }
             }
-            signal(SIGINT, CtrlHandler);
         }
-        return NULL;
+        signal(SIGINT, CtrlHandler);
     }
+    return NULL;
+}
