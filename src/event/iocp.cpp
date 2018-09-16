@@ -57,10 +57,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 }
 
 libhttppp::Event::~Event() {
-#ifdef DEBUG_MUTEX
-	_httpexception.Note("~Event", "Lock MainMutex");
-#endif
-	_Mutex->lock();
+	WSASetEvent(_hCleanupEvent[0]);
 	delete   _Cpool;
 	delete   _firstConnectionContext;
     delete   _WorkerPool;
@@ -70,7 +67,7 @@ libhttppp::Event::~Event() {
 	_lastConnectionContext = NULL;
 }
 
-libhttppp::Event* _EventIns = NULL;
+
 
 void libhttppp::Event::runEventloop() {
 	int srvssocket = _ServerSocket->getSocket();
@@ -99,7 +96,6 @@ void libhttppp::Event::runEventloop() {
 	}
 
 	while (_EventRestartloop) {
-		_EventIns = this;
 		_EventRestartloop = true;
 		_EventEndloop = true;
 		WSAResetEvent(_hCleanupEvent[0]);
@@ -125,13 +121,14 @@ void libhttppp::Event::runEventloop() {
 		GUID acceptex_guid = WSAID_ACCEPTEX;
 #endif
 
-		ConnectionContext *curcxt = addConnectionContext();
+		ConnectionContext *curcxt = NULL;
+		addConnectionContext(&curcxt);
 
 
 		_IOCP = CreateIoCompletionPort((HANDLE)_ServerSocket->getSocket(), _IOCP, (DWORD_PTR)curcxt, 0);
 		if (_IOCP == NULL) {
 			_httpexception.Critical("CreateIoCompletionPort() failed: %d\n", GetLastError());
-			delConnectionContext(curcxt->_CurConnection);
+			delConnectionContext(curcxt,NULL);
 			throw _httpexception;
 		}
 
@@ -239,13 +236,12 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
 	switch (dwEvent) {
 	case CTRL_BREAK_EVENT:
-		_EventIns->_EventRestartloop = true;
+		_EventRestartloop = true;
 	case CTRL_C_EVENT:
 	case CTRL_LOGOFF_EVENT:
 	case CTRL_SHUTDOWN_EVENT:
 	case CTRL_CLOSE_EVENT:
-		_EventIns->_EventEndloop = true;
-		WSASetEvent(_EventIns->_hCleanupEvent[0]);
+		_EventEndloop = true;
 		break;
 
 	default:
@@ -256,98 +252,4 @@ BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
 		return(FALSE);
 	}
 	return(TRUE);
-}
-
-/*Workers*/
-void *libhttppp::Event::ReadEvent(void *curcon) {
-	ConnectionContext *ccon = (ConnectionContext*)curcon;
-	Event *eventins = ccon->_CurEvent;
-#ifdef DEBUG_MUTEX
-	ccon->_httpexception.Note("ReadEvent", "lock ConnectionMutex");
-#endif  
-	ccon->_Mutex->lock();
-	Connection *con = (Connection*)ccon->_CurConnection;
-	try {
-		char buf[BLOCKSIZE];
-		int rcvsize = 0;
-		do {
-			rcvsize = eventins->_ServerSocket->recvData(con->getClientSocket(), buf, BLOCKSIZE);
-			if (rcvsize > 0)
-				con->addRecvQueue(buf, rcvsize);
-		} while (rcvsize > 0);
-		eventins->RequestEvent(con);
-#ifdef DEBUG_MUTEX
-		ccon->_httpexception.Note("ReadEvent", "unlock ConnectionMutex");
-#endif 
-		ccon->_Mutex->unlock();
-		WriteEvent(ccon);
-	}
-	catch (HTTPException &e) {
-#ifdef DEBUG_MUTEX
-		ccon->_httpexception.Note("ReadEvent", "unlock ConnectionMutex");
-#endif 
-		ccon->_Mutex->unlock();
-		if (e.isCritical()) {
-			throw e;
-		}
-		if (e.isError()) {
-			con->cleanRecvData();
-			CloseEvent(ccon);
-		}
-	}
-	return NULL;
-}
-
-void *libhttppp::Event::WriteEvent(void* curcon) {
-	ConnectionContext *ccon = (ConnectionContext*)curcon;
-	Event *eventins = ccon->_CurEvent;
-#ifdef DEBUG_MUTEX
-	ccon->_httpexception.Note("WriteEvent", "lock ConnectionMutex");
-#endif
-	ccon->_Mutex->lock();
-	Connection *con = (Connection*)ccon->_CurConnection;
-	try {
-		ssize_t sended = 0;
-		while (con->getSendData()) {
-			sended = eventins->_ServerSocket->sendData(con->getClientSocket(),
-				(void*)con->getSendData()->getData(),
-				con->getSendData()->getDataSize());
-			if (sended > 0)
-				con->resizeSendQueue(sended);
-			eventins->ResponseEvent(con);
-		}
-	}
-	catch (HTTPException &e) {
-		CloseEvent(ccon);
-	}
-#ifdef DEBUG_MUTEX
-	ccon->_httpexception.Note("WriteEvent", "unlock ConnectionMutex");
-#endif
-	ccon->_Mutex->unlock();
-	return NULL;
-}
-
-void *libhttppp::Event::CloseEvent(void *curcon) {
-	ConnectionContext *ccon = (ConnectionContext*)curcon;
-	Event *eventins = ccon->_CurEvent;
-#ifdef DEBUG_MUTEX
-	ccon->_httpexception.Note("CloseEvent", "ConnectionMutex");
-#endif
-	ccon->_Mutex->lock();
-	Connection *con = (Connection*)ccon->_CurConnection;
-	eventins->DisconnectEvent(con);
-#ifdef DEBUG_MUTEX
-	ccon->_httpexception.Note("CloseEvent", "unlock ConnectionMutex");
-#endif
-	ccon->_Mutex->unlock();
-	try {
-//		epoll_ctl(eventins->_epollFD, EPOLL_CTL_DEL, con->getClientSocket()->getSocket(), &eventins->_setEvent);
-		eventins->delConnectionContext(con);
-		curcon = NULL;
-		eventins->_httpexception.Note("Connection shutdown!");
-	}
-	catch (HTTPException &e) {
-		eventins->_httpexception.Note("Can't do Connection shutdown!");
-	}
-	return NULL;
 }

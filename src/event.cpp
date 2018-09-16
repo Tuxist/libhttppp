@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "threadpool.h"
 
 bool libhttppp::Event::_EventEndloop=true;
+bool libhttppp::Event::_EventRestartloop = true;
 
 libhttppp::Event::ConnectionContext::ConnectionContext(){
   _CurConnection=NULL;
