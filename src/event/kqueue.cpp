@@ -176,6 +176,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                     ClientSocket *clientsocket=curct->_CurConnection->getClientSocket();
                     int fd=clientsocket->getSocket();
                     try {
+                        char buf[BLOCKSIZE];
                         int rcvsize=wevent->_ServerSocket->recvData(clientsocket,buf,BLOCKSIZE);
                         switch(rcvsize) {
                         case -1: {
@@ -199,7 +200,6 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                             }
                         }
                         default: {
-                            char buf[BLOCKSIZE];
                             curct->_CurConnection->addRecvQueue(buf,rcvsize);
                             wevent->RequestEvent(curct->_CurConnection);
                             setEvent.filter=EVFILT_READ;
