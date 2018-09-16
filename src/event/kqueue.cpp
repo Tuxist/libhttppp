@@ -182,8 +182,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         switch(rcvsize) {
                         case -1: {
                             setEvent.filter=EVFILT_READ;
-                            setEvent.flags=EV_MOD;
-                            EV_SET(&setEvent, fd, EVFILT_READ, EV_MOD, 0, 0, (void*) curct);
+                            setEvent.flags=EV_RECEIPT;
+                            EV_SET(&setEvent, fd, EVFILT_READ, EV_RECEIPT, 0, 0, (void*) curct);
                             if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
                                 httpexception.Error("runeventloop","can't mod  kqueue!");
                             }
@@ -191,8 +191,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         case 0: {
                             if(curct->_CurConnection->getSendSize()!=0) {
                                 setEvent.filter=EVFILT_WRITE;
-                                setEvent.flags=EV_MOD;
-                                EV_SET(&setEvent, fd, EVFILT_WRITE, EV_MOD, 0, 0, (void*) curct);
+                                setEvent.flags=EV_RECEIPT;
+                                EV_SET(&setEvent, fd, EVFILT_WRITE, EV_RECEIPT, 0, 0, (void*) curct);
                                 if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
                                     httpexception.Error("runeventloop","can't mod  kqueue!");
                                 } else {
@@ -204,8 +204,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                             curct->_CurConnection->addRecvQueue(buf,rcvsize);
                             wevent->RequestEvent(curct->_CurConnection);
                             setEvent.filter=EVFILT_READ;
-                            setEvent.flags=EV_MOD;
-                            EV_SET(&setEvent, fd, EVFILT_READ, EV_MOD, 0, 0, (void*) curct);
+                            setEvent.flags=EV_RECEIPT;
+                            EV_SET(&setEvent, fd, EVFILT_READ, EV_RECEIPT, 0, 0, (void*) curct);
                             if (kevent(wevent->_Kq, &setEvent, 1, NULL, 0, NULL) == -1) {
                                 httpexception.Error("runeventloop","can't mod  kqueue!");
                             }
