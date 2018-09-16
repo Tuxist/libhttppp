@@ -232,35 +232,35 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         ccon->_Mutex->unlock();
                 }
                 }
-                if (wevent->_Events[i].flags & EV_ERROR){
-CLOSECONNECTION:                
+                if (wevent->_Events[i].flags & EV_ERROR) {
+CLOSECONNECTION:
 #ifdef DEBUG_MUTEX
-                httpexception.Note("CloseEvent","ConnectionMutex");
+                    httpexception.Note("CloseEvent","ConnectionMutex");
 #endif
-                ccon->_Mutex->lock();
-                Connection *con=(Connection*)ccon->_CurConnection;
-                eventins->DisconnectEvent(con);
-                try {
-                    EV_SET(&setEvent,con->getClientSocket()->getSocket(),
-                           eventins->_Events[ccon->_EventCounter].filter,
-                           EV_DELETE, 0, 0, NULL);
-                    if (kevent(eventins->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
-                        eventins->_httpexception.Error("Connection can't delete from kqueue");
+                    ccon->_Mutex->lock();
+                    Connection *con=(Connection*)ccon->_CurConnection;
+                    eventins->DisconnectEvent(con);
+                    try {
+                        EV_SET(&setEvent,con->getClientSocket()->getSocket(),
+                               eventins->_Events[ccon->_EventCounter].filter,
+                               EV_DELETE, 0, 0, NULL);
+                        if (kevent(eventins->_Kq,&setEvent, 1, NULL, 0, NULL) == -1)
+                            eventins->_httpexception.Error("Connection can't delete from kqueue");
 #ifdef DEBUG_MUTEX
-                    httpexception.Note("CloseEvent","unlock ConnectionMutex");
+                        httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
-                    ccon->_Mutex->unlock();
-                    eventins->delConnectionContext(ccon,NULL);
-                    curcon=NULL;
-                    httpexception.Note("Connection shutdown!");
-                } catch(HTTPException &e) {
+                        ccon->_Mutex->unlock();
+                        eventins->delConnectionContext(ccon,NULL);
+                        curcon=NULL;
+                        httpexception.Note("Connection shutdown!");
+                    } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
-                    httpexception.Note("CloseEvent","unlock ConnectionMutex");
+                        httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
-                    ccon->_Mutex->unlock();
-                    httpexception.Note("Can't do Connection shutdown!");
+                        ccon->_Mutex->unlock();
+                        httpexception.Note("Can't do Connection shutdown!");
+                    }
                 }
-            }
             }
             signal(SIGINT, CtrlHandler);
         }
