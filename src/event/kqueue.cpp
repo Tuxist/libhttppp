@@ -78,7 +78,7 @@ void libhttppp::Event::runEventloop() {
         0
     };
     _Kq = kqueue();
-    EV_SET(&setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR , 0, 0, NULL);
+    EV_SET(&setEvent, srvssocket, EVFILT_READ , EV_ADD || EV_CLEAR || EV_ONESHOT, 0, 0, NULL);
     if (kevent(_Kq, &setEvent, 1, NULL, 0, NULL) == -1)
         _httpexception.Critical("runeventloop","can't create kqueue!");
     signal(SIGPIPE, SIG_IGN);
