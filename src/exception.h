@@ -115,7 +115,7 @@ namespace libhttppp {
 //      std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,description,message);
 #ifdef DEBUG
-      printf("%s\n",buffer);
+      fprintf(stderr,"%s\n",buffer);
 #endif
       return buffer;
     }

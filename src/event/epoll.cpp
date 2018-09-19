@@ -48,7 +48,6 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _ServerSocket->listenSocket();
     _EventEndloop =true;
     _Cpool= new ConnectionPool(_ServerSocket);
-    _Events = new epoll_event[(_ServerSocket->getMaxconnections())];
     _WorkerPool = new ThreadPool;
     _Mutex = new Mutex;
     _firstConnectionContext=NULL;
@@ -59,7 +58,6 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 
 libhttppp::Event::~Event() {
     delete   _Cpool;
-    delete[] _Events;
     delete   _firstConnectionContext;
     delete   _WorkerPool;
     delete   _firstWorkerContext;
@@ -76,8 +74,7 @@ void libhttppp::Event::runEventloop() {
     struct epoll_event setevent= (struct epoll_event) {
         0
     };
-    for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
-        _Events[i].data.fd = -1;
+
     _epollFD = epoll_create1(0);
 
     if (_epollFD == -1) {
@@ -115,9 +112,11 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
     struct epoll_event setevent= (struct epoll_event) {
         0
     };
-
+    struct epoll_event *events = new epoll_event[(wevent->_ServerSocket->getMaxconnections())];
+    for(int i=0; i<wevent->_ServerSocket->getMaxconnections(); i++)
+        events[i].data.fd = -1;
     while(wevent->_EventEndloop) {
-        int n = epoll_wait(wevent->_epollFD,wevent->_Events,maxconnets, EPOLLWAIT);
+        int n = epoll_wait(wevent->_epollFD,events,maxconnets, EPOLLWAIT);
         if(n<0) {
             if(errno== EINTR) {
                 continue;
@@ -129,7 +128,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
         }
         for(int i=0; i<n; i++) {
             ConnectionContext *curct=NULL;
-            if(wevent->_Events[i].data.fd == srvssocket) {
+            if(events[i].data.fd == srvssocket) {
                 try {
                     /*will create warning debug mode that normally because the check already connection
                      * with this socket if getconnection throw they will be create a new one
@@ -171,8 +170,8 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         throw e;
                 }
             } else {
-                curct=(ConnectionContext*)wevent->_Events[i].data.ptr;
-                switch(wevent->_Events[i].events) {
+                curct=(ConnectionContext*)events->data.ptr;
+                switch(events[i].events) {
                 case(EPOLLIN): {
 #ifdef DEBUG_MUTEX
                     httpexception.Note("ReadEvent","lock ConnectionMutex");
@@ -194,6 +193,10 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                                 setevent.events = EPOLLOUT | EPOLLET;
                                 epoll_ctl(wevent->_epollFD, EPOLL_CTL_MOD, fd, &setevent);
                             } else {
+#ifdef DEBUG_MUTEX
+                                httpexception.Note("ReadEvent","unlock ConnectionMutex");
+#endif
+                                curct->_Mutex->unlock();
                                 goto ClOSECONNECTION;
                             }
                         }
@@ -289,6 +292,7 @@ ClOSECONNECTION:
             signal(SIGINT, CtrlHandler);
         }
     }
+    delete[] events;
     return NULL;
 }
 

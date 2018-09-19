@@ -127,7 +127,6 @@ namespace libhttppp {
   private:
 #ifdef EVENT_EPOLL
 	int                 _epollFD;
-	struct epoll_event *_Events;
 #elif EVENT_KQUEUE
 	int                 _Kq;
 	struct kevent      *_Events;
