@@ -269,8 +269,10 @@ ClOSECONNECTION:
                     wevent->DisconnectEvent(curct->_CurConnection);
                     try {
                         int ect=epoll_ctl(wevent->_epollFD, EPOLL_CTL_DEL, fd, &setevent);
-                        if(ect==-1)
+                        if(ect==-1){
                             httpexception.Note("CloseEvent","can't delete Connection from epoll");
+                            throw httpexception;
+                        }
 #ifdef DEBUG_MUTEX
                         httpexception.Note("CloseEvent","unlock ConnectionMutex");
 #endif
@@ -278,6 +280,7 @@ ClOSECONNECTION:
                         wevent->delConnectionContext(curct,NULL);
                         curct=NULL;
                         httpexception.Note("Connection shutdown!");
+                        continue;
                     } catch(HTTPException &e) {
 #ifdef DEBUG_MUTEX
                         httpexception.Note("CloseEvent","unlock ConnectionMutex");

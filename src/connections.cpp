@@ -278,6 +278,8 @@ libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *cl
 }
 
 libhttppp::Connection* libhttppp::ConnectionPool::delConnection(Connection *delcon){
+  if(!delcon)
+      return NULL;
   Connection *prevcon=NULL;
   for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
     if(curcon==delcon){

@@ -40,7 +40,7 @@ libhttppp::Event::ConnectionContext::ConnectionContext() {
 }
 
 libhttppp::Event::ConnectionContext::~ConnectionContext() {
-    _CurEvent->_Cpool->delConnection(_CurConnection);
+    _CurCPool->delConnection(_CurConnection);
     delete _Mutex;
     delete _nextConnectionContext;
 }
@@ -51,6 +51,8 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
 }
 
 void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext **addcon) {
+    if(!addcon)
+        return;
     if(!_firstConnectionContext) {
 #ifdef DEBUG_MUTEX
         _httpexception.Note("delConnection","Lock MainMutex");
