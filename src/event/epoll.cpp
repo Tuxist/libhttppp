@@ -82,7 +82,7 @@ void libhttppp::Event::runEventloop() {
         throw _httpexception;
     }
 
-    setevent.events = EPOLLIN|EPOLLET;
+    setevent.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
     setevent.data.fd = _ServerSocket->getSocket();
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
