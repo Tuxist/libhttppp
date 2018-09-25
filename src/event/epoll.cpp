@@ -71,6 +71,7 @@ void libhttppp::Event::CtrlHandler(int signum) {
 }
 
 void libhttppp::Event::runEventloop() {
+    HTTPException httpexception;
     struct epoll_event setevent= (struct epoll_event) {
         0
     };
@@ -78,16 +79,16 @@ void libhttppp::Event::runEventloop() {
     _epollFD = epoll_create1(0);
 
     if (_epollFD == -1) {
-        _httpexception.Critical("can't create epoll");
-        throw _httpexception;
+        httpexception.Critical("can't create epoll");
+        throw httpexception;
     }
 
     setevent.events = EPOLLIN|EPOLLET|EPOLLONESHOT;
     setevent.data.fd = _ServerSocket->getSocket();
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
-        _httpexception.Critical("can't create epoll");
-        throw _httpexception;
+        httpexception.Critical("can't create epoll");
+        throw httpexception;
     }
     signal(SIGPIPE, SIG_IGN);
     SYSInfo sysinfo;
@@ -212,14 +213,18 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
 #endif
                         curct->_Mutex->unlock();
                     } catch(HTTPException &e) {
-#ifdef DEBUG_MUTEX
-                        httpexception.Note("ReadEvent","unlock ConnectionMutex");
-#endif
-                        curct->_Mutex->unlock();
                         if(e.isCritical()) {
                             throw e;
                         } else if(e.isError()) {
+#ifdef DEBUG_MUTEX
+                            httpexception.Note("ReadEvent","lock ConnectionMutex");
+#endif
+                            curct->_Mutex->lock();
                             curct->_CurConnection->cleanRecvData();
+#ifdef DEBUG_MUTEX
+                            httpexception.Note("ReadEvent","unlock ConnectionMutex");
+#endif
+                            curct->_Mutex->unlock();
                         }
                     }
                 }
@@ -269,7 +274,7 @@ ClOSECONNECTION:
                     wevent->DisconnectEvent(curct->_CurConnection);
                     try {
                         int ect=epoll_ctl(wevent->_epollFD, EPOLL_CTL_DEL, fd, &setevent);
-                        if(ect==-1){
+                        if(ect==-1) {
                             httpexception.Note("CloseEvent","can't delete Connection from epoll");
                             throw httpexception;
                         }
@@ -298,5 +303,6 @@ ClOSECONNECTION:
     delete[] events;
     return NULL;
 }
+
 
 

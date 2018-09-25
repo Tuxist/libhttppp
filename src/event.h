@@ -146,8 +146,7 @@ namespace libhttppp {
     WorkerContext     *_lastWorkerContext;
     /*Thread Monitor*/
     Mutex             *_Mutex;
-        
-    HTTPException      _httpexception;
+
     ServerSocket      *_ServerSocket;
     static bool        _EventEndloop;
     static bool        _EventRestartloop;
