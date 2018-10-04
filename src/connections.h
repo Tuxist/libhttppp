@@ -24,7 +24,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
- 
+
 
 #include "config.h"
 #include "exception.h"
@@ -34,97 +34,76 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define CONNECTIONS_H
 
 namespace std {
-   class mutex;
+class mutex;
 };
 
 namespace libhttppp {
-  class HTTPException;
-  
-  class ConnectionData {
-  public:
+class HTTPException;
+
+class ConnectionData {
+public:
     const char*      getData();
     size_t           getDataSize();
-    ConnectionData  *nextConnectionData();    
-  private:
+    ConnectionData  *nextConnectionData();
+private:
     ConnectionData(const char*data,size_t datasize);
     ~ConnectionData();
     char              _Data[BLOCKSIZE];
     size_t            _DataSize;
     ConnectionData   *_nextConnectionData;
     friend class      Connection;
-  };
+};
 
-  class Connection {
-  public:
+class Connection {
+public:
+    Connection();
+    ~Connection();
+
+    /*get client Socket from Connection*/
     ClientSocket   *getClientSocket();
-    Connection     *nextConnection();
     
     /*Cache helper functions*/
-    
-    int             copyValue(ConnectionData* startblock, int startpos, 
+
+    int             copyValue(ConnectionData* startblock, int startpos,
                               ConnectionData* endblock, int endpos, char** buffer);
-    int             searchValue(ConnectionData* startblock, ConnectionData** findblock, 
- 			        const char* keyword);
-    int             searchValue(ConnectionData* startblock, ConnectionData** findblock, 
-			        const char* keyword,size_t keylen);
-    
+    int             searchValue(ConnectionData* startblock, ConnectionData** findblock,
+                                const char* keyword);
+    int             searchValue(ConnectionData* startblock, ConnectionData** findblock,
+                                const char* keyword,size_t keylen);
+
     /*Get Data funtions Send Queue*/
     ConnectionData *addSendQueue(const char *data,size_t datasize);
     ConnectionData *resizeSendQueue(size_t size);
-    void            cleanSendData();
+    void                     cleanSendData();
     ConnectionData *getSendData();
-    size_t          getSendSize();
-    
+    size_t                   getSendSize();
+
     /*Get Data funtions Recv Queue*/
     ConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize);
     ConnectionData *resizeRecvQueue(size_t size);
-    void            cleanRecvData();
+    void                     cleanRecvData();
     ConnectionData *getRecvData();
-    size_t          getRecvSize(); 
+    size_t                   getRecvSize();
 
-    int             pollState;
-    
-  private:
+    int                        pollState;
+private:
     ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
-				 size_t *qsize,size_t size);
-    ClientSocket   *_ClientSocket;
-    Connection     *_nextConnection;
+                                 size_t *qsize,size_t size);
+    ClientSocket      *_ClientSocket;
     /*Outgoing Data*/
     ConnectionData *_SendDataFirst;
     ConnectionData *_SendDataLast;
-    size_t          _SendDataSize;
+    size_t                   _SendDataSize;
     /*Incomming Data*/
     ConnectionData *_ReadDataFirst;
     ConnectionData *_ReadDataLast;
-    size_t          _ReadDataSize;  
-    /*Helper functions*/
-    Connection();
-    ~Connection();
+    size_t                   _ReadDataSize;
     HTTPException   _httpexception;
     friend class ConnectionPool;
-  };
-  
+};
 
-  class ConnectionPool {
-  public:
-    ConnectionPool(ServerSocket *socket);
-    ~ConnectionPool();
-    Connection *addConnection();
-    
-    Connection *delConnection(ClientSocket *clientsocket);
-    Connection *delConnection(Connection *delcon);
-    
-    Connection *getConnection(ClientSocket *clientsocket);
-  protected:
-    HTTPException _httpexception;
-    ServerSocket *_ServerSocket;
-    Connection   *_firstConnection;
-    Connection   *_lastConnection;
-  private:
-  };
-  
-  class ClientConnection {
-    
-  };
+class ClientConnection {
+
+};
 }
 #endif

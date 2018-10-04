@@ -36,10 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   #include <Strsafe.h>
 #endif
 
-#ifdef EVENT_EPOLL
-  #include <sys/epoll.h>
-#endif
-
 #ifdef EVENT_KQUEUE
   #include <sys/event.h>
 #endif
@@ -58,7 +54,20 @@ namespace libhttppp {
 		Event(ServerSocket *serversocket);
 		virtual ~Event();
 
-        /*Worker Events*/
+        class WorkerContext {
+        private:
+            WorkerContext();
+            ~WorkerContext();
+             /*Linking to Events*/
+            Event                 *_CurEvent;
+            Thread               *_CurThread;
+            WorkerContext  *_nextWorkerContext;
+            friend class Event;
+        };
+        
+        WorkerContext *addWorkerContext();
+        WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
+        
         class ConnectionContext {
         public:
             ConnectionContext     *nextConnectionContext();
@@ -77,12 +86,8 @@ namespace libhttppp {
 #endif
             /*Indefier Connection*/
             Connection             *_CurConnection;
-            /*Linking to CurrentConnectionpoll*/
-            ConnectionPool         *_CurCPool;
-            /*Linking to Events*/
-            Event                  *_CurEvent;
-            /*Thread Monitor*/
-            Mutex                  *_Mutex;
+            /*current Mutex*/
+            Mutex                     *_Mutex;
             /*next entry*/
             ConnectionContext      *_nextConnectionContext;
             friend class Event;
@@ -90,19 +95,6 @@ namespace libhttppp {
    
         void addConnectionContext(ConnectionContext **addcon);
         void delConnectionContext(ConnectionContext *delctx,ConnectionContext **nextcxt);
-        
-        class WorkerContext {
-        private:
-            WorkerContext();
-            ~WorkerContext();
-            Event         *_CurEvent;
-            Thread        *_CurThread;
-            WorkerContext *_nextWorkerContext;
-            friend class Event;
-        };
-        
-        WorkerContext *addWorkerContext();
-        WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
         
     /*API Events*/
     virtual void RequestEvent(Connection *curcon);
@@ -126,10 +118,10 @@ namespace libhttppp {
 
   private:
 #ifdef EVENT_EPOLL
-	int                 _epollFD;
+	int                            _epollFD;
 #elif EVENT_KQUEUE
-	int                 _Kq;
-	struct kevent      *_Events;
+	int                            _Kq;
+	struct kevent        *_Events;
 #elif EVENT_IOCP
 	HANDLE              _IOCP;
 	WSAEVENT            _hCleanupEvent[1];
@@ -141,16 +133,14 @@ namespace libhttppp {
     ConnectionContext *_lastConnectionContext;
     
     /*Threadpools*/
-    ThreadPool        *_WorkerPool;
+    ThreadPool           *_WorkerPool;
     WorkerContext     *_firstWorkerContext;
-    WorkerContext     *_lastWorkerContext;
-    /*Thread Monitor*/
-    Mutex             *_Mutex;
-
-    ServerSocket      *_ServerSocket;
-    static bool        _EventEndloop;
-    static bool        _EventRestartloop;
-    ConnectionPool    *_Cpool;
+    WorkerContext     *_lastWorkerContext;   
+    Mutex                   *_Mutex;
+    
+    ServerSocket        *_ServerSocket;
+    static bool              _EventEndloop;
+    static bool              _EventRestartloop;
   };
 }
 
