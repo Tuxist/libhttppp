@@ -25,37 +25,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "mutex.h"
+#include "pthread.h"
+#include "lock.h"
 
-libhttppp::Mutex::Mutex(){
-   _CMutex = new pthread_mutex_t;
-   *_CMutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-   pthread_mutex_init(_CMutex, NULL);
+libhttppp::Lock::Lock(){
+   _CLock=0;
 }
 
-libhttppp::Mutex::~Mutex(){
-  pthread_mutex_destroy(_CMutex);
-  delete _CMutex;
+libhttppp::Lock::~Lock(){
+
 }
 
 
-bool libhttppp::Mutex::lock(){
-  if(pthread_mutex_lock(_CMutex)==0)
+bool libhttppp::Lock::lock(){
+    while(!__sync_bool_compare_and_swap(&_CLock, 0, 1)){
+        sched_yield();
+    } 
     return true;
-  else
-    return false; 
 }
 
-bool libhttppp::Mutex::trylock(){
-  if(pthread_mutex_trylock(_CMutex)==0)
-    return true;
-  else
-    return false; 
+bool libhttppp::Lock::trylock(){
+  if(!__sync_bool_compare_and_swap(&_CLock, 0, 1)){
+     return false; 
+  }
+  return true;
 }
 
-bool libhttppp::Mutex::unlock(){
-  if(pthread_mutex_unlock(_CMutex)==0)
-    return true;
-  else
-    return false; 
+bool libhttppp::Lock::unlock(){
+  _CLock=0;
+}
+
+bool libhttppp::Lock::isLocked(){
+  if(_CLock==0)
+      return false;
+  return true;
 }

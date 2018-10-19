@@ -12,7 +12,7 @@
 #else
   #include "Unix/socket.h"
   #include "Unix/inttype.h"
-  #include "Unix/mutex.h"
+  #include "Unix/lock.h"
   #include "Unix/thread.h"
   #include "Unix/sysinfo.h"
 #endif

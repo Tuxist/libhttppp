@@ -25,7 +25,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/Windows/sysinfo.cpp")
 ELSE()
   list(APPEND libhttpSrcs "os/Unix/socket.cpp")
-  list(APPEND libhttpSrcs "os/Unix/mutex.cpp")
+  list(APPEND libhttpSrcs "os/Unix/lock.cpp")
   list(APPEND libhttpSrcs "os/Unix/thread.cpp")
   list(APPEND libhttpSrcs "os/Unix/sysinfo.cpp")
 ENDIF()
@@ -110,7 +110,7 @@ install(FILES os/Windows/inttype.h
 ELSE()
 install(FILES os/Unix/inttype.h 
               os/Unix/socket.h
-              os/Unix/mutex.h
+              os/Unix/lock.h
               os/Unix/thread.h
               os/Unix/sysinfo.h
         DESTINATION include/httppp/os/Unix

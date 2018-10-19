@@ -34,12 +34,12 @@ bool libhttppp::Event::_EventEndloop=true;
 bool libhttppp::Event::_EventRestartloop=true;
 
 libhttppp::Event::ConnectionContext::ConnectionContext() {
-    _Mutex=new Mutex;
+    _Lock=new Lock;
     _CurConnection=NULL;
 }
 
 libhttppp::Event::ConnectionContext::~ConnectionContext() {
-    delete _Mutex;
+    delete _Lock;
     delete _CurConnection;
 }
 
@@ -49,7 +49,7 @@ libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextC
 }
 
 void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext **addcon) {
-    _Mutex->lock();
+    _Lock->lock();
     HTTPException httpexception;
     if(!addcon)
         return;
@@ -63,12 +63,12 @@ void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext 
     }
     _lastConnectionContext->_CurConnection=new Connection;
     *addcon=_lastConnectionContext;
-    _Mutex->unlock();
+    _Lock->unlock();
 }
 
 void libhttppp::Event::delConnectionContext(libhttppp::Event::ConnectionContext *delctx,
         libhttppp::Event::ConnectionContext **nextcxt) {
-    _Mutex->lock();
+    _Lock->lock();
     HTTPException httpexception;
     ConnectionContext *prevcontext=NULL;
     for(ConnectionContext *curcontext=_firstConnectionContext; curcontext;
@@ -105,7 +105,7 @@ void libhttppp::Event::delConnectionContext(libhttppp::Event::ConnectionContext 
             *nextcxt=_firstConnectionContext;
         }
     }
-    _Mutex->unlock();
+    _Lock->unlock();
 }
 
 libhttppp::Event::WorkerContext::WorkerContext() {

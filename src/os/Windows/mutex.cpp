@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "mutex.h"
+#include "lock.h"
 
 libhttppp::Mutex::Mutex(){
   _CMutex = (HANDLE)::CreateMutex(0, 0, 0);    

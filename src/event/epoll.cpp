@@ -49,7 +49,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _ServerSocket->listenSocket();
     _EventEndloop =true;
     _WorkerPool = new ThreadPool;
-    _Mutex = new Mutex;
+    _Lock = new Lock;
     _firstConnectionContext=NULL;
     _lastConnectionContext=NULL;
     _firstWorkerContext=NULL;
@@ -59,7 +59,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 libhttppp::Event::~Event() {
     delete   _firstConnectionContext;
     delete   _WorkerPool;
-    delete   _Mutex;
+    delete   _Lock;
     delete   _firstWorkerContext;
     _lastWorkerContext=NULL;
     _lastConnectionContext=NULL;
@@ -156,6 +156,7 @@ void *libhttppp::Event::WorkerThread(void *wrkevent) {
                         throw e;
                 }
             } else {
+                while(wevent->_Lock->isLocked());
                 curct=(ConnectionContext*)events->data.ptr;
                 switch(events[i].events) {
                 case(EPOLLIN): {

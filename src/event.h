@@ -87,7 +87,7 @@ namespace libhttppp {
             /*Indefier Connection*/
             Connection             *_CurConnection;
             /*current Mutex*/
-            Mutex                     *_Mutex;
+            Lock                     *_Lock;
             /*next entry*/
             ConnectionContext      *_nextConnectionContext;
             friend class Event;
@@ -133,12 +133,12 @@ namespace libhttppp {
     ConnectionContext *_lastConnectionContext;
     
     /*Threadpools*/
-    ThreadPool           *_WorkerPool;
-    WorkerContext     *_firstWorkerContext;
-    WorkerContext     *_lastWorkerContext;   
-    Mutex                   *_Mutex;
+    ThreadPool              *_WorkerPool;
+    WorkerContext           *_firstWorkerContext;
+    WorkerContext           *_lastWorkerContext;   
+    Lock                    *_Lock;
     
-    ServerSocket        *_ServerSocket;
+    ServerSocket            *_ServerSocket;
     static bool              _EventEndloop;
     static bool              _EventRestartloop;
   };

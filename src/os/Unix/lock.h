@@ -25,23 +25,22 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <pthread.h>
-
 #include "../../exception.h"
 
 #ifndef MUTEX_H
 #define MUTEX_H
 
 namespace libhttppp {
-  class Mutex {
+  class Lock {
   public:
-    Mutex();
-    ~Mutex();
+    Lock();
+    ~Lock();
     bool            trylock();
     bool            lock();
     bool            unlock();
+    bool            isLocked();
   private:
-    pthread_mutex_t *_CMutex;
+    int              _CLock;
     HTTPException    _httpexception;
   };
 }
