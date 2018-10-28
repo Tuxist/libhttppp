@@ -25,26 +25,44 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <windows.h>
-#include <process.h>
+#include "lock.h"
 
-#include "../../exception.h"
-
-#ifndef MUTEX_H
-#define MUTEX_H
-
-namespace libhttppp {
-  class Mutex {
-  public:
-    Mutex();
-    ~Mutex();
-    bool            trylock();
-    bool            lock();
-    bool            unlock();
-  private:
-    HANDLE           _CMutex;
-    HTTPException    _httpexception;
-  };
+libhttppp::Lock::Lock(){
+  _CLock = (HANDLE)::CreateMutex(0, 0, 0);    
 }
 
-#endif
+
+libhttppp::Lock::~Lock(){
+    CloseHandle(_CLock);
+}
+
+bool libhttppp::Lock::trylock(){
+    unsigned long ret = WaitForSingleObject(_CLock, 0);
+    if(ret == WAIT_OBJECT_0){
+        return true;
+    } else if(ret == WAIT_TIMEOUT){
+        return false;
+    } else if(ret == WAIT_ABANDONED){
+        ReleaseMutex(_CLock);
+        _httpexception.Critical("Mutex","Mutex wasn't Released by owned thread");
+        throw _httpexception;
+    } else{
+        return false;
+    }
+}
+
+bool libhttppp::Lock::lock(){
+  unsigned long ret = WaitForSingleObject(_CLock,INFINITE);
+  if(ret != WAIT_OBJECT_0){
+    return false;
+  }
+  return true;
+}
+
+
+bool libhttppp::Lock::unlock(){
+  if(!ReleaseMutex(_CLock))
+    return false;
+  else
+    return true;  
+}

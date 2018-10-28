@@ -6,7 +6,7 @@
 #ifdef Windows
   #include "Windows/socket.h"
   #include "Windows/inttype.h"
-  #include "Windows/mutex.h"
+  #include "Windows/lock.h"
   #include "Windows/thread.h"
   #include "Windows/sysinfo.h"
 #else

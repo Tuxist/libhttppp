@@ -20,7 +20,7 @@ set(libhttpSrcs
 #os dependencies
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/Windows/socket.cpp")
-  list(APPEND libhttpSrcs "os/Windows/mutex.cpp")
+  list(APPEND libhttpSrcs "os/Windows/lock.cpp")
   list(APPEND libhttpSrcs "os/Windows/thread.cpp")
   list(APPEND libhttpSrcs "os/Windows/sysinfo.cpp")
 ELSE()
@@ -101,7 +101,7 @@ install(FILES os/os.h
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 install(FILES os/Windows/inttype.h 
               os/Windows/socket.h
-              os/Windows/mutex.h
+              os/Windows/lock.h
               os/Windows/thread.h
 			  os/Windows/sysinfo.h
         DESTINATION include/httppp/os/Windows

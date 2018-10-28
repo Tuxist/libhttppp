@@ -107,10 +107,11 @@ void libhttppp::Event::runEventloop() {
 			throw _httpexception;
 		}
 
-		for (DWORD dwCPU = 0; dwCPU < threadcount; dwCPU++) {
-			Thread  hThread;
-			hThread.Create(WorkerThread, this);
-//			g_ThreadHandles[dwCPU] = hThread.getHandle();
+		SYSInfo sysinfo;
+		size_t thrs = sysinfo.getNumberOfProcessors();
+		for (size_t i = 0; i < thrs; i++) {
+			WorkerContext *curwrkctx = addWorkerContext();
+			curwrkctx->_CurThread->Create(WorkerThread, curwrkctx);
 		}
 
 		int nRet = 0;
