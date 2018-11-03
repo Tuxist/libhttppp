@@ -47,9 +47,8 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
 	_EventEndloop = true;
-	_Cpool = new ConnectionPool(_ServerSocket);
     _WorkerPool = new ThreadPool;
-	_Mutex = new Mutex;
+	_Lock = new Lock;
 	_firstConnectionContext = NULL;
 	_lastConnectionContext = NULL;
     _firstWorkerContext=NULL;
@@ -58,18 +57,18 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
 
 libhttppp::Event::~Event() {
 	WSASetEvent(_hCleanupEvent[0]);
-	delete   _Cpool;
 	delete   _firstConnectionContext;
     delete   _WorkerPool;
     delete   _firstWorkerContext;
   _lastWorkerContext=NULL;
-	delete   _Mutex;
+	delete   _Lock;
 	_lastConnectionContext = NULL;
 }
 
 
 
 void libhttppp::Event::runEventloop() {
+	HTTPException httpexception;
 	int srvssocket = _ServerSocket->getSocket();
 	int maxconnets = _ServerSocket->getMaxconnections();
 
@@ -78,8 +77,8 @@ void libhttppp::Event::runEventloop() {
 
 	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent()))
 	{
-		_httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
-		throw _httpexception;
+		httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
+		throw httpexception;
 	}
 
 	try{
@@ -92,7 +91,7 @@ void libhttppp::Event::runEventloop() {
 			WSACloseEvent(_hCleanupEvent[0]);
 			_hCleanupEvent[0] = WSA_INVALID_EVENT;
 		}
-		throw _httpexception;
+		throw httpexception;
 	}
 
 	while (_EventRestartloop) {
@@ -102,9 +101,9 @@ void libhttppp::Event::runEventloop() {
 
 		_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 		if (_IOCP == NULL) {
-			_httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",
+			httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",
 				GetLastError());
-			throw _httpexception;
+			throw httpexception;
 		}
 
 		SYSInfo sysinfo;
@@ -128,14 +127,14 @@ void libhttppp::Event::runEventloop() {
 
 		_IOCP = CreateIoCompletionPort((HANDLE)_ServerSocket->getSocket(), _IOCP, (DWORD_PTR)curcxt, 0);
 		if (_IOCP == NULL) {
-			_httpexception.Critical("CreateIoCompletionPort() failed: %d\n", GetLastError());
+			httpexception.Critical("CreateIoCompletionPort() failed: %d\n", GetLastError());
 			delConnectionContext(curcxt,NULL);
-			throw _httpexception;
+			throw httpexception;
 		}
 
 		if (curcxt == NULL) {
-			_httpexception.Critical("failed to update listen socket to IOCP\n");
-			throw _httpexception;
+			httpexception.Critical("failed to update listen socket to IOCP\n");
+			throw httpexception;
 		}
 
 		// Load the AcceptEx extension function from the provider for this socket
@@ -152,8 +151,8 @@ void libhttppp::Event::runEventloop() {
 		);
 
 		if (nRet == SOCKET_ERROR){
-			_httpexception.Critical("failed to load AcceptEx: %d\n", WSAGetLastError());
-			throw _httpexception;
+			httpexception.Critical("failed to load AcceptEx: %d\n", WSAGetLastError());
+			throw httpexception;
 		}
 
 		/*Disable Buffer in Clientsocket*/
@@ -180,8 +179,8 @@ void libhttppp::Event::runEventloop() {
 			(LPOVERLAPPED) &(curcxt->Overlapped)); //buggy needs impletend in event.h
 
 		if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
-			_httpexception.Critical("AcceptEx() failed: %d\n", WSAGetLastError());
-			throw _httpexception;
+			httpexception.Critical("AcceptEx() failed: %d\n", WSAGetLastError());
+			throw httpexception;
 		}
 
 		ConnectionData *cdat = curcxt->_CurConnection->addRecvQueue(buf, dwRecvNumBytes);
@@ -202,7 +201,8 @@ void libhttppp::Event::runEventloop() {
 
 DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 	HTTPException httpexepction;
-	Event *curenv= (Event*)WorkThreadContext;
+	WorkerContext *workerctx = (WorkerContext*)WorkThreadContext;
+	Event *curenv = workerctx->_CurEvent;
 	ConnectionContext *curcxt = NULL;
 	HANDLE hIOCP = curenv->_IOCP;
 	HTTPException httpexception;
