@@ -49,7 +49,7 @@ libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
   _DataSize=datasize;
 }
 
-libhttppp::ConnectionData::~ConnectionData(){
+libhttppp::ConnectionData::~ConnectionData() {
   delete _nextConnectionData;
 }
 

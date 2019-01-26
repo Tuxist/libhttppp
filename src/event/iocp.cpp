@@ -65,7 +65,39 @@ libhttppp::Event::~Event() {
 	_lastConnectionContext = NULL;
 }
 
+libhttppp::Event::ConnectionContext::IOCPConnectionData::IOCPConnectionData(const char * data, size_t datasize, WSAOVERLAPPED * overlapped) 
+	                                                                      : ConnectionData(data, datasize) {
+	_Overlapped = overlapped;
+}
 
+libhttppp::Event::ConnectionContext::IOCPConnectionData::~IOCPConnectionData(){
+	delete _Overlapped;
+}
+
+libhttppp::Event::ConnectionContext::IOCPConnection::IOCPConnection() : Connection(){
+	_ReadDataFirst=NULL;
+	_ReadDataLast=NULL;
+}
+
+
+libhttppp::Event::ConnectionContext::IOCPConnection::~IOCPConnection(){
+	delete _ReadDataFirst;
+	delete _ReadDataLast;
+}
+
+libhttppp::Event::ConnectionContext::IOCPConnectionData *libhttppp::Event::ConnectionContext::IOCPConnection::addRecvQueue(const char data[BLOCKSIZE],
+                                                                                                                           size_t datasize, WSAOVERLAPPED * overlapped){
+	if (!_ReadDataFirst) {
+		_ReadDataFirst = new IOCPConnectionData(data,datasize, overlapped);
+		_ReadDataLast = _ReadDataFirst;
+	}
+	else {
+		_ReadDataLast->_nextConnectionData = new IOCPConnectionData(data,datasize, overlapped);
+		_ReadDataLast = _ReadDataLast->_nextConnectionData;
+	}
+	_ReadDataSize += datasize;
+	return _ReadDataLast;
+}
 
 void libhttppp::Event::runEventloop() {
 	HTTPException httpexception;
@@ -170,20 +202,21 @@ void libhttppp::Event::runEventloop() {
 		//
 
 		char buf[BLOCKSIZE];
+		WSAOVERLAPPED *wsaover = new WSAOVERLAPPED;
 		nRet = curcxt->fnAcceptEx(_ServerSocket->getSocket(), 
 			curcxt->_CurConnection->getClientSocket()->getSocket(),
 			(LPVOID)(buf),
 			BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
 			sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
 			&dwRecvNumBytes,
-			(LPOVERLAPPED) &(curcxt->Overlapped)); //buggy needs impletend in event.h
+			(LPOVERLAPPED)wsaover); //buggy needs impletend in event.h
 
 		if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 			httpexception.Critical("AcceptEx() failed: %d\n", WSAGetLastError());
 			throw httpexception;
 		}
-
-		ConnectionData *cdat = curcxt->_CurConnection->addRecvQueue(buf, dwRecvNumBytes);
+		
+		ConnectionData *cdat = curcxt->_CurConnection->addRecvQueue(buf,dwRecvNumBytes, wsaover);
 
 		WSAWaitForMultipleEvents(1,_hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 	}
@@ -205,11 +238,11 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 	Event *curenv = workerctx->_CurEvent;
 	ConnectionContext *curcxt = NULL;
 	HANDLE hIOCP = curenv->_IOCP;
-	HTTPException httpexception;
-	httpexception.Note("Worker starting");
 	BOOL bSuccess = FALSE;
 	DWORD dwIoSize = 0;
 	LPWSAOVERLAPPED lpOverlapped = NULL;
+	HTTPException httpexception;
+	httpexception.Note("Worker starting");
 	for(;;) {
 		bSuccess = GetQueuedCompletionStatus(
 			hIOCP,

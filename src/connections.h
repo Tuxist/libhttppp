@@ -45,9 +45,10 @@ public:
     const char*      getData();
     size_t           getDataSize();
     ConnectionData  *nextConnectionData();
+protected:
+	ConnectionData(const char*data, size_t datasize);
+	~ConnectionData();
 private:
-    ConnectionData(const char*data,size_t datasize);
-    ~ConnectionData();
     char              _Data[BLOCKSIZE];
     size_t            _DataSize;
     ConnectionData   *_nextConnectionData;
@@ -86,19 +87,24 @@ public:
     size_t                   getRecvSize();
 
     int                        pollState;
+protected:
+	/*Incomming Data*/
+	size_t          _ReadDataSize;
+	/*Outgoing Data*/
+	size_t          _SendDataSize;
 private:
     ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
                                  size_t *qsize,size_t size);
     ClientSocket      *_ClientSocket;
+
+	/*Incomming Data*/
+	ConnectionData *_ReadDataFirst;
+	ConnectionData *_ReadDataLast;
+
     /*Outgoing Data*/
     ConnectionData *_SendDataFirst;
     ConnectionData *_SendDataLast;
-    size_t                   _SendDataSize;
-    /*Incomming Data*/
-    ConnectionData *_ReadDataFirst;
-    ConnectionData *_ReadDataLast;
-    size_t                   _ReadDataSize;
-    HTTPException   _httpexception;
+
     friend class ConnectionPool;
 };
 

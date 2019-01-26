@@ -61,7 +61,11 @@ void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext 
         _firstConnectionContext=new ConnectionContext;
         _lastConnectionContext=_firstConnectionContext;
     }
+#ifndef EVENT_IOCP
     _lastConnectionContext->_CurConnection=new Connection;
+#else
+	_lastConnectionContext->_CurConnection = new Event::ConnectionContext::IOCPConnection;
+#endif
     *addcon=_lastConnectionContext;
     _Lock->unlock();
 }
@@ -172,3 +176,4 @@ void libhttppp::Event::ConnectEvent(libhttppp::Connection *curcon) {
 void libhttppp::Event::DisconnectEvent(libhttppp::Connection *curcon) {
     return;
 }
+

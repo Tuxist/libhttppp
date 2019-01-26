@@ -79,13 +79,38 @@ namespace libhttppp {
 			/*Acceptex for iocp*/
 			LPFN_ACCEPTEX          fnAcceptEx;
 			/*WSA Ovlerlapped*/
-			WSAOVERLAPPED          Overlapped;
+			class IOCPConnectionData : protected ConnectionData {
+			protected:
+				IOCPConnectionData(const char*data, size_t datasize, WSAOVERLAPPED *overlapped);
+				~IOCPConnectionData();
+			private:
+				WSAOVERLAPPED         *_Overlapped;
+				IOCPConnectionData    *_nextConnectionData;
+				friend class           Event;
+				friend class           ConnectionContext;
+			};
+
+			class IOCPConnection : public Connection {
+			public:
+				IOCPConnection();
+				~IOCPConnection();
+				IOCPConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize, WSAOVERLAPPED *overlapped);
+			private:
+				/*Incomming Data*/
+				IOCPConnectionData *_ReadDataFirst;
+				IOCPConnectionData *_ReadDataLast;
+			};
+
 #elif EVENT_KQUEUE
 	    /*counter for Events*/
             ssize_t                  _EventCounter;
 #endif
             /*Indefier Connection*/
-            Connection             *_CurConnection;
+#ifndef EVENT_IOCP
+			Connection             *_CurConnection;
+#else
+			IOCPConnection         *_CurConnection;
+#endif
             /*current Mutex*/
             Lock                     *_Lock;
             /*next entry*/
