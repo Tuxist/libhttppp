@@ -25,8 +25,64 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include "../../os.h"
+
 #define EVENT_EPOLL
 
-static  void  CtrlHandler(int signum);
-int                            _epollFD;
-static void *WorkerThread(void *wrkevent);
+#ifndef IOCP_H
+#define IOCP_H
+
+namespace libhttppp {
+	class ConnectionContext;
+	class WorkerContext {
+	private:
+		WorkerContext();
+		~WorkerContext();
+
+		/*Linking to IOCP Events*/
+		IOCP                  *_CurIOCP;
+		Thread                *_CurThread;
+		WorkerContext         *_nextWorkerContext;
+		friend class IOCP;
+	};
+
+	class ConnectionContext {
+	public:
+		ConnectionContext     *nextConnectionContext();
+	private:
+		ConnectionContext();
+		~ConnectionContext();
+		/*Indefier Connection*/
+		Connection         *_CurConnection;
+		/*current Mutex*/
+		Lock                   *_Lock;
+		/*next entry*/
+		ConnectionContext      *_nextConnectionContext;
+		friend class IOCP;
+	};
+
+	class EPOLL {
+	public:
+		EPOLL(ServerSocket *serversocket);
+		~EPOLL();
+		void runEventloop();
+		static  void  CtrlHandler(int signum);
+		static void *WorkerThread(void *wrkevent);
+	private:
+		void addConnectionContext(ConnectionContext **addcon);
+		int  _epollFD;
+		/*Connection Context helper*/
+		ConnectionContext *_firstConnectionContext;
+		ConnectionContext *_lastConnectionContext;
+
+		/*Threadpools*/
+		ThreadPool              *_WorkerPool;
+		WorkerContext           *_firstWorkerContext;
+		WorkerContext           *_lastWorkerContext;
+		Lock                    *_Lock;
+
+		ServerSocket            *_ServerSocket;
+	};
+};
+
+#endif

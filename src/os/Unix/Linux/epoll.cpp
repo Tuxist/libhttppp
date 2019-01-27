@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/epoll.h>
 
 #include "os/os.h"
+#include "../../../connections.h"
 #include "threadpool.h"
 
 #define READEVENT 0
@@ -41,9 +42,113 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define DEBUG_MUTEX
 
-#include "../event.h"
+#include "epoll.h"
+
+libhttppp::WorkerContext *libhttppp::IOCP::addWorkerContext() {
+	if (_firstWorkerContext) {
+		_lastWorkerContext->_nextWorkerContext = new WorkerContext;
+		_lastWorkerContext = _lastWorkerContext->_nextWorkerContext;
+	}
+	else {
+		_firstWorkerContext = new WorkerContext;
+		_lastWorkerContext = _firstWorkerContext;
+	}
+	_lastWorkerContext->_CurIOCP = this;
+	_lastWorkerContext->_CurThread = _WorkerPool->addThread();
+	return _lastWorkerContext;
+}
+
+libhttppp::WorkerContext *libhttppp::IOCP::delWorkerContext(
+	libhttppp::WorkerContext *delwrkctx) {
+	WorkerContext *prevwrk = NULL;
+	for (WorkerContext *curwrk = _firstWorkerContext; curwrk; curwrk = curwrk->_nextWorkerContext) {
+		if (curwrk == delwrkctx) {
+			if (prevwrk) {
+				prevwrk->_nextWorkerContext = curwrk->_nextWorkerContext;
+			}
+			if (curwrk == _firstWorkerContext) {
+				_firstWorkerContext = curwrk->_nextWorkerContext;
+			}
+			if (curwrk == _lastWorkerContext) {
+				_lastWorkerContext = prevwrk;
+			}
+			curwrk->_nextWorkerContext = NULL;
+			delete curwrk;
+		}
+		prevwrk = curwrk;
+	}
+	if (prevwrk)
+		return prevwrk->_nextWorkerContext;
+	else
+		return _firstWorkerContext;
+}
 
 void libhttppp::IOCP::addConnectionContext(libhttppp::ConnectionContext **addcon) {
+	_Lock->lock();
+	HTTPException httpexception;
+	if (!addcon)
+		return;
+	if (_firstConnectionContext) {
+		libhttppp::ConnectionContext *prevcon = _lastConnectionContext;;
+		prevcon->_nextConnectionContext = new ConnectionContext;
+		_lastConnectionContext = prevcon->_nextConnectionContext;
+	}
+	else {
+		_firstConnectionContext = new ConnectionContext;
+		_lastConnectionContext = _firstConnectionContext;
+	}
+	_lastConnectionContext->_CurConnection = new IOCPConnection;
+	*addcon = _lastConnectionContext;
+	_Lock->unlock();
+}
+
+
+void libhttppp::IOCP::delConnectionContext(libhttppp::ConnectionContext *delctx,
+	libhttppp::ConnectionContext **nextcxt) {
+	_Lock->lock();
+	HTTPException httpexception;
+	ConnectionContext *prevcontext = NULL;
+	for (ConnectionContext *curcontext = _firstConnectionContext; curcontext;
+		curcontext = curcontext->nextConnectionContext()) {
+		if (curcontext == delctx) {
+			if (prevcontext) {
+				prevcontext->_nextConnectionContext = curcontext->_nextConnectionContext;
+			}
+			if (_firstConnectionContext == curcontext) {
+				if (_lastConnectionContext == _firstConnectionContext) {
+					_firstConnectionContext = _firstConnectionContext->nextConnectionContext();
+					_lastConnectionContext = _firstConnectionContext;
+				}
+				else {
+					_firstConnectionContext = _firstConnectionContext->nextConnectionContext();
+				}
+			}
+			if (_lastConnectionContext == delctx) {
+				if (prevcontext) {
+					_lastConnectionContext = prevcontext;
+				}
+				else {
+					_lastConnectionContext = _firstConnectionContext;
+				}
+			}
+			curcontext->_nextConnectionContext = NULL;
+			delete curcontext;
+			break;
+		}
+		prevcontext = curcontext;
+	}
+	if (nextcxt) {
+		if (prevcontext && prevcontext->_nextConnectionContext) {
+			*nextcxt = prevcontext->_nextConnectionContext;
+		}
+		else {
+			*nextcxt = _firstConnectionContext;
+		}
+	}
+	_Lock->unlock();
+}
+
+void libhttppp::EPOLL::addConnectionContext(libhttppp::ConnectionContext **addcon) {
 	_Lock->lock();
 	HTTPException httpexception;
 	if (!addcon)
@@ -63,7 +168,7 @@ void libhttppp::IOCP::addConnectionContext(libhttppp::ConnectionContext **addcon
 }
 
 
-libhttppp::Event::Event(ServerSocket *serversocket) {
+libhttppp::EPOLL::EPOLL(ServerSocket *serversocket) {
     _ServerSocket=serversocket;
     _ServerSocket->setnonblocking();
     _ServerSocket->listenSocket();
@@ -76,7 +181,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _lastWorkerContext=NULL;
 }
 
-libhttppp::Event::~Event() {
+libhttppp::EPOLL::~EPOLL() {
     delete   _firstConnectionContext;
     delete   _WorkerPool;
     delete   _Lock;
@@ -90,7 +195,7 @@ void libhttppp::Event::CtrlHandler(int signum) {
       _EventEndloop=false;
 }
 
-void libhttppp::Event::runEventloop() {
+void libhttppp::EPOLL::runEventloop() {
     HTTPException httpexception;
     struct epoll_event setevent= (struct epoll_event) {
         0

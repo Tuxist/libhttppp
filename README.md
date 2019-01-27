@@ -8,19 +8,21 @@
 - Httpcookie
 - Httpbasicauth
 - Https
-- epoll (linux support)
 - Multithreading
-- kqueue (Mac OS BSD support)
 
 ## On Work
-- Httpdigestauth
+
 - iocp (Windows support)
+- epoll (linux support)
+- kqueue (Mac OS BSD support)
+- select (other os)
 
 ## Todo:
+- Httpdigestauth
 - Httpntlmauth
 - Httpcompression (gzip)
 - Httpclientsupport
-- select (other os)
+
 
 ## Download:
 https://github.com/Tuxist/libhttppp
