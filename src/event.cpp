@@ -33,14 +33,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::Event::Event(ServerSocket *serversocket) :
 #ifdef EVENT_EPOLL
 	EPOLL(serversocket) {
-#elif EVENT_IOCP
-	IOCP(serversocket) {
-#elif EVENT_KQUEUE
-	KQUEUE(serversocket) {
-#else
-	SELECT(serversocket) {
 #endif // EVENT_EPOLL
-	
+#ifdef EVENT_IOCP
+	IOCP(serversocket) {
+#endif // EVENT_IOCP
+#ifdef EVENT_KQUEUE
+	KQUEUE(serversocket) {
+#endif // EVENT_KQUEUE
+#ifdef EVENT_SELECT
+	SELECT(serversocket) {
+#endif // EVENT_SELECT
+}
+
+libhttppp::Event::~Event() {
+
 }
 
 /*Event Handlers*/

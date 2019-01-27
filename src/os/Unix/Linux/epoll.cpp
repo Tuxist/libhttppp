@@ -43,6 +43,26 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../event.h"
 
+void libhttppp::IOCP::addConnectionContext(libhttppp::ConnectionContext **addcon) {
+	_Lock->lock();
+	HTTPException httpexception;
+	if (!addcon)
+		return;
+	if (_firstConnectionContext) {
+		libhttppp::ConnectionContext *prevcon = _lastConnectionContext;;
+		prevcon->_nextConnectionContext = new ConnectionContext;
+		_lastConnectionContext = prevcon->_nextConnectionContext;
+	}
+	else {
+		_firstConnectionContext = new ConnectionContext;
+		_lastConnectionContext = _firstConnectionContext;
+	}
+	_lastConnectionContext->_CurConnection = new Event::ConnectionContext::IOCPConnection;
+	*addcon = _lastConnectionContext;
+	_Lock->unlock();
+}
+
+
 libhttppp::Event::Event(ServerSocket *serversocket) {
     _ServerSocket=serversocket;
     _ServerSocket->setnonblocking();

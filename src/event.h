@@ -27,12 +27,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 #include <config.h>
+#include "os/os.h"
 
 #ifndef EVENT_H
 #define EVENT_H
 
 namespace libhttppp {
-	class ServerSocket;
 #ifdef MSVC
 	class __declspec(dllexport)  Event :
 #else
@@ -40,14 +40,20 @@ namespace libhttppp {
 #endif
 
 #ifdef EVENT_EPOLL
-	protected EPOLL {
-#elif EVENT_IOCP
-	protected IOCP {
-#elif EVENT_KQUEUE
-	protected KQUEUE {
-#else
-	protected SELECT {
+	public EPOLL {
 #endif // EVENT_EPOLL
+
+#ifdef EVENT_IOCP
+	public IOCP {
+#endif // EVENT_IOCP
+
+#ifdef EVENT_KQUEUE
+	public KQUEUE {
+#endif // EVENT_KQUEUE
+
+#ifdef EVENT_SELECT
+	public SELECT {
+#endif //EVENT_SELECT
 
 	public:
 		Event(ServerSocket *serversocket);
@@ -57,8 +63,6 @@ namespace libhttppp {
 		virtual void ResponseEvent(libhttppp::Connection *curcon);
 		virtual void ConnectEvent(libhttppp::Connection *curcon);
 		virtual void DisconnectEvent(Connection *curcon);
-		/*Run Mainloop*/
-		virtual void runEventloop()=0;
   };
 };
 

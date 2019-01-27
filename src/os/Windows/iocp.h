@@ -35,8 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_IOCP
 
-/*WSA Ovlerlapped*/
+#ifndef IOCP_H
+#define IOCP_H
+
 namespace libhttppp {
+	class IOCP;
 	class IOCPConnectionData : protected ConnectionData {
 	protected:
 		IOCPConnectionData(const char*data, size_t datasize, WSAOVERLAPPED *overlapped);
@@ -44,8 +47,7 @@ namespace libhttppp {
 	private:
 		WSAOVERLAPPED         *_Overlapped;
 		IOCPConnectionData    *_nextConnectionData;
-		friend class           Event;
-		friend class           ConnectionContext;
+		friend class IOCPConnection;
 	};
 
 	class IOCPConnection : public Connection {
@@ -63,14 +65,13 @@ namespace libhttppp {
 	private:
 		WorkerContext();
 		~WorkerContext();
-		/*Linking to Events*/
-		Event                 *_CurEvent;
+
+		/*Linking to IOCP Events*/
+		IOCP                  *_CurIOCP;
 		Thread                *_CurThread;
 		WorkerContext         *_nextWorkerContext;
-		friend class Event;
+		friend class IOCP;
 	};
-
-
 
 	class ConnectionContext {
 	public:
@@ -83,23 +84,30 @@ namespace libhttppp {
 		/*Indefier Connection*/
 		IOCPConnection         *_CurConnection;
 		/*current Mutex*/
-		Lock                     *_Lock;
+		Lock                   *_Lock;
 		/*next entry*/
 		ConnectionContext      *_nextConnectionContext;
-		friend class Event;
+		friend class IOCP;
 	};
 
 	class IOCP {
 	public:
+		void runEventloop();
+	protected:
+		IOCP(ServerSocket *serversocket);
+		~IOCP();
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
 		static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
+		static bool _EventEndloop;
+		static bool _EventRestartloop;
+	private:
 
 		void addConnectionContext(ConnectionContext **addcon);
 		void delConnectionContext(ConnectionContext *delctx, ConnectionContext **nextcxt);
 
 		WorkerContext *addWorkerContext();
 		WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
-	private:
+
 		HANDLE              _IOCP;
 		WSAEVENT            _hCleanupEvent[1];
 		CRITICAL_SECTION    _CriticalSection;
@@ -116,7 +124,7 @@ namespace libhttppp {
 		Lock                    *_Lock;
 
 		ServerSocket            *_ServerSocket;
-		static bool              _EventEndloop;
-		static bool              _EventRestartloop;
 	};
 };
+
+#endif
