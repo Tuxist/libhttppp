@@ -26,147 +26,40 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "exception.h"
-#include "connections.h"
-#include "os/os.h"
 #include <config.h>
-
-#ifdef Windows
-  #include <Windows.h>
-  #include <mswsock.h>
-  #include <Strsafe.h>
-#endif
-
-#ifdef EVENT_KQUEUE
-  #include <sys/event.h>
-#endif
 
 #ifndef EVENT_H
 #define EVENT_H
 
 namespace libhttppp {
-    class ThreadPool;
+	class ServerSocket;
 #ifdef MSVC
-	class __declspec(dllexport)  Event {
+	class __declspec(dllexport)  Event :
 #else
-	class __attribute__ ((visibility ("default"))) Event {
+	class __attribute__((visibility("default"))) Event :
 #endif
+
+#ifdef EVENT_EPOLL
+	protected EPOLL {
+#elif EVENT_IOCP
+	protected IOCP {
+#elif EVENT_KQUEUE
+	protected KQUEUE {
+#else
+	protected SELECT {
+#endif // EVENT_EPOLL
+
 	public:
 		Event(ServerSocket *serversocket);
-		virtual ~Event();
-
-        class WorkerContext {
-        private:
-            WorkerContext();
-            ~WorkerContext();
-             /*Linking to Events*/
-            Event                 *_CurEvent;
-            Thread               *_CurThread;
-            WorkerContext  *_nextWorkerContext;
-            friend class Event;
-        };
-        
-        WorkerContext *addWorkerContext();
-        WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
-        
-        class ConnectionContext {
-        public:
-            ConnectionContext     *nextConnectionContext();
-        private:
-            ConnectionContext();
-            ~ConnectionContext();
-			
-#ifdef EVENT_IOCP
-			/*Acceptex for iocp*/
-			LPFN_ACCEPTEX          fnAcceptEx;
-			/*WSA Ovlerlapped*/
-			class IOCPConnectionData : protected ConnectionData {
-			protected:
-				IOCPConnectionData(const char*data, size_t datasize, WSAOVERLAPPED *overlapped);
-				~IOCPConnectionData();
-			private:
-				WSAOVERLAPPED         *_Overlapped;
-				IOCPConnectionData    *_nextConnectionData;
-				friend class           Event;
-				friend class           ConnectionContext;
-			};
-
-			class IOCPConnection : public Connection {
-			public:
-				IOCPConnection();
-				~IOCPConnection();
-				IOCPConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize, WSAOVERLAPPED *overlapped);
-			private:
-				/*Incomming Data*/
-				IOCPConnectionData *_ReadDataFirst;
-				IOCPConnectionData *_ReadDataLast;
-			};
-
-#elif EVENT_KQUEUE
-	    /*counter for Events*/
-            ssize_t                  _EventCounter;
-#endif
-            /*Indefier Connection*/
-#ifndef EVENT_IOCP
-			Connection             *_CurConnection;
-#else
-			IOCPConnection         *_CurConnection;
-#endif
-            /*current Mutex*/
-            Lock                     *_Lock;
-            /*next entry*/
-            ConnectionContext      *_nextConnectionContext;
-            friend class Event;
-        };
-   
-        void addConnectionContext(ConnectionContext **addcon);
-        void delConnectionContext(ConnectionContext *delctx,ConnectionContext **nextcxt);
-        
-    /*API Events*/
-    virtual void RequestEvent(Connection *curcon);
-    virtual void ResponseEvent(libhttppp::Connection *curcon);
-    virtual void ConnectEvent(libhttppp::Connection *curcon);
-    virtual void DisconnectEvent(Connection *curcon);
-    /*Run Mainloop*/
-    virtual void runEventloop();
-
-#ifdef EVENT_IOCP
-	static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
-#else
-    static void *WorkerThread(void *wrkevent);
-#endif
-
-#ifdef Windows
-    static BOOL WINAPI CtrlHandler(DWORD dwEvent);
-#else
-    static  void  CtrlHandler(int signum);
-#endif
-
-  private:
-#ifdef EVENT_EPOLL
-	int                            _epollFD;
-#elif EVENT_KQUEUE
-	int                            _Kq;
-	struct kevent        *_Events;
-#elif EVENT_IOCP
-	HANDLE              _IOCP;
-	WSAEVENT            _hCleanupEvent[1];
-	CRITICAL_SECTION    _CriticalSection;
-#endif
-    
-    /*Connection Context helper*/
-    ConnectionContext *_firstConnectionContext;
-    ConnectionContext *_lastConnectionContext;
-    
-    /*Threadpools*/
-    ThreadPool              *_WorkerPool;
-    WorkerContext           *_firstWorkerContext;
-    WorkerContext           *_lastWorkerContext;   
-    Lock                    *_Lock;
-    
-    ServerSocket            *_ServerSocket;
-    static bool              _EventEndloop;
-    static bool              _EventRestartloop;
+		virtual ~Event();       
+		/*API Events*/
+		virtual void RequestEvent(Connection *curcon);
+		virtual void ResponseEvent(libhttppp::Connection *curcon);
+		virtual void ConnectEvent(libhttppp::Connection *curcon);
+		virtual void DisconnectEvent(Connection *curcon);
+		/*Run Mainloop*/
+		virtual void runEventloop()=0;
   };
-}
+};
 
 #endif

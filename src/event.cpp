@@ -30,134 +30,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define DEBUG_MUTEX
 
-bool libhttppp::Event::_EventEndloop=true;
-bool libhttppp::Event::_EventRestartloop=true;
-
-libhttppp::Event::ConnectionContext::ConnectionContext() {
-    _Lock=new Lock;
-    _CurConnection=NULL;
-}
-
-libhttppp::Event::ConnectionContext::~ConnectionContext() {
-    delete _Lock;
-    delete _CurConnection;
-}
-
-
-libhttppp::Event::ConnectionContext * libhttppp::Event::ConnectionContext::nextConnectionContext() {
-    return _nextConnectionContext;
-}
-
-void libhttppp::Event::addConnectionContext(libhttppp::Event::ConnectionContext **addcon) {
-    _Lock->lock();
-    HTTPException httpexception;
-    if(!addcon)
-        return;
-    if(_firstConnectionContext) {
-        ConnectionContext *prevcon=_lastConnectionContext;;
-        prevcon->_nextConnectionContext=new ConnectionContext;
-        _lastConnectionContext=prevcon->_nextConnectionContext;
-    } else {
-        _firstConnectionContext=new ConnectionContext;
-        _lastConnectionContext=_firstConnectionContext;
-    }
-#ifndef EVENT_IOCP
-    _lastConnectionContext->_CurConnection=new Connection;
+libhttppp::Event::Event(ServerSocket *serversocket) :
+#ifdef EVENT_EPOLL
+	EPOLL(serversocket) {
+#elif EVENT_IOCP
+	IOCP(serversocket) {
+#elif EVENT_KQUEUE
+	KQUEUE(serversocket) {
 #else
-	_lastConnectionContext->_CurConnection = new Event::ConnectionContext::IOCPConnection;
-#endif
-    *addcon=_lastConnectionContext;
-    _Lock->unlock();
-}
-
-void libhttppp::Event::delConnectionContext(libhttppp::Event::ConnectionContext *delctx,
-        libhttppp::Event::ConnectionContext **nextcxt) {
-    _Lock->lock();
-    HTTPException httpexception;
-    ConnectionContext *prevcontext=NULL;
-    for(ConnectionContext *curcontext=_firstConnectionContext; curcontext;
-            curcontext=curcontext->nextConnectionContext()) {
-        if(curcontext==delctx) {
-            if(prevcontext) {
-                prevcontext->_nextConnectionContext=curcontext->_nextConnectionContext;
-            }
-            if(_firstConnectionContext==curcontext) {
-                if(_lastConnectionContext==_firstConnectionContext) {
-                    _firstConnectionContext=_firstConnectionContext->nextConnectionContext();
-                    _lastConnectionContext=_firstConnectionContext;
-                } else {
-                    _firstConnectionContext=_firstConnectionContext->nextConnectionContext();
-                }
-            }
-            if(_lastConnectionContext==delctx) {
-                if(prevcontext) {
-                    _lastConnectionContext=prevcontext;
-                } else {
-                    _lastConnectionContext=_firstConnectionContext;
-                }
-            }
-            curcontext->_nextConnectionContext=NULL;
-            delete curcontext;
-            break;
-        }
-        prevcontext=curcontext;
-    }
-    if(nextcxt) {
-        if(prevcontext && prevcontext->_nextConnectionContext) {
-            *nextcxt= prevcontext->_nextConnectionContext;
-        } else {
-            *nextcxt=_firstConnectionContext;
-        }
-    }
-    _Lock->unlock();
-}
-
-libhttppp::Event::WorkerContext::WorkerContext() {
-    _CurEvent=NULL;
-    _CurThread=NULL;
-    _nextWorkerContext=NULL;
-}
-
-libhttppp::Event::WorkerContext::~WorkerContext() {
-    delete _nextWorkerContext;
-}
-
-libhttppp::Event::WorkerContext *libhttppp::Event::addWorkerContext() {
-    if(_firstWorkerContext) {
-        _lastWorkerContext->_nextWorkerContext=new WorkerContext;
-        _lastWorkerContext=_lastWorkerContext->_nextWorkerContext;
-    } else {
-        _firstWorkerContext=new WorkerContext;
-        _lastWorkerContext = _firstWorkerContext;
-    }
-    _lastWorkerContext->_CurEvent=this;
-    _lastWorkerContext->_CurThread=_WorkerPool->addThread();
-    return _lastWorkerContext;
-}
-
-libhttppp::Event::WorkerContext *libhttppp::Event::delWorkerContext(
-    libhttppp::Event::WorkerContext *delwrkctx) {
-    WorkerContext *prevwrk=NULL;
-    for(WorkerContext *curwrk=_firstWorkerContext; curwrk; curwrk=curwrk->_nextWorkerContext) {
-        if(curwrk==delwrkctx) {
-            if(prevwrk) {
-                prevwrk->_nextWorkerContext=curwrk->_nextWorkerContext;
-            }
-            if(curwrk==_firstWorkerContext) {
-                _firstWorkerContext=curwrk->_nextWorkerContext;
-            }
-            if(curwrk==_lastWorkerContext) {
-                _lastWorkerContext=prevwrk;
-            }
-            curwrk->_nextWorkerContext=NULL;
-            delete curwrk;
-        }
-        prevwrk=curwrk;
-    }
-    if(prevwrk)
-        return prevwrk->_nextWorkerContext;
-    else
-        return _firstWorkerContext;
+	SELECT(serversocket) {
+#endif // EVENT_EPOLL
+	
 }
 
 /*Event Handlers*/

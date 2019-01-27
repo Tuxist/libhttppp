@@ -40,9 +40,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //#define DEBUG_MUTEX
 
-#include "../event.h"
+#include "iocp.h"
 
-libhttppp::Event::Event(ServerSocket *serversocket) {
+libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
@@ -55,7 +55,7 @@ libhttppp::Event::Event(ServerSocket *serversocket) {
     _lastWorkerContext=NULL;
 }
 
-libhttppp::Event::~Event() {
+libhttppp::IOCP::~IOCP() {
 	WSASetEvent(_hCleanupEvent[0]);
 	delete   _firstConnectionContext;
     delete   _WorkerPool;
@@ -65,27 +65,46 @@ libhttppp::Event::~Event() {
 	_lastConnectionContext = NULL;
 }
 
-libhttppp::Event::ConnectionContext::IOCPConnectionData::IOCPConnectionData(const char * data, size_t datasize, WSAOVERLAPPED * overlapped) 
+void libhttppp::IOCP::addConnectionContext(libhttppp::Event::ConnectionContext **addcon) {
+	_Lock->lock();
+	HTTPException httpexception;
+	if (!addcon)
+		return;
+	if (_firstConnectionContext) {
+		ConnectionContext *prevcon = _lastConnectionContext;;
+		prevcon->_nextConnectionContext = new ConnectionContext;
+		_lastConnectionContext = prevcon->_nextConnectionContext;
+	}
+	else {
+		_firstConnectionContext = new ConnectionContext;
+		_lastConnectionContext = _firstConnectionContext;
+	}
+    _lastConnectionContext->_CurConnection = new Event::ConnectionContext::IOCPConnection;
+   *addcon = _lastConnectionContext;
+   _Lock->unlock();
+}
+
+libhttppp::IOCPConnectionData::IOCPConnectionData(const char * data, size_t datasize, WSAOVERLAPPED * overlapped) 
 	                                                                      : ConnectionData(data, datasize) {
 	_Overlapped = overlapped;
 }
 
-libhttppp::Event::ConnectionContext::IOCPConnectionData::~IOCPConnectionData(){
+libhttppp::IOCPConnectionData::~IOCPConnectionData(){
 	delete _Overlapped;
 }
 
-libhttppp::Event::ConnectionContext::IOCPConnection::IOCPConnection() : Connection(){
+libhttppp::IOCPConnection::IOCPConnection() : Connection(){
 	_ReadDataFirst=NULL;
 	_ReadDataLast=NULL;
 }
 
 
-libhttppp::Event::ConnectionContext::IOCPConnection::~IOCPConnection(){
+libhttppp::IOCPConnection::~IOCPConnection(){
 	delete _ReadDataFirst;
 	delete _ReadDataLast;
 }
 
-libhttppp::Event::ConnectionContext::IOCPConnectionData *libhttppp::Event::ConnectionContext::IOCPConnection::addRecvQueue(const char data[BLOCKSIZE],
+libhttppp::IOCPConnectionData *libhttppp::Event::ConnectionContext::IOCPConnection::addRecvQueue(const char data[BLOCKSIZE],
                                                                                                                            size_t datasize, WSAOVERLAPPED * overlapped){
 	if (!_ReadDataFirst) {
 		_ReadDataFirst = new IOCPConnectionData(data,datasize, overlapped);
@@ -99,7 +118,7 @@ libhttppp::Event::ConnectionContext::IOCPConnectionData *libhttppp::Event::Conne
 	return _ReadDataLast;
 }
 
-void libhttppp::Event::runEventloop() {
+void libhttppp::IOCP::runEventloop() {
 	HTTPException httpexception;
 	int srvssocket = _ServerSocket->getSocket();
 	int maxconnets = _ServerSocket->getMaxconnections();
@@ -157,7 +176,7 @@ void libhttppp::Event::runEventloop() {
 		addConnectionContext(&curcxt);
 
 
-		_IOCP = CreateIoCompletionPort((HANDLE)_ServerSocket->getSocket(), _IOCP, (DWORD_PTR)curcxt, 0);
+		_IOCP = CreateIoCompletionPort((HANDLE)srvssocket, _IOCP, (DWORD_PTR)curcxt, 0);
 		if (_IOCP == NULL) {
 			httpexception.Critical("CreateIoCompletionPort() failed: %d\n", GetLastError());
 			delConnectionContext(curcxt,NULL);
@@ -209,14 +228,15 @@ void libhttppp::Event::runEventloop() {
 			BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
 			sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
 			&dwRecvNumBytes,
-			(LPOVERLAPPED)wsaover); //buggy needs impletend in event.h
+			(LPOVERLAPPED)wsaover);
 
 		if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 			httpexception.Critical("AcceptEx() failed: %d\n", WSAGetLastError());
 			throw httpexception;
 		}
 		
-		ConnectionData *cdat = curcxt->_CurConnection->addRecvQueue(buf,dwRecvNumBytes, wsaover);
+		Event::ConnectionContext::IOCPConnectionData *cdat;
+		cdat = curcxt->_CurConnection->addRecvQueue(buf, dwRecvNumBytes, wsaover);
 
 		WSAWaitForMultipleEvents(1,_hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 	}
@@ -232,7 +252,7 @@ void libhttppp::Event::runEventloop() {
 	SetConsoleCtrlHandler(CtrlHandler, FALSE);
 }
 
-DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
+DWORD WINAPI libhttppp::IOCP::WorkerThread(LPVOID WorkThreadContext) {
 	HTTPException httpexepction;
 	WorkerContext *workerctx = (WorkerContext*)WorkThreadContext;
 	Event *curenv = workerctx->_CurEvent;
@@ -267,7 +287,7 @@ DWORD WINAPI libhttppp::Event::WorkerThread(LPVOID WorkThreadContext) {
 	return(0);
 }
 
-BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
+BOOL WINAPI libhttppp::IOCP::CtrlHandler(DWORD dwEvent) {
 	switch (dwEvent) {
 	case CTRL_BREAK_EVENT:
 		_EventRestartloop = true;
@@ -286,4 +306,132 @@ BOOL WINAPI libhttppp::Event::CtrlHandler(DWORD dwEvent) {
 		return(FALSE);
 	}
 	return(TRUE);
+}
+
+libhttppp::IOCP::ConnectionContext::ConnectionContext() {
+	_Lock = new Lock;
+	_CurConnection = NULL;
+}
+
+libhttppp::IOCP::ConnectionContext::~ConnectionContext() {
+	delete _Lock;
+	delete _CurConnection;
+}
+
+
+libhttppp::IOCP::ConnectionContext * libhttppp::IOCP::ConnectionContext::nextConnectionContext() {
+	return _nextConnectionContext;
+}
+
+void libhttppp::IOCP::addConnectionContext(libhttppp::IOCP::ConnectionContext **addcon) {
+	_Lock->lock();
+	HTTPException httpexception;
+	if (!addcon)
+		return;
+	if (_firstConnectionContext) {
+		ConnectionContext *prevcon = _lastConnectionContext;;
+		prevcon->_nextConnectionContext = new ConnectionContext;
+		_lastConnectionContext = prevcon->_nextConnectionContext;
+	}
+	else {
+		_firstConnectionContext = new ConnectionContext;
+		_lastConnectionContext = _firstConnectionContext;
+	}
+	_lastConnectionContext->_CurConnection = new Connection;
+	*addcon = _lastConnectionContext;
+	_Lock->unlock();
+}
+
+void libhttppp::IOCP::delConnectionContext(libhttppp::IOCP::ConnectionContext *delctx,
+	libhttppp::IOCP::ConnectionContext **nextcxt) {
+	_Lock->lock();
+	HTTPException httpexception;
+	ConnectionContext *prevcontext = NULL;
+	for (ConnectionContext *curcontext = _firstConnectionContext; curcontext;
+		curcontext = curcontext->nextConnectionContext()) {
+		if (curcontext == delctx) {
+			if (prevcontext) {
+				prevcontext->_nextConnectionContext = curcontext->_nextConnectionContext;
+			}
+			if (_firstConnectionContext == curcontext) {
+				if (_lastConnectionContext == _firstConnectionContext) {
+					_firstConnectionContext = _firstConnectionContext->nextConnectionContext();
+					_lastConnectionContext = _firstConnectionContext;
+				}
+				else {
+					_firstConnectionContext = _firstConnectionContext->nextConnectionContext();
+				}
+			}
+			if (_lastConnectionContext == delctx) {
+				if (prevcontext) {
+					_lastConnectionContext = prevcontext;
+				}
+				else {
+					_lastConnectionContext = _firstConnectionContext;
+				}
+			}
+			curcontext->_nextConnectionContext = NULL;
+			delete curcontext;
+			break;
+		}
+		prevcontext = curcontext;
+	}
+	if (nextcxt) {
+		if (prevcontext && prevcontext->_nextConnectionContext) {
+			*nextcxt = prevcontext->_nextConnectionContext;
+		}
+		else {
+			*nextcxt = _firstConnectionContext;
+		}
+	}
+	_Lock->unlock();
+}
+
+libhttppp::IOCP::WorkerContext::WorkerContext() {
+	_CurEvent = NULL;
+	_CurThread = NULL;
+	_nextWorkerContext = NULL;
+}
+
+libhttppp::IOCP::WorkerContext::~WorkerContext() {
+	delete _nextWorkerContext;
+}
+
+libhttppp::IOCP::WorkerContext *libhttppp::IOCP::addWorkerContext() {
+	if (_firstWorkerContext) {
+		_lastWorkerContext->_nextWorkerContext = new WorkerContext;
+		_lastWorkerContext = _lastWorkerContext->_nextWorkerContext;
+	}
+	else {
+		_firstWorkerContext = new WorkerContext;
+		_lastWorkerContext = _firstWorkerContext;
+	}
+	_lastWorkerContext->_CurEvent = this;
+	_lastWorkerContext->_CurThread = _WorkerPool->addThread();
+	return _lastWorkerContext;
+}
+
+libhttppp::IOCP::WorkerContext *libhttppp::IOCP::delWorkerContext(
+	libhttppp::Event::WorkerContext *delwrkctx) {
+	WorkerContext *prevwrk = NULL;
+	for (WorkerContext *curwrk = _firstWorkerContext; curwrk; curwrk = curwrk->_nextWorkerContext) {
+		if (curwrk == delwrkctx) {
+			if (prevwrk) {
+				prevwrk->_nextWorkerContext = curwrk->_nextWorkerContext;
+			}
+			if (curwrk == _firstWorkerContext) {
+				_firstWorkerContext = curwrk->_nextWorkerContext;
+			}
+			if (curwrk == _lastWorkerContext) {
+				_lastWorkerContext = prevwrk;
+			}
+			curwrk->_nextWorkerContext = NULL;
+			delete curwrk;
+		}
+		prevwrk = curwrk;
+	}
+	if (prevwrk)
+		return prevwrk->_nextWorkerContext;
+	else
+		return _firstWorkerContext;
 }
