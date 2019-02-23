@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define IOCP_H
 
 namespace libhttppp {
+    class Connection;
 	class ConnectionContext;
 	class WorkerContext {
 	private:
@@ -40,7 +41,6 @@ namespace libhttppp {
 		~WorkerContext();
 
 		/*Linking to IOCP Events*/
-		IOCP                  *_CurIOCP;
 		Thread                *_CurThread;
 		WorkerContext         *_nextWorkerContext;
 		friend class IOCP;
