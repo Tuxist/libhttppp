@@ -17,7 +17,7 @@
   #include "Unix/thread.h"
   #include "Unix/sysinfo.h"
 #ifdef Linux
-  #include "Unix/linux/epoll.h"
+  #include "Unix/Linux/epoll.h"
 #elif BSD
   #include "Unix/bsd/kqueue.h"
 #elif Darwin
