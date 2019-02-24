@@ -25,13 +25,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "event.h"
+#include "os/event/event.h"
 #include "exception.h"
 
 #ifndef HTTPD_H
 #define HTTPD_H
 
 namespace libhttppp {
+  class ServerSocket;
   class HTTPDCmd {
   public:
 	  const char *getKey();

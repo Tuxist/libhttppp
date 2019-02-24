@@ -14,32 +14,23 @@ set(libhttpSrcs
   https.cpp
   base64.cpp
   utils.cpp
-  event.cpp
 )
 
 #os dependencies
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  list(APPEND libhttpSrcs "os/Windows/socket.cpp")
-  list(APPEND libhttpSrcs "os/Windows/lock.cpp")
-  list(APPEND libhttpSrcs "os/Windows/thread.cpp")
-  list(APPEND libhttpSrcs "os/Windows/sysinfo.cpp")
+  list(APPEND libhttpSrcs "os/windows/socket.cpp")
+  list(APPEND libhttpSrcs "os/windows/lock.cpp")
+  list(APPEND libhttpSrcs "os/windows/thread.cpp")
+  list(APPEND libhttpSrcs "os/windows/sysinfo.cpp")
 ELSE()
-  list(APPEND libhttpSrcs "os/Unix/socket.cpp")
-  list(APPEND libhttpSrcs "os/Unix/lock.cpp")
-  list(APPEND libhttpSrcs "os/Unix/thread.cpp")
-  list(APPEND libhttpSrcs "os/Unix/sysinfo.cpp")
+  list(APPEND libhttpSrcs "os/unix/socket.cpp")
+  list(APPEND libhttpSrcs "os/unix/lock.cpp")
+  list(APPEND libhttpSrcs "os/unix/thread.cpp")
+  list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
 ENDIF()
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-   list(APPEND libhttpSrcs "os/Windows/iocp.cpp")
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   list(APPEND libhttpSrcs "os/Unix/Linux/epoll.cpp")
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
-       ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-   list(APPEND libhttpSrcs "os/Unix/BSD/kqueue.cpp")
-ELSE()
-   list(APPEND libhttpSrcs "os/Unix/select.cpp")
-ENDIF()
+list(APPEND libhttpSrcs "os/event/event.cpp")
+
 
 include_directories(
   ${OPENSSL_INCLUDE_DIR}
