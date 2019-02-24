@@ -43,9 +43,11 @@ namespace libhttppp {
     public:
         Event(ServerSocket *serversocket);
         void runEventloop();
+        static void *WorkerThread(void *wrkevent);
         virtual ~Event();
     protected:
         EventApi *_EventApi;
+        bool          _Run;
     };
 };
 

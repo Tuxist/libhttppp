@@ -32,4 +32,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static  void  CtrlHandler(int signum);
 int                            _Kq;
 struct kevent        *_Events;
-static void *WorkerThread(void *wrkevent);
+

@@ -72,3 +72,11 @@ libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread
         return _firstThread;
 }
 
+libhttppp::Thread * libhttppp::ThreadPool::getfirstThread(){
+    return _firstThread;
+}
+
+libhttppp::Thread * libhttppp::ThreadPool::getlastThread(){
+    return _lastThread;
+}
+

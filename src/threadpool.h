@@ -39,6 +39,10 @@ namespace libhttppp {
      ~ThreadPool();
      Thread *addThread();
      Thread *delThread(Thread *delthread);
+     
+     Thread *getfirstThread();
+     Thread *getlastThread();
+     
    private:
      Thread *_firstThread;
      Thread *_lastThread;

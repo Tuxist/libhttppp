@@ -29,11 +29,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../connections.h"
 #include "../../eventapi.h"
+#include "../../threadpool.h"
 
 #include "event.h"
 
 libhttppp::Event::Event(libhttppp::ServerSocket* serversocket){
     _EventApi = new EVENT(serversocket);
+    _Run=true;
 }
 
 libhttppp::Event::~Event(){
@@ -43,11 +45,24 @@ libhttppp::EventApi::~EventApi(){
 }
 
 void libhttppp::Event::runEventloop(){
+    _Run=true;
     _EventApi->initEventHandler();
     SYSInfo sysinfo;
     size_t thrs = sysinfo.getNumberOfProcessors();
+    ThreadPool thpool;
     for(size_t i=0; i<thrs; i++) {
-          WorkerContext *curwrkctx=addWorkerContext();
-          curwrkctx->_CurThread->Create(WorkerThread,curwrkctx);
+          Thread *th=thpool.addThread();
+          th->Create(WorkerThread,this);
+    }
+    
+    for(Thread *curth=thpool.getfirstThread(); curth; curth=curth->nextThread()) {
+         curth->Join();
+     }
+}
+
+void * libhttppp::Event::WorkerThread(void* wrkevent){
+    Event *eventptr=(Event*)wrkevent;
+    while(eventptr->_Run){
+        int des=eventptr->_EventApi->waitEventHandler();
     }
 }

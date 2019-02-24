@@ -84,6 +84,26 @@ void libhttppp::EPOLL::initEventHandler(){
         httpexception.Critical("can't create epoll");
         throw httpexception;
     }
+    
+    _Events=new epoll_event[(_ServerSocket->getMaxconnections())];
+    
+    for(int i=0; i<_ServerSocket->getMaxconnections(); i++)
+        _Events[i].data.fd = -1;
+}
+
+int libhttppp::EPOLL::waitEventHandler(){
+    int n = epoll_wait(_epollFD,_Events,_ServerSocket->getMaxconnections(), EPOLLWAIT);
+    if(n<0) {
+        HTTPException httpexception;
+        if(errno== EINTR) {
+            httpexception.Warning("EPOLL","EINTR");
+            return n;
+        } else {
+            httpexception.Critical("EPOLL","epoll wait failure");
+            throw httpexception;
+        }
+    }
+    return n;
 }
 
 /*API Events*/
@@ -105,67 +125,7 @@ void libhttppp::EPOLL::DisconnectEvent(Connection *curcon){
 };
 
 
-// 
-// libhttppp::WorkerContext *libhttppp::EPOLL::addWorkerContext() {
-// 	if (_firstWorkerContext) {
-// 		_lastWorkerContext->_nextWorkerContext = new WorkerContext;
-// 		_lastWorkerContext = _lastWorkerContext->_nextWorkerContext;
-// 	}
-// 	else {
-// 		_firstWorkerContext = new WorkerContext;
-// 		_lastWorkerContext = _firstWorkerContext;
-// 	}
-// 	_lastWorkerContext->_CurEPOLL = this;
-// 	_lastWorkerContext->_CurThread = _WorkerPool->addThread();
-// 	return _lastWorkerContext;
-// }
-// 
-// libhttppp::WorkerContext *libhttppp::EPOLL::delWorkerContext(
-// 	libhttppp::WorkerContext *delwrkctx) {
-// 	WorkerContext *prevwrk = NULL;
-// 	for (WorkerContext *curwrk = _firstWorkerContext; curwrk; curwrk = curwrk->_nextWorkerContext) {
-// 		if (curwrk == delwrkctx) {
-// 			if (prevwrk) {
-// 				prevwrk->_nextWorkerContext = curwrk->_nextWorkerContext;
-// 			}
-// 			if (curwrk == _firstWorkerContext) {
-// 				_firstWorkerContext = curwrk->_nextWorkerContext;
-// 			}
-// 			if (curwrk == _lastWorkerContext) {
-// 				_lastWorkerContext = prevwrk;
-// 			}
-// 			curwrk->_nextWorkerContext = NULL;
-// 			delete curwrk;
-// 		}
-// 		prevwrk = curwrk;
-// 	}
-// 	if (prevwrk)
-// 		return prevwrk->_nextWorkerContext;
-// 	else
-// 		return _firstWorkerContext;
-// }
-// 
-// libhttppp::EPOLL::EPOLL(ServerSocket *serversocket) {
-//     _ServerSocket=serversocket;
-//     _ServerSocket->setnonblocking();
-//     _ServerSocket->listenSocket();
-//     _EventEndloop =true;
-//     _WorkerPool = new ThreadPool;
-//     _Lock = new Lock;
-//     _firstConnectionContext=NULL;
-//     _lastConnectionContext=NULL;
-//     _firstWorkerContext=NULL;
-//     _lastWorkerContext=NULL;
-// }
-// 
-// libhttppp::EPOLL::~EPOLL() {
-//     delete   _firstConnectionContext;
-//     delete   _WorkerPool;
-//     delete   _Lock;
-//     delete   _firstWorkerContext;
-//     _lastWorkerContext=NULL;
-//     _lastConnectionContext=NULL;
-// }
+
 // 
 // void libhttppp::EPOLL::CtrlHandler(int signum) {
 //     if(_EventEndloop!=false)
@@ -216,20 +176,12 @@ void libhttppp::EPOLL::DisconnectEvent(Connection *curcon){
 //     struct epoll_event setevent= (struct epoll_event) {
 //         0
 //     };
-//     struct epoll_event *events = new epoll_event[(wevent->_ServerSocket->getMaxconnections())];
+//     struct epoll_event *events = 
 //     for(int i=0; i<maxconnets; i++)
 //         events[i].data.fd = -1;
 //     while(Event::_EventEndloop) {
-//         int n = epoll_wait(wevent->_epollFD,events,maxconnets, EPOLLWAIT);
-//         if(n<0) {
-//             if(errno== EINTR) {
-//                 continue;
-//             } else {
-//                 httpexception.Critical("epoll wait failure");
-//                 throw httpexception;
-//             }
-// 
-//         }
+//         
+
 //         for(int i=0; i<n; i++) {
 //             ConnectionContext *curct=NULL;
 //             if(events[i].data.fd == srvssocket) {

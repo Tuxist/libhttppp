@@ -36,7 +36,8 @@ namespace libhttppp {
         EPOLL(ServerSocket* serversocket);
         ~EPOLL();
         /**/
-        void initEventHandler();
+        void       initEventHandler();
+        int        waitEventHandler();
         const char *getEventType();
         /*HTTP API Events*/
         void RequestEvent(Connection *curcon);
@@ -45,8 +46,9 @@ namespace libhttppp {
         void DisconnectEvent(Connection *curcon);
         
     private:
-        int           _epollFD;
-        ServerSocket *_ServerSocket;
+        int                             _epollFD;
+         struct epoll_event *_Events;
+        ServerSocket           *_ServerSocket;
     };
 };
 
