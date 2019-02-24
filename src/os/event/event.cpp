@@ -25,27 +25,22 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <config.h>
+
 #include "../../connections.h"
+#include "../../eventapi.h"
+
 #include "event.h"
+
+libhttppp::Event::Event(libhttppp::ServerSocket* serversocket){
+    _EventApi = new EVENT(serversocket);
+}
+
+libhttppp::Event::~Event(){
+}
+
+libhttppp::EventApi::~EventApi(){
+}
 
 void libhttppp::Event::runEventloop(){
 }
-
-
-/*API Events*/
-
-void libhttppp::Event::RequestEvent(Connection *curcon){
-    return;
-};
-
-void libhttppp::Event::ResponseEvent(Connection *curcon){
-    return;
-};
-
-void libhttppp::Event::ConnectEvent(Connection *curcon){
-    return;
-};
-
-void libhttppp::Event::DisconnectEvent(Connection *curcon){
-    return;
-};

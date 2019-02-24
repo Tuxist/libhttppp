@@ -27,21 +27,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../eventapi.h"
 
+#include "epoll/epoll.h"
+
 #ifndef EVENT_H
 #define EVENT_H
 
 namespace libhttppp {
+    class EventApi;
     class Connection;
 #ifdef MSVC
-	class __declspec(dllexport)  Event : protected EventApi
+	class __declspec(dllexport) Event {
 #else
-	class __attribute__((visibility("default"))) Event : protected EventApi{
+	class __attribute__((visibility("default"))) Event {
 #endif
     public:
         Event(ServerSocket *serversocket);
-        virtual ~Event();        
-    private:
-        ServerSocket *_ServerSocket;
+        void runEventloop();
+        virtual ~Event();
+    protected:
+        EventApi *_EventApi;
     };
 };
 

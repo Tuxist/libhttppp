@@ -44,15 +44,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "epoll.h"
 
-libhttppp::EPoll::EPoll(libhttppp::ServerSocket* serversocket){
+libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
+    HTTPException httpexception;
     _ServerSocket=serversocket;
     _initEventHandler();
 }
 
-libhttppp::EPoll::~EPoll(){
+libhttppp::EPOLL::~EPOLL(){
 }
 
-void libhttppp::EPoll::_initEventHandler(){
+const char * libhttppp::EPOLL::getEventType(){
+    return "EPOLL";
+}
+
+void libhttppp::EPOLL::_initEventHandler(){
     HTTPException httpexception;
     struct epoll_event setevent= (struct epoll_event) {
         0
@@ -74,7 +79,23 @@ void libhttppp::EPoll::_initEventHandler(){
     }
 }
 
+/*API Events*/
 
+void libhttppp::EPOLL::RequestEvent(Connection *curcon){
+    return;
+};
+
+void libhttppp::EPOLL::ResponseEvent(Connection *curcon){
+    return;
+};
+
+void libhttppp::EPOLL::ConnectEvent(Connection *curcon){
+    return;
+};
+
+void libhttppp::EPOLL::DisconnectEvent(Connection *curcon){
+    return;
+};
 
 
 // 

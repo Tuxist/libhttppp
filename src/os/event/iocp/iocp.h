@@ -33,8 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../../connections.h"
 #include "os/os.h"
 
-#define EVENT_IOCP
-
 #ifndef IOCP_H
 #define IOCP_H
 

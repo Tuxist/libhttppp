@@ -31,13 +31,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EPOLL_H
 
 namespace libhttppp {
-    class EPoll {
+    class EPOLL : public EventApi{
     public:
-        EPoll(ServerSocket *serversocket);
-        ~EPoll();        
+        EPOLL(ServerSocket* serversocket);
+        ~EPOLL();
+        /**/
+        const char *getEventType();
+        /*HTTP API Events*/
+        void RequestEvent(Connection *curcon);
+        void ResponseEvent(Connection *curcon);
+        void ConnectEvent(Connection *curcon);
+        void DisconnectEvent(Connection *curcon);
+        
     private:
-        void _initEventHandler();
-        int  _epollFD;
+        void          _initEventHandler();
+        int           _epollFD;
         ServerSocket *_ServerSocket;
     };
 };

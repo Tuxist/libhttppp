@@ -30,16 +30,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "os/os.h"
 #include "connections.h"
 
-#ifndef EVENT_H
-#define EVENT_H
+#ifndef EVENTAPI_H
+#define EVENTAPI_H
 
 namespace libhttppp {
 class EventApi {
-	protected:
+	public:
 		virtual ~EventApi();
-        /*Main Event Loop*/
-        virtual void runEventloop()=0;
-		/*API Events*/
+        virtual const char *getEventType()=0; 
+		/*HTTP API Events*/
 		virtual void RequestEvent(Connection *curcon)=0;
 		virtual void ResponseEvent(Connection *curcon)=0;
 		virtual void ConnectEvent(Connection *curcon)=0;
