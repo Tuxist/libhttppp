@@ -37,8 +37,9 @@ namespace libhttppp {
 class EventApi {
 	public:
 		virtual ~EventApi();
-        virtual const char *getEventType()=0; 
-		/*HTTP API Events*/
+        virtual void initEventHandler()=0;
+        virtual const char *getEventType()=0;
+        /*HTTP API Events*/
 		virtual void RequestEvent(Connection *curcon)=0;
 		virtual void ResponseEvent(Connection *curcon)=0;
 		virtual void ConnectEvent(Connection *curcon)=0;

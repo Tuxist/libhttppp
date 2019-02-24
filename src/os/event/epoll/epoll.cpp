@@ -47,7 +47,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
     HTTPException httpexception;
     _ServerSocket=serversocket;
-    _initEventHandler();
+
 }
 
 libhttppp::EPOLL::~EPOLL(){
@@ -57,8 +57,15 @@ const char * libhttppp::EPOLL::getEventType(){
     return "EPOLL";
 }
 
-void libhttppp::EPOLL::_initEventHandler(){
+void libhttppp::EPOLL::initEventHandler(){
     HTTPException httpexception;
+    try{
+        _ServerSocket->setnonblocking();
+        _ServerSocket->listenSocket();
+    }catch(HTTPException &e){
+        throw e;
+    }
+    
     struct epoll_event setevent= (struct epoll_event) {
         0
     };

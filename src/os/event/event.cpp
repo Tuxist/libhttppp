@@ -43,4 +43,11 @@ libhttppp::EventApi::~EventApi(){
 }
 
 void libhttppp::Event::runEventloop(){
+    _EventApi->initEventHandler();
+    SYSInfo sysinfo;
+    size_t thrs = sysinfo.getNumberOfProcessors();
+    for(size_t i=0; i<thrs; i++) {
+          WorkerContext *curwrkctx=addWorkerContext();
+          curwrkctx->_CurThread->Create(WorkerThread,curwrkctx);
+    }
 }
