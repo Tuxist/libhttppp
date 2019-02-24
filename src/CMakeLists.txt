@@ -31,6 +31,13 @@ ENDIF()
 
 list(APPEND libhttpSrcs "os/event/event.cpp")
 
+IF(${EVENT} MATCHES "IOCP")
+  list(APPEND libhttpSrcs "os/event/iocp/iocp.cpp")
+ELSEIF(${EVENT} MATCHES "EPOLL")
+  list(APPEND libhttpSrcs "os/event/epoll/epoll.cpp")
+ELSEIF(${EVENT} MATCHES "KQUEUE")
+  list(APPEND libhttpSrcs "os/event/kqueue/kqueue.cpp")
+ENDIF()
 
 include_directories(
   ${OPENSSL_INCLUDE_DIR}
