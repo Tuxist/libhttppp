@@ -29,15 +29,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <fcntl.h>
 #include <cstdlib>
-#include <config.h>
 #include <errno.h>
 
+#include "config.h"
 #include "os/os.h"
-#include "threadpool.h"
+#include "../../../threadpool.h"
 #include "iocp.h"
 
 #define READEVENT 0
 #define SENDEVENT 1
+
+void *libhttppp::IOCP::WorkerThread(void *wrkevent){
+	return NULL;
+}
 
 //#define DEBUG_MUTEX
 

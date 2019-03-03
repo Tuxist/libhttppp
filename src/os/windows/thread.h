@@ -39,7 +39,7 @@ namespace libhttppp {
   public:
     Thread();
     ~Thread();
-	void Create(LPTHREAD_START_ROUTINE function, void *arguments);
+	void Create(void *function(void*), void *arguments);
 	void Detach();
 	DWORD getThreadID();
 	HANDLE getHandle();

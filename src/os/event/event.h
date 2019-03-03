@@ -27,7 +27,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../eventapi.h"
 
+#if EVENT==EPOLL
 #include "epoll/epoll.h"
+#endif // EPOLL
+
+#if EVENT==IOCP
+#include "iocp/iocp.h"
+#endif // IOCP
 
 #ifndef EVENT_H
 #define EVENT_H

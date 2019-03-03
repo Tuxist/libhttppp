@@ -28,10 +28,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Windows.h>
 #include <mswsock.h>
 #include <Strsafe.h>
-#include <config.h>
 
-#include "../../connections.h"
-#include "os/os.h"
+#include "config.h"
+
+#include "../../../connections.h"
+#include "../../os.h"
 
 #ifndef IOCP_H
 #define IOCP_H
@@ -39,12 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
 	class IOCP {
 	public:
-		void runEventloop();
-	protected:
 		IOCP(ServerSocket *serversocket);
 		~IOCP();
+		void runEventloop();
+		static void *WorkerThread(void *wrkevent);
+		/*	protected:
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
-		static DWORD WINAPI WorkerThread(LPVOID WorkThreadContext);
 		static bool _EventEndloop;
 		static bool _EventRestartloop;
 	private:
@@ -59,18 +60,15 @@ namespace libhttppp {
 		WSAEVENT            _hCleanupEvent[1];
 		CRITICAL_SECTION    _CriticalSection;
 
-
-		/*Connection Context helper*/
 		ConnectionContext *_firstConnectionContext;
 		ConnectionContext *_lastConnectionContext;
 
-		/*Threadpools*/
 		ThreadPool              *_WorkerPool;
 		WorkerContext           *_firstWorkerContext;
 		WorkerContext           *_lastWorkerContext;
 		Lock                    *_Lock;
 
-		ServerSocket            *_ServerSocket;
+		ServerSocket            *_ServerSocket;#*/
 	};
 };
 

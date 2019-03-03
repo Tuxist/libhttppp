@@ -36,9 +36,9 @@ libhttppp::Thread::~Thread(){
   delete _nextThread;
 }
 
-void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments) {
+void libhttppp::Thread::Create(void* function(void*), void* arguments) {
     HTTPException  httpexception;
-	_Thread = CreateThread(NULL, 0, function, arguments, 0, &_ThreadId);
+	_Thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, arguments, 0, &_ThreadId);
 	if (_Thread == NULL) {
 		httpexception.Critical("Can't create Thread!", GetLastError());
 		throw httpexception;
