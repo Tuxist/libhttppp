@@ -25,44 +25,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <config.h>
+#include "eventapi.h"
 
-#include "../../connections.h"
-#include "../../eventapi.h"
-#include "../../threadpool.h"
+#include "event/${EVENT_HEADER}"
 
-#include "event.h"
+#ifndef EVENT_H
+#define EVENT_H
 
-libhttppp::Event::Event(libhttppp::ServerSocket* serversocket){
-    _EventApi = new EVENT(serversocket);
-    _Run=true;
-}
+namespace libhttppp {
+    class EventApi;
+    class Connection;
+#ifdef MSVC
+	class __declspec(dllexport) Event {
+#else
+	class __attribute__((visibility("default"))) Event {
+#endif
+    public:
+        Event(ServerSocket *serversocket);
+        void runEventloop();
+        static void *WorkerThread(void *wrkevent);
+        virtual ~Event();
+    protected:
+        EventApi *_EventApi;
+        bool          _Run;
+    };
+};
 
-libhttppp::Event::~Event(){
-}
-
-libhttppp::EventApi::~EventApi(){
-}
-
-void libhttppp::Event::runEventloop(){
-    _Run=true;
-    _EventApi->initEventHandler();
-    SYSInfo sysinfo;
-    size_t thrs = sysinfo.getNumberOfProcessors();
-    ThreadPool thpool;
-    for(size_t i=0; i<thrs; i++) {
-          Thread *th=thpool.addThread();
-          th->Create(WorkerThread,this);
-    }
-    
-    for(Thread *curth=thpool.getfirstThread(); curth; curth=curth->nextThread()) {
-         curth->Join();
-     }
-}
-
-void * libhttppp::Event::WorkerThread(void* wrkevent){
-    Event *eventptr=(Event*)wrkevent;
-    while(eventptr->_Run){
-        int des=eventptr->_EventApi->waitEventHandler();
-    }
-}
+#endif

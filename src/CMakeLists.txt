@@ -14,6 +14,7 @@ set(libhttpSrcs
   https.cpp
   base64.cpp
   utils.cpp
+  event.cpp
 )
 
 #os dependencies
@@ -29,14 +30,12 @@ ELSE()
   list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
 ENDIF()
 
-list(APPEND libhttpSrcs "os/event/event.cpp")
-
 IF(${EVENT} MATCHES "IOCP")
-  list(APPEND libhttpSrcs "os/event/iocp/iocp.cpp")
+  list(APPEND libhttpSrcs "event/iocp/iocp.cpp")
 ELSEIF(${EVENT} MATCHES "EPOLL")
-  list(APPEND libhttpSrcs "os/event/epoll/epoll.cpp")
+  list(APPEND libhttpSrcs "event/epoll/epoll.cpp")
 ELSEIF(${EVENT} MATCHES "KQUEUE")
-  list(APPEND libhttpSrcs "os/event/kqueue/kqueue.cpp")
+  list(APPEND libhttpSrcs "event/kqueue/kqueue.cpp")
 ENDIF()
 
 include_directories(
@@ -98,7 +97,7 @@ install(FILES os/Windows/inttype.h
               os/Windows/lock.h
               os/Windows/thread.h
 			  os/Windows/sysinfo.h
-			  os/Windows/iocp.h
+			  os/event/iocp/iocp.h
         DESTINATION include/httppp/os/Windows
         COMPONENT Devel
 )
@@ -109,12 +108,10 @@ install(FILES os/Unix/inttype.h
               os/Unix/thread.h
               os/Unix/sysinfo.h
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-			  os/Unix/Linux/epoll.h
+			  os/event/event/epoll.h
 	ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
        ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	          os/Unix/BSD/kqueue.h
-	ELSE()
-	          os/Unix/select.h
+	          os/event/event/kqueue.h
 	ENDIF()
         DESTINATION include/httppp/os/Unix
         COMPONENT Devel
