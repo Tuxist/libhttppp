@@ -31,19 +31,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config.h"
 
-#include "../../../connections.h"
-#include "../../os.h"
+#include "../../connections.h"
+#include "os/os.h"
+#include "eventapi.h"
 
 #ifndef IOCP_H
 #define IOCP_H
 
 namespace libhttppp {
-	class IOCP {
+	class IOCP : public EventApi{
 	public:
 		IOCP(ServerSocket *serversocket);
 		~IOCP();
 		void runEventloop();
-		static void *WorkerThread(void *wrkevent);
+		
+		/**/
+		void       initEventHandler();
+		int        waitEventHandler();
+		const char *getEventType();
+		/*HTTP API Events*/
+		void RequestEvent(Connection *curcon);
+		void ResponseEvent(Connection *curcon);
+		void ConnectEvent(Connection *curcon);
+		void DisconnectEvent(Connection *curcon);
+
 		/*	protected:
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
 		static bool _EventEndloop;

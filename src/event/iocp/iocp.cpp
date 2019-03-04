@@ -33,15 +33,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config.h"
 #include "os/os.h"
-#include "../../../threadpool.h"
+#include "../../threadpool.h"
 #include "iocp.h"
 
 #define READEVENT 0
 #define SENDEVENT 1
 
-void *libhttppp::IOCP::WorkerThread(void *wrkevent){
-	return NULL;
+libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
+
 }
+
+libhttppp::IOCP::~IOCP() {
+
+}
+
+const char * libhttppp::IOCP::getEventType() {
+	return "IOCP";
+}
+
+void libhttppp::IOCP::initEventHandler() {
+	HTTPException httpexception;
+}
+
+int libhttppp::IOCP::waitEventHandler() {
+	return 0;
+}
+
+/*API Events*/
+
+void libhttppp::IOCP::RequestEvent(Connection *curcon) {
+	return;
+};
+
+void libhttppp::IOCP::ResponseEvent(Connection *curcon) {
+	return;
+};
+
+void libhttppp::IOCP::ConnectEvent(Connection *curcon) {
+	return;
+};
+
+void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
+	return;
+};
+
 
 //#define DEBUG_MUTEX
 
