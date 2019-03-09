@@ -9,6 +9,7 @@
   #include "windows/lock.h"
   #include "windows/thread.h"
   #include "windows/sysinfo.h"
+  #include "windows/ctrlhandler.h"
 #else
   #include "unix/socket.h"
   #include "unix/inttype.h"

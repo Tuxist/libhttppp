@@ -25,34 +25,43 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "eventapi.h"
+#include <Windows.h>
 
-#include "event/${EVENT_HEADER}"
+#include "ctrlhandler.h"
 
-#ifndef EVENT_H
-#define EVENT_H
+libhttppp::CtrlHandler::CtrlHandler() {
+	SetConsoleCtrlHandler(this->CtrlEventHandler, TRUE);
+}
 
-namespace libhttppp {
-    class EventApi;
-    class Connection;
-#ifdef MSVC
-	class __declspec(dllexport) Event : public CtrlHandler {
-#else
-	class __attribute__((visibility("default"))) Event : public CtrlHandler {
-#endif
-    public:
-        Event(ServerSocket *serversocket);
-        void runEventloop();
-        static void *WorkerThread(void *wrkevent);
-        virtual ~Event();
-    protected:
-        EventApi	 *_EventApi;
-        bool          _Run;
-		bool          _Restart;
-	private:
-		void CTRLCloseEvent();
-		void CTRLBreakEvent();
-    };
-};
+libhttppp::CtrlHandler::~CtrlHandler() {
+	SetConsoleCtrlHandler(this->CtrlEventHandler, FALSE);
+}
 
-#endif
+BOOL WINAPI libhttppp::CtrlHandler::CtrlEventHandler(DWORD eventin) {
+	switch (eventin) {
+		case CTRL_BREAK_EVENT:
+			CTRLBreakEvent();
+			break;
+ 		case CTRL_C_EVENT:
+ 		case CTRL_LOGOFF_EVENT:
+ 		case CTRL_SHUTDOWN_EVENT:
+ 		case CTRL_CLOSE_EVENT:
+			CTRLCloseEvent();
+ 			break;
+ 
+		default:
+		//
+		// unknown type--better pass it on.
+		//
+		return(FALSE);
+	}
+ 	return(TRUE);
+}
+
+void libhttppp::CtrlHandler::CTRLBreakEvent() {
+	return;
+}
+
+void libhttppp::CtrlHandler::CTRLCloseEvent() {
+	return;
+}

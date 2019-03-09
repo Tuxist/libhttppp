@@ -55,9 +55,11 @@ namespace libhttppp {
 		void ConnectEvent(Connection *curcon);
 		void DisconnectEvent(Connection *curcon);
 
+		static bool _EventEndloop;
+
 		/*	protected:
 		static BOOL WINAPI CtrlHandler(DWORD dwEvent);
-		static bool _EventEndloop;
+		
 		static bool _EventRestartloop;
 	private:
 
@@ -68,8 +70,8 @@ namespace libhttppp {
 		WorkerContext *delWorkerContext(WorkerContext *delwrkctx);
 
 		HANDLE              _IOCP;
-		WSAEVENT            _hCleanupEvent[1];
-		CRITICAL_SECTION    _CriticalSection;
+		
+		
 
 		ConnectionContext *_firstConnectionContext;
 		ConnectionContext *_lastConnectionContext;
@@ -78,8 +80,11 @@ namespace libhttppp {
 		WorkerContext           *_firstWorkerContext;
 		WorkerContext           *_lastWorkerContext;
 		Lock                    *_Lock;
-
-		ServerSocket            *_ServerSocket;#*/
+		*/
+	private:
+		CRITICAL_SECTION		_CriticalSection;
+		WSAEVENT				_hCleanupEvent[1];
+		ServerSocket           *_ServerSocket;
 	};
 };
 

@@ -33,15 +33,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "event.h"
 
-libhttppp::Event::Event(libhttppp::ServerSocket* serversocket){
+libhttppp::Event::Event(libhttppp::ServerSocket* serversocket) : CtrlHandler(){
     _EventApi = new EVENT(serversocket);
     _Run=true;
+	_Restart = false;
 }
 
 libhttppp::Event::~Event(){
 }
 
 libhttppp::EventApi::~EventApi(){
+}
+
+void libhttppp::Event::CTRLBreakEvent() {
+	_Run = false;
+}
+
+void libhttppp::Event::CTRLBreakEvent() {
+	_Restart = true;
 }
 
 void libhttppp::Event::runEventloop(){

@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright (c) 2019, Jan Koester jan.koester@gmx.net
+Copyright (c) 2014, Jan Koester jan.koester@gmx.net
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,34 +25,40 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "eventapi.h"
+#ifndef CTRLHANDlER_H
+#define CTRLHANDLER_H
 
-#include "event/${EVENT_HEADER}"
-
-#ifndef EVENT_H
-#define EVENT_H
 
 namespace libhttppp {
-    class EventApi;
-    class Connection;
-#ifdef MSVC
-	class __declspec(dllexport) Event : public CtrlHandler {
-#else
-	class __attribute__((visibility("default"))) Event : public CtrlHandler {
-#endif
-    public:
-        Event(ServerSocket *serversocket);
-        void runEventloop();
-        static void *WorkerThread(void *wrkevent);
-        virtual ~Event();
-    protected:
-        EventApi	 *_EventApi;
-        bool          _Run;
-		bool          _Restart;
+	class CtrlHandler {
+	public:
+		CtrlHandler();
+		~CtrlHandler();
+		
+		virtual void CTRLCloseEvent()=0;
+		virtual void CTRLBreakEvent()=0;
 	private:
-		void CTRLCloseEvent();
-		void CTRLBreakEvent();
-    };
+		BOOL WINAPI CtrlEventHandler(DWORD eventin);
+	};
 };
 
 #endif
+
+
+
+/*
+SIGHUP	1	Logoff
+SIGINT	2	Benutzer-Interrupt (ausgelöst durch [Strg]+[C])
+SIGQUIT	3	Benutzeraufforderung zum Beenden (ausgelöst durch [Strg)+[\])
+SIGFPE	8	Fließkommafehler, beispielsweise Null-Division
+SIGKILL	9	Prozess killen
+SIGUSR1	10	Benutzerdefiniertes Signal
+SIGSEGV	11	Prozess hat versucht, auf Speicher zuzugreifen, der ihm nicht zugewiesen war
+SIGUSR2	12	Weiteres benutzerdefiniertes Signal
+SIGALRM	14	Timer (Zeitgeber), der mit der Funktion alarm() gesetzt wurde, ist abgelaufen
+SIGTERM	15	Aufforderung zum Beenden
+SIGCHLD	17	Kindprozess wird aufgefordert, sich zu beenden
+SIGCONT	18	Nach einem SIGSTOP- oder SIGTSTP-Signal fortfahren
+SIGSTOP	19	Den Prozess anhalten
+SIGTSTP	20 Prozess suspendiert, ausgelöst durch [Strg)+[Z].
+*/

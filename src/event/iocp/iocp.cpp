@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SENDEVENT 1
 
 libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
-
+	_ServerSocket = serversocket;
 }
 
 libhttppp::IOCP::~IOCP() {
@@ -53,6 +53,26 @@ const char * libhttppp::IOCP::getEventType() {
 
 void libhttppp::IOCP::initEventHandler() {
 	HTTPException httpexception;
+	HANDLE srvssocket =(HANDLE) _ServerSocket->getSocket();
+	int maxconnets = _ServerSocket->getMaxconnections();
+	
+	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent())){
+		httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
+		throw httpexception;
+	}
+	
+	try {
+		InitializeCriticalSection(&_CriticalSection);
+	}
+	catch (...) {
+		HTTPException hexception;
+		hexception.Critical("InitializeCriticalSection raised an exception.\n");
+		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
+			WSACloseEvent(_hCleanupEvent[0]);
+			_hCleanupEvent[0] = WSA_INVALID_EVENT;
+		}
+		throw httpexception;
+	}
 }
 
 int libhttppp::IOCP::waitEventHandler() {
@@ -269,32 +289,7 @@ void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
 // }
 // 
 // void libhttppp::IOCP::runEventloop() {
-// 	HTTPException httpexception;
-// 	HANDLE srvssocket =(HANDLE) _ServerSocket->getSocket();
-// 	int maxconnets = _ServerSocket->getMaxconnections();
-// 
-// 	SYSInfo sysinfo;
-// 	DWORD threadcount = sysinfo.getNumberOfProcessors() * 2;
-// 
-// 	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent()))
-// 	{
-// 		httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
-// 		throw httpexception;
-// 	}
-// 
-// 	try {
-// 		InitializeCriticalSection(&_CriticalSection);
-// 	}
-// 	catch (...) {
-// 		HTTPException hexception;
-// 		hexception.Critical("InitializeCriticalSection raised an exception.\n");
-// 		SetConsoleCtrlHandler(CtrlHandler, FALSE);
-// 		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
-// 			WSACloseEvent(_hCleanupEvent[0]);
-// 			_hCleanupEvent[0] = WSA_INVALID_EVENT;
-// 		}
-// 		throw httpexception;
-// 	}
+
 // 
 // 	while (_EventRestartloop) {
 // 		_EventRestartloop = true;
@@ -399,7 +394,7 @@ void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
 // 	}
 // 
 // 	WSACleanup();
-// 	SetConsoleCtrlHandler(CtrlHandler, FALSE);
+// 	
 // }
 // 
 // DWORD WINAPI libhttppp::IOCP::WorkerThread(LPVOID WorkThreadContext) {
@@ -438,22 +433,5 @@ void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
 // }
 // 
 // BOOL WINAPI libhttppp::IOCP::CtrlHandler(DWORD dwEvent) {
-// 	switch (dwEvent) {
-// 	case CTRL_BREAK_EVENT:
-// 		_EventRestartloop = true;
-// 	case CTRL_C_EVENT:
-// 	case CTRL_LOGOFF_EVENT:
-// 	case CTRL_SHUTDOWN_EVENT:
-// 	case CTRL_CLOSE_EVENT:
-// 		_EventEndloop = true;
-// 		break;
-// 
-// 	default:
-// 		//
-// 		// unknown type--better pass it on.
-// 		//
-// 
-// 		return(FALSE);
-// 	}
-// 	return(TRUE);
+
 // }
