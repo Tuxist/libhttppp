@@ -37,8 +37,8 @@ namespace libhttppp {
 		
 		virtual void CTRLCloseEvent()=0;
 		virtual void CTRLBreakEvent()=0;
-	private:
-		BOOL WINAPI CtrlEventHandler(DWORD eventin);
+		static BOOL WINAPI CtrlEventHandler(DWORD eventin);
+		static void		  *CTRLPtr;
 	};
 };
 

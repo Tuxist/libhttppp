@@ -31,6 +31,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <errno.h>
 
+#ifdef  Windows
+#include <Windows.h>
+#include <winsock2.h>
+#include <mswsock.h>
+#endif //  Windows
+
+
 #include "config.h"
 #include "os/os.h"
 #include "../../threadpool.h"
@@ -41,10 +48,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
+	_IOCPCon = new Connection();
 }
 
 libhttppp::IOCP::~IOCP() {
-
+	delete _IOCPCon;
 }
 
 const char * libhttppp::IOCP::getEventType() {
@@ -73,10 +81,80 @@ void libhttppp::IOCP::initEventHandler() {
 		}
 		throw httpexception;
 	}
+
+	_IOCP = CreateIoCompletionPort(srvssocket, _IOCP, (DWORD_PTR)_IOCPCon, 0);
+	if (_IOCP == NULL) {
+		httpexception.Critical("createiocompletionport() failed: %d\n", GetLastError());
+		delete _IOCPCon;
+		_IOCPCon = NULL;
+		throw httpexception;
+	}
+ 
+	if (_IOCPCon == NULL) {
+		httpexception.Critical("failed to update listen socket to iocp\n");
+		throw httpexception;
+	}
 }
 
 int libhttppp::IOCP::waitEventHandler() {
-	return 0;
+	HTTPException httpexception;
+	int nRet = 0;
+	DWORD bytes = 0;
+	DWORD dwrecvnumbytes = 0;
+	GUID acceptex_guid = WSAID_ACCEPTEX;
+	/*
+	// load the acceptex extension function from the provider for this socket
+	nret = wsaioctl(
+		_ServerSocket->getSocket(),
+		sio_get_extension_function_pointer,
+		&acceptex_guid,
+		sizeof(acceptex_guid),
+		&curcxt->fnacceptex,
+		sizeof(curcxt->fnacceptex),
+		&bytes,
+		NULL,
+		NULL
+	);
+ 
+	if (nret == socket_error) {
+		httpexception.Critical("failed to load acceptex: %d\n", wsagetlasterror());
+		throw httpexception;
+	}*/
+// 
+// 		/*disable buffer in clientsocket*/
+// 		try {
+// 			clientsocket *lsock = curcxt->_curconnection->getclientsocket();
+// 			lsock->disablebuffer();
+// 		}
+// 		catch (httpexception &e) {
+// 			if (e.iscritical()) {
+// 				throw e;
+// 			}
+// 		}
+// 
+// 		//
+// 		// pay close attention to these parameters and buffer lengths
+// 		//
+// 
+// 		char buf[blocksize];
+// 		wsaoverlapped *wsaover = new wsaoverlapped;
+// 		nret = curcxt->fnacceptex(_serversocket->getsocket(),
+// 			curcxt->_curconnection->getclientsocket()->getsocket(),
+// 			(lpvoid)(buf),
+// 			blocksize - (2 * (sizeof(sockaddr_storage) + 16)),
+// 			sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16,
+// 			&dwrecvnumbytes,
+// 			(lpoverlapped)wsaover);
+// 
+// 		if (nret == socket_error && (error_io_pending != wsagetlasterror())) {
+// 			httpexception.critical("acceptex() failed: %d\n", wsagetlasterror());
+// 			throw httpexception;
+// 		}
+// 
+// 		iocpconnectiondata *cdat;
+// 		cdat = curcxt->_curconnection->addrecvqueue(buf, dwrecvnumbytes, wsaover);
+	WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
+	return nRet;
 }
 
 /*API Events*/
@@ -100,8 +178,7 @@ void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
 
 //#define DEBUG_MUTEX
 
-// bool libhttppp::IOCP::_EventEndloop = true;
-// bool libhttppp::IOCP::_EventRestartloop = true;
+
 // 
 // libhttppp::IOCPConnectionData::IOCPConnectionData(const char * data, size_t datasize, WSAOVERLAPPED * overlapped) 
 // 	                                                                      : ConnectionData(data, datasize) {
@@ -431,7 +508,4 @@ void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
 // 	}
 // 	return(0);
 // }
-// 
-// BOOL WINAPI libhttppp::IOCP::CtrlHandler(DWORD dwEvent) {
-
-// }
+//

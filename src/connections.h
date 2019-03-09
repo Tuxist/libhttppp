@@ -108,6 +108,10 @@ private:
     friend class ConnectionPool;
 };
 
+class ConnectionPool {
+
+};
+
 class ClientConnection {
 
 };

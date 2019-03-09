@@ -29,24 +29,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ctrlhandler.h"
 
+void *libhttppp::CtrlHandler::CTRLPtr = NULL;
+
 libhttppp::CtrlHandler::CtrlHandler() {
-	SetConsoleCtrlHandler(this->CtrlEventHandler, TRUE);
+	CTRLPtr = this;
+	SetConsoleCtrlHandler(CtrlEventHandler, TRUE);
 }
 
 libhttppp::CtrlHandler::~CtrlHandler() {
-	SetConsoleCtrlHandler(this->CtrlEventHandler, FALSE);
+	SetConsoleCtrlHandler(CtrlEventHandler, FALSE);
 }
 
 BOOL WINAPI libhttppp::CtrlHandler::CtrlEventHandler(DWORD eventin) {
+	CtrlHandler *curobject = (CtrlHandler*)CtrlHandler::CTRLPtr;
 	switch (eventin) {
 		case CTRL_BREAK_EVENT:
-			CTRLBreakEvent();
+			curobject->CTRLBreakEvent();
 			break;
  		case CTRL_C_EVENT:
  		case CTRL_LOGOFF_EVENT:
  		case CTRL_SHUTDOWN_EVENT:
  		case CTRL_CLOSE_EVENT:
-			CTRLCloseEvent();
+			curobject->CTRLCloseEvent();
  			break;
  
 		default:

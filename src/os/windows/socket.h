@@ -52,7 +52,6 @@ private:
     SSL             *_SSL;
     struct sockaddr  _ClientAddr;
 	socklen_t        _ClientAddrLen;
-	HTTPException    _httpexception;
     friend class ServerSocket;
 };
 

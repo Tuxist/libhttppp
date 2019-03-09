@@ -40,10 +40,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/x509.h>
 
 libhttppp::ClientSocket::ClientSocket(){
+  HTTPException httpexception;
   _Socket= WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (_Socket == INVALID_SOCKET) {
-	  _httpexception.Critical("WSASocket(sdSocket) failed: ",WSAGetLastError());
-	  throw _httpexception;
+	  httpexception.Critical("WSASocket(sdSocket) failed: ",WSAGetLastError());
+	  throw httpexception;
   }
   _SSL=NULL;
 }
@@ -59,11 +60,12 @@ void libhttppp::ClientSocket::setnonblocking(){
 }
 
 void libhttppp::ClientSocket::disableBuffer(){
+	HTTPException httpexception;
 	int nzero = 0;
 	int nRet = setsockopt(_Socket, SOL_SOCKET, SO_SNDBUF, (char *)&nzero, sizeof(nzero));
 	if (nRet == SOCKET_ERROR) {
-		_httpexception.Critical("setsockopt(SNDBUF) failed: ", WSAGetLastError());
-		throw _httpexception;
+		httpexception.Critical("setsockopt(SNDBUF) failed: ", WSAGetLastError());
+		throw httpexception;
 	}
 }
 
@@ -147,9 +149,10 @@ void libhttppp::ServerSocket::setnonblocking(){
 }
 
 void libhttppp::ServerSocket::listenSocket(){
+  HTTPException httpexception;
   if(listen(_Socket, _Maxconnections) < 0){
-    _httpexception.Critical("Can't listen Server Socket", errno);
-    throw _httpexception;
+    httpexception.Critical("Can't listen Server Socket", errno);
+    throw httpexception;
   }
 }
 
@@ -162,12 +165,13 @@ int libhttppp::ServerSocket::getMaxconnections(){
 }
 
 SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
+  HTTPException httpexception;
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
   SOCKET socket = accept(_Socket,(struct sockaddr *)&clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket==-1){
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    _httpexception.Error("Can't accept on  Socket",errbuf);
+    httpexception.Error("Can't accept on  Socket",errbuf);
   }
   clientsocket->_Socket=socket;
   if(isSSLTrue()){
@@ -186,6 +190,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 }
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
+  HTTPException httpexception;
   int rval=0;
   if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
@@ -196,9 +201,9 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(rval==-1){
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    _httpexception.Error("Socket sendata:",errbuf);
+    httpexception.Error("Socket sendata:",errbuf);
     if(errno != EAGAIN || errno !=EWOULDBLOCK)
-      throw _httpexception;
+      throw httpexception;
   }
   return rval;
 }
@@ -206,14 +211,15 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 ssize_t libhttppp::ServerSocket::sendWSAData(ClientSocket *socket, WSABUF *data, DWORD size,DWORD flags,
 	                                         LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
 	                                         LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+  HTTPException httpexception;
   int	rval = WSASendTo(socket->getSocket(), data, size, numberofbytessend, flags, &socket->_ClientAddr, 
 	                     socket->_ClientAddrLen,lpOverlapped, lpCompletionRoutine);
   if (rval == -1) {
 	char errbuf[255];
 	strerror_r(errno, errbuf, 255);
-	_httpexception.Error("Socket sendata:", errbuf);
+	httpexception.Error("Socket sendata:", errbuf);
 	if (errno != EAGAIN || errno != EWOULDBLOCK)
-		throw _httpexception;
+		throw httpexception;
   }
   return rval;
 }
@@ -223,6 +229,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 }
 
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
+  HTTPException httpexception;
   ssize_t recvsize=0;
   if(isSSLTrue() && socket->_SSL){
     recvsize=SSL_read(socket->_SSL,data,size);
@@ -233,9 +240,9 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
   if(recvsize==-1){
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    _httpexception.Error("Socket recvata:",errbuf);
+    httpexception.Error("Socket recvata:",errbuf);
     if(errno != EAGAIN || errno !=EWOULDBLOCK){
-      throw _httpexception;
+      throw httpexception;
     }
   }
   return recvsize;
@@ -244,14 +251,15 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 ssize_t libhttppp::ServerSocket::recvWSAData(ClientSocket *socket, WSABUF *data, DWORD size, LPDWORD flags,
 	LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
 	LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
+	HTTPException httpexception;
 	ssize_t recvsize = WSARecvFrom(socket->getSocket(), data, size, numberofbytessend, flags, &socket->_ClientAddr,
 		(LPINT)socket->_ClientAddrLen, lpOverlapped, lpCompletionRoutine);
 	if (recvsize == -1) {
 		char errbuf[255];
 		strerror_r(errno, errbuf, 255);
-		_httpexception.Error("Socket sendata:", errbuf);
+		httpexception.Error("Socket sendata:", errbuf);
 		if (errno != EAGAIN || errno != EWOULDBLOCK)
-			throw _httpexception;
+			throw httpexception;
 	}
 	return recvsize;
 }

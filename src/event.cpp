@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::Event::Event(libhttppp::ServerSocket* serversocket) : CtrlHandler(){
     _EventApi = new EVENT(serversocket);
     _Run=true;
-	_Restart = false;
+	_Restart = true;
 }
 
 libhttppp::Event::~Event(){
@@ -45,12 +45,12 @@ libhttppp::Event::~Event(){
 libhttppp::EventApi::~EventApi(){
 }
 
-void libhttppp::Event::CTRLBreakEvent() {
+void libhttppp::Event::CTRLCloseEvent() {
 	_Run = false;
 }
 
 void libhttppp::Event::CTRLBreakEvent() {
-	_Restart = true;
+	_Restart = false;
 }
 
 void libhttppp::Event::runEventloop(){
@@ -59,14 +59,17 @@ void libhttppp::Event::runEventloop(){
     SYSInfo sysinfo;
     size_t thrs = sysinfo.getNumberOfProcessors();
     ThreadPool thpool;
-    for(size_t i=0; i<thrs; i++) {
-          Thread *th=thpool.addThread();
-          th->Create(WorkerThread,this);
-    }
-    
-    for(Thread *curth=thpool.getfirstThread(); curth; curth=curth->nextThread()) {
-         curth->Join();
-     }
+
+	while (_Restart) {
+		for (size_t i = 0; i < thrs; i++) {
+			Thread *th = thpool.addThread();
+			th->Create(WorkerThread, this);
+		}
+
+		for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
+			curth->Join();
+		}
+	}
 }
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
