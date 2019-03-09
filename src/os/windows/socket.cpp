@@ -39,6 +39,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
+#include "../../exception.h"
+
 libhttppp::ClientSocket::ClientSocket(){
   HTTPException httpexception;
   _Socket= WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
@@ -78,8 +80,9 @@ void libhttppp::ClientSocket::setSocket(SOCKET socket) {
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
-  _httpexception.Critical("ServerSocket","Unix Socket not soppurted by this OS");
-  throw _httpexception;
+  HTTPException httpexception;
+  httpexception.Critical("ServerSocket","Unix Socket not soppurted by this OS");
+  throw httpexception;
 }
 
 
@@ -90,12 +93,13 @@ libhttppp::ServerSocket::ServerSocket(SOCKET socket) {
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
+  HTTPException httpexception;
   _Maxconnections=maxconnections;
   int iResult;
   WSADATA wsaData;
   iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
   if (iResult != 0) {
-	  _httpexception.Critical("WSAStartup failed");
+	  httpexception.Critical("WSAStartup failed");
   }
 
   char port_buffer[6];
@@ -112,8 +116,8 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 
   int s = getaddrinfo(addr, port_buffer, &_SockAddr, &result);
   if (s != 0) {
-	  _httpexception.Critical("getaddrinfo failed ", gai_strerror(s));
-	  throw _httpexception;
+	  httpexception.Critical("getaddrinfo failed ", gai_strerror(s));
+	  throw httpexception;
   }
 
   /* getaddrinfo() returns a list of address structures.
@@ -134,8 +138,8 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   }
 
   if (rp == NULL) {               /* No address succeeded */
-	  _httpexception.Critical("Could not bind\n");
-	  throw _httpexception;
+	  httpexception.Critical("Could not bind\n");
+	  throw httpexception;
   }
   freeaddrinfo(result);
 }

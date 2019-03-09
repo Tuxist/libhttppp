@@ -48,6 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
+	_ServerSocket->setnonblocking();
+	_ServerSocket->listenSocket();
 	_IOCPCon = new Connection();
 }
 
@@ -61,6 +63,7 @@ const char * libhttppp::IOCP::getEventType() {
 
 void libhttppp::IOCP::initEventHandler() {
 	HTTPException httpexception;
+	
 	HANDLE srvssocket =(HANDLE) _ServerSocket->getSocket();
 	int maxconnets = _ServerSocket->getMaxconnections();
 	
@@ -84,7 +87,7 @@ void libhttppp::IOCP::initEventHandler() {
 
 	_IOCP = CreateIoCompletionPort(srvssocket, _IOCP, (DWORD_PTR)_IOCPCon, 0);
 	if (_IOCP == NULL) {
-		httpexception.Critical("createiocompletionport() failed: %d\n", GetLastError());
+		httpexception.Critical("createiocompletionport() failed:", GetLastError());
 		delete _IOCPCon;
 		_IOCPCon = NULL;
 		throw httpexception;

@@ -55,12 +55,12 @@ void libhttppp::Event::CTRLBreakEvent() {
 
 void libhttppp::Event::runEventloop(){
     _Run=true;
-    _EventApi->initEventHandler();
-    SYSInfo sysinfo;
-    size_t thrs = sysinfo.getNumberOfProcessors();
-    ThreadPool thpool;
-
+	_Restart = true;
 	while (_Restart) {
+		ThreadPool thpool;
+		SYSInfo sysinfo;
+		size_t thrs = sysinfo.getNumberOfProcessors();
+		_EventApi->initEventHandler();
 		for (size_t i = 0; i < thrs; i++) {
 			Thread *th = thpool.addThread();
 			th->Create(WorkerThread, this);
