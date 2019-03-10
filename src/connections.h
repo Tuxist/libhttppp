@@ -38,7 +38,6 @@ class mutex;
 };
 
 namespace libhttppp {
-class HTTPException;
 
 class ConnectionData {
 public:

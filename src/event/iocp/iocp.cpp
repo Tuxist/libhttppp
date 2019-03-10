@@ -63,10 +63,12 @@ const char * libhttppp::IOCP::getEventType() {
 
 void libhttppp::IOCP::initEventHandler() {
 	HTTPException httpexception;
-	
-	HANDLE srvssocket =(HANDLE) _ServerSocket->getSocket();
-	int maxconnets = _ServerSocket->getMaxconnections();
-	
+	_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	if (_IOCP == NULL) {
+		httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",GetLastError());
+		throw httpexception;
+	}
+
 	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent())){
 		httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
 		throw httpexception;
@@ -85,7 +87,7 @@ void libhttppp::IOCP::initEventHandler() {
 		throw httpexception;
 	}
 
-	_IOCP = CreateIoCompletionPort(srvssocket, _IOCP, (DWORD_PTR)_IOCPCon, 0);
+	_IOCP = CreateIoCompletionPort((HANDLE)_ServerSocket->getSocket(), _IOCP, (DWORD_PTR)_IOCPCon, 0);
 	if (_IOCP == NULL) {
 		httpexception.Critical("createiocompletionport() failed:", GetLastError());
 		delete _IOCPCon;
