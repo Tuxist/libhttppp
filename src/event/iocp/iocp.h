@@ -39,6 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define IOCP_H
 
 namespace libhttppp {
+	class IOCPConnection : public Connection{
+	private:
+		LPFN_ACCEPTEX fnAcceptEx;
+		friend class IOCP;
+	};
+
 	class IOCP : public EventApi{
 	public:
 		IOCP(ServerSocket *serversocket);
@@ -59,7 +65,7 @@ namespace libhttppp {
 		CRITICAL_SECTION		 _CriticalSection;
 		WSAEVENT				 _hCleanupEvent[1];
 		ServerSocket            *_ServerSocket;
-		Connection              *_IOCPCon;
+		IOCPConnection          *_IOCPCon;
 		ConnectionPool  		*_ConnectionPool;
 	};
 };

@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <iostream>
+
 #include <config.h>
 
 #include "connections.h"
@@ -76,6 +78,10 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
     while(eventptr->_Run){
         int des=eventptr->_EventApi->waitEventHandler();
+		for (int i = 0; i < des; i++) {
+			
+		}
+		std::cout << "test: " << des <<"\n";
     }
 	return NULL;
 }

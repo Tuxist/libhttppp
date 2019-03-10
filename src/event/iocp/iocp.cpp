@@ -50,7 +50,7 @@ libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
-	_IOCPCon = new Connection();
+	_IOCPCon = new IOCPConnection();
 }
 
 libhttppp::IOCP::~IOCP() {
@@ -107,57 +107,53 @@ int libhttppp::IOCP::waitEventHandler() {
 	DWORD bytes = 0;
 	DWORD dwrecvnumbytes = 0;
 	GUID acceptex_guid = WSAID_ACCEPTEX;
-	/*
+
 	// load the acceptex extension function from the provider for this socket
-	nret = wsaioctl(
+	nRet = WSAIoctl(
 		_ServerSocket->getSocket(),
-		sio_get_extension_function_pointer,
+		SIO_GET_EXTENSION_FUNCTION_POINTER,
 		&acceptex_guid,
 		sizeof(acceptex_guid),
-		&curcxt->fnacceptex,
-		sizeof(curcxt->fnacceptex),
+		&_IOCPCon->fnAcceptEx,
+		sizeof(_IOCPCon->fnAcceptEx),
 		&bytes,
 		NULL,
 		NULL
 	);
  
-	if (nret == socket_error) {
-		httpexception.Critical("failed to load acceptex: %d\n", wsagetlasterror());
+	if (nRet == SOCKET_ERROR) {
+		httpexception.Critical("failed to load acceptex: %d\n", WSAGetLastError());
 		throw httpexception;
-	}*/
-// 
-// 		/*disable buffer in clientsocket*/
-// 		try {
-// 			clientsocket *lsock = curcxt->_curconnection->getclientsocket();
-// 			lsock->disablebuffer();
-// 		}
-// 		catch (httpexception &e) {
-// 			if (e.iscritical()) {
-// 				throw e;
-// 			}
-// 		}
-// 
-// 		//
-// 		// pay close attention to these parameters and buffer lengths
-// 		//
-// 
-// 		char buf[blocksize];
-// 		wsaoverlapped *wsaover = new wsaoverlapped;
-// 		nret = curcxt->fnacceptex(_serversocket->getsocket(),
-// 			curcxt->_curconnection->getclientsocket()->getsocket(),
-// 			(lpvoid)(buf),
-// 			blocksize - (2 * (sizeof(sockaddr_storage) + 16)),
-// 			sizeof(sockaddr_storage) + 16, sizeof(sockaddr_storage) + 16,
-// 			&dwrecvnumbytes,
-// 			(lpoverlapped)wsaover);
-// 
-// 		if (nret == socket_error && (error_io_pending != wsagetlasterror())) {
-// 			httpexception.critical("acceptex() failed: %d\n", wsagetlasterror());
-// 			throw httpexception;
-// 		}
-// 
-// 		iocpconnectiondata *cdat;
-// 		cdat = curcxt->_curconnection->addrecvqueue(buf, dwrecvnumbytes, wsaover);
+	}
+
+	/*disable buffer in clientsocket*/
+	try {
+		ClientSocket *lsock = _IOCPCon->getClientSocket();
+		lsock->disableBuffer();
+	}catch (HTTPException &e) {
+		if (e.isCritical()) {
+			throw e;
+		}
+	}
+	//
+	// pay close attention to these parameters and buffer lengths
+	//
+
+	char buf[BLOCKSIZE];
+	WSAOVERLAPPED *wsaover = new WSAOVERLAPPED;
+	nRet = _IOCPCon->fnAcceptEx(_ServerSocket->getSocket(),
+		_IOCPCon->getClientSocket()->getSocket(),
+		(LPVOID)(buf),
+		BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
+		sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
+		&dwrecvnumbytes,
+		(LPOVERLAPPED)wsaover);
+ 
+	if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
+		httpexception.Critical("acceptex() failed: %d\n", WSAGetLastError());
+		throw httpexception;
+	}
+	
 	WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 	return nRet;
 }
