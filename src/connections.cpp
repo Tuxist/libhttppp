@@ -49,16 +49,12 @@ libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
   _DataSize=datasize;
 }
 
-libhttppp::ConnectionData::~ConnectionData(){
+libhttppp::ConnectionData::~ConnectionData() {
   delete _nextConnectionData;
 }
 
 libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   return _ClientSocket;
-}
-
-libhttppp::Connection *libhttppp::Connection::nextConnection(){
-  return _nextConnection; 
 }
 
 /** \brief a method to add Data to Sendqueue
@@ -231,7 +227,6 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 
 libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket;
-  _nextConnection=NULL;
   _ReadDataFirst=NULL;
   _ReadDataLast=NULL;
   _ReadDataSize=0;
@@ -244,71 +239,4 @@ libhttppp::Connection::~Connection(){
   delete _ClientSocket;
   delete _ReadDataFirst;
   delete _SendDataFirst;
-  delete _nextConnection;
-}
-
-
-libhttppp::ConnectionPool::ConnectionPool(ServerSocket *socket){
-  _firstConnection=NULL;
-  _lastConnection=NULL;
-  _ServerSocket=socket;
-  if(!_ServerSocket){
-    _httpexception.Critical("ServerSocket not set!");
-    throw _httpexception;
-  }
-}
-
-libhttppp::ConnectionPool::~ConnectionPool(){
-    delete _firstConnection;
-}
-
-libhttppp::Connection* libhttppp::ConnectionPool::addConnection(){
-  if(!_firstConnection){
-    _firstConnection=new Connection;
-    _lastConnection=_firstConnection;
-  }else{
-    _lastConnection->_nextConnection=new Connection;
-    _lastConnection=_lastConnection->_nextConnection;
-  }
-  Connection *rcon=_lastConnection;
-  return rcon;
-}
-
-libhttppp::Connection* libhttppp::ConnectionPool::delConnection(ClientSocket *clientsocket){
-  return delConnection(getConnection(clientsocket));
-}
-
-libhttppp::Connection* libhttppp::ConnectionPool::delConnection(Connection *delcon){
-  Connection *prevcon=NULL;
-  for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
-    if(curcon==delcon){
-      if(prevcon){
-        prevcon->_nextConnection=curcon->_nextConnection;
-        if(_lastConnection==delcon)
-          _lastConnection=prevcon;
-      }else{
-        _firstConnection=curcon->_nextConnection;
-        if(_lastConnection==delcon)
-          _lastConnection=_firstConnection;
-      }
-      curcon->_nextConnection=NULL;
-      delete curcon;
-      break;
-    }
-    prevcon=curcon;
-  }
-  if(prevcon && prevcon->_nextConnection){
-    return prevcon->_nextConnection;
-  }else{
-    Connection *fcon=_firstConnection;
-    return fcon;
-  }
-}
-
-libhttppp::Connection* libhttppp::ConnectionPool::getConnection(ClientSocket *clientsocket){
-  for(Connection *curcon=_firstConnection; curcon; curcon=curcon->nextConnection()){
-    if(curcon->getClientSocket()==clientsocket)
-      return curcon;
-  }
-  return NULL;
 }

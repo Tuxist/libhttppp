@@ -4,14 +4,14 @@ All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
+	* Redistributions of source code must retain the above copyright
+	  notice, this list of conditions and the following disclaimer.
+	* Redistributions in binary form must reproduce the above copyright
+	  notice, this list of conditions and the following disclaimer in the
+	  documentation and/or other materials provided with the distribution.
+	* Neither the name of the <organization> nor the
+	  names of its contributors may be used to endorse or promote products
+	  derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -25,28 +25,23 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <config.h>
+#include <process.h>
 
-#include "os/os.h"
+#include "sysinfo.h"
 
-#ifndef THREADPOOL_H
-#define THREADPOOL_H
+libhttppp::SYSInfo::SYSInfo() {
+	_SystemInfo = new SYSTEM_INFO;
+	GetSystemInfo(_SystemInfo);
+}
 
-namespace libhttppp {
-   class ThreadPool {
-   public:
-     ThreadPool();
-     ~ThreadPool();
-     Thread *addThread();
-     Thread *delThread(Thread *delthread);
-     
-     Thread *getfirstThread();
-     Thread *getlastThread();
-     
-   private:
-     Thread *_firstThread;
-     Thread *_lastThread;
-   };
-};
+libhttppp::SYSInfo::~SYSInfo() {
+	delete _SystemInfo;
+}
 
-#endif
+DWORD libhttppp::SYSInfo::getNumberOfProcessors() {
+	return _SystemInfo->dwNumberOfProcessors;
+}
+
+int libhttppp::SYSInfo::getPid() {
+	return _getpid();
+}

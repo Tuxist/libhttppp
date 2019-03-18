@@ -25,44 +25,32 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "mutex.h"
+#include <windows.h>
 
-libhttppp::Mutex::Mutex(){
-  _CMutex = (HANDLE)::CreateMutex(0, 0, 0);    
-}
+#include "../../exception.h"
 
+#ifndef THREAD_H
+#define THREAD_H
 
-libhttppp::Mutex::~Mutex(){
-    CloseHandle(_CMutex);
-}
+namespace libhttppp {
+  class ThreadPool;
 
-bool libhttppp::Mutex::trylock(){
-    unsigned long ret = WaitForSingleObject(_CMutex, 0); 
-    if(ret == WAIT_OBJECT_0){
-        return true;
-    } else if(ret == WAIT_TIMEOUT){
-        return false;
-    } else if(ret == WAIT_ABANDONED){
-        ReleaseMutex(_CMutex);
-        _httpexception.Critical("Mutex","Mutex wasn't Released by owned thread");
-        throw _httpexception;
-    } else{
-        return false;
-    }
-}
+  class Thread{
+  public:
+    Thread();
+    ~Thread();
+	void Create(void *function(void*), void *arguments);
+	void Detach();
+	DWORD getThreadID();
+	HANDLE getHandle();
+    void Join();
+    Thread *nextThread();
+  private:
+    HANDLE          _Thread;
+    DWORD           _ThreadId;
+    Thread         *_nextThread;
+    friend class ThreadPool;
+  };
+};
 
-bool libhttppp::Mutex::lock(){ 
-  unsigned long ret = WaitForSingleObject(_CMutex,INFINITE);
-  if(ret != WAIT_OBJECT_0){
-    return false;
-  }
-  return true;
-}
-
-
-bool libhttppp::Mutex::unlock(){
-  if(!ReleaseMutex(_CMutex))
-    return false;
-  else
-    return true;  
-}
+#endif

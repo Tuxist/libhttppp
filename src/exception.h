@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <config.h>
+#include "config.h"
 #include <cstdio>
 
 /*
@@ -115,7 +115,7 @@ namespace libhttppp {
 //      std::fill(buffer,buffer+MSGLEN,NULL);
       snprintf(buffer,MSGLEN,printstyle,description,message);
 #ifdef DEBUG
-      printf("%s\n",buffer);
+      fprintf(stderr,"%s\n",buffer);
 #endif
       return buffer;
     }

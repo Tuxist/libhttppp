@@ -30,7 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "connections.h"
 #include "httpdefinitions.h"
 #include "exception.h"
-#include "event.h"
+#include "eventapi.h"
 
 #ifndef HTTP_H
 #define HTTP_H

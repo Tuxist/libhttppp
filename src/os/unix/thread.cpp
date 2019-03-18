@@ -25,42 +25,69 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "thread.h" 
+#include <errno.h>
+
+#include "thread.h"
+#include <string.h>
 
 libhttppp::Thread::Thread(){
-  _ThreadId = -1;
+  _Pid=-1;
   _nextThread=NULL;
 }
 
 libhttppp::Thread::~Thread(){
+  delete _nextThread;
 }
 
-void libhttppp::Thread::Create(LPTHREAD_START_ROUTINE function, void* arguments) {
-    HTTPException  httpexception;
-	_Thread = CreateThread(NULL, 0, function, arguments, 0, &_ThreadId);
-	if (_Thread == NULL) {
-		httpexception.Critical("Can't create Thread!", GetLastError());
-		throw httpexception;
-	}
+void libhttppp::Thread::Create(void *function(void*), void *arguments) {
+  HTTPException httpexception;
+  int rth = pthread_create(&_Thread, NULL, function, arguments);
+  if (rth != 0) {
+#ifdef __GLIBCXX__
+    char errbuf[255];
+    httpexception.Error("Thread Create",strerror_r(errno, errbuf, 255));
+#else
+    char errbuf[255];
+    strerror_r(errno, errbuf, 255);
+    httpexception.Error("Thread Create",errbuf);
+#endif
+    throw httpexception;
+  }
 }
 
-void libhttppp::Thread::Detach() {
-    HTTPException   httpexception;
-	httpexception.Note("Detach not support by this OS");
+void libhttppp::Thread::Detach(){
+    pthread_detach(_Thread);
 }
 
-DWORD libhttppp::Thread::getThreadID() {
-  return _ThreadId;
+int libhttppp::Thread::getThreadID() {
+    HTTPException httpexception;
+	httpexception.Note("ThreadID not support by this OS");
+	return -1;
 }
 
-HANDLE libhttppp::Thread::getHandle() {
-	return _Thread;
+int libhttppp::Thread::getPid(){
+  return _Pid;  
+}
+
+void libhttppp::Thread::setPid(int pid){
+  _Pid=pid;
 }
 
 void libhttppp::Thread::Join(){
-    WaitForSingleObject(_Thread, INFINITE);
+  if(pthread_join(_Thread,&_Retval)==0){
+    return;  
+  }else{
+    HTTPException httpexception;    
+#ifdef __GLIBCXX__
+    char errbuf[255];
+    httpexception.Error("Can't join Thread",strerror_r(errno, errbuf, 255));
+#else
+    char errbuf[255];
+    strerror_r(errno, errbuf, 255);
+    httpexception.Error("Can't join Thread",errbuf);
+#endif  
+  }
 }
-
 
 libhttppp::Thread *libhttppp::Thread::nextThread(){
     return _nextThread;

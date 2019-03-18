@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define HTTPD_H
 
 namespace libhttppp {
+  class ServerSocket;
   class HTTPDCmd {
   public:
 	  const char *getKey();

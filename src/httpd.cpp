@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 #include <cstdlib>
 
+#include "os/os.h"
 #include "utils.h"
 #include "httpd.h"
 

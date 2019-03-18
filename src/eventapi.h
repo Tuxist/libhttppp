@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright (c) 2018, Jan Koester jan.koester@gmx.net
+Copyright (c) 2014, Jan Koester jan.koester@gmx.net
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,69 +25,27 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <errno.h>
+#include "exception.h"
+#include "config.h"
+#include "os/os.h"
+#include "connections.h"
 
-#include "thread.h"
-#include <string.h>
+#ifndef EVENTAPI_H
+#define EVENTAPI_H
 
-libhttppp::Thread::Thread(){
-  _Pid=-1;
-  _nextThread=NULL;
-}
+namespace libhttppp {
+class EventApi {
+	public:
+		virtual ~EventApi();
+        virtual void initEventHandler()=0;
+        virtual int    waitEventHandler()=0;
+        virtual const char *getEventType()=0;
+        /*HTTP API Events*/
+		virtual void RequestEvent(Connection *curcon)=0;
+		virtual void ResponseEvent(Connection *curcon)=0;
+		virtual void ConnectEvent(Connection *curcon)=0;
+		virtual void DisconnectEvent(Connection *curcon)=0;
+  };
+};
 
-libhttppp::Thread::~Thread(){
-}
-
-void libhttppp::Thread::Create(void *function(void*), void *arguments) {
-  HTTPException httpexception;
-  int rth = pthread_create(&_Thread, NULL, function, arguments);
-  if (rth != 0) {
-#ifdef __GLIBCXX__
-    char errbuf[255];
-    httpexception.Error("Thread Create",strerror_r(errno, errbuf, 255));
-#else
-    char errbuf[255];
-    strerror_r(errno, errbuf, 255);
-    httpexception.Error("Thread Create",errbuf);
 #endif
-    throw httpexception;
-  }
-}
-
-void libhttppp::Thread::Detach(){
-    pthread_detach(_Thread);
-}
-
-int libhttppp::Thread::getThreadID() {
-    HTTPException httpexception;
-	httpexception.Note("ThreadID not support by this OS");
-	return -1;
-}
-
-int libhttppp::Thread::getPid(){
-  return _Pid;  
-}
-
-void libhttppp::Thread::setPid(int pid){
-  _Pid=pid;
-}
-
-void libhttppp::Thread::Join(){
-  if(pthread_join(_Thread,&_Retval)==0){
-    return;  
-  }else{
-    HTTPException httpexception;    
-#ifdef __GLIBCXX__
-    char errbuf[255];
-    httpexception.Error("Can't join Thread",strerror_r(errno, errbuf, 255));
-#else
-    char errbuf[255];
-    strerror_r(errno, errbuf, 255);
-    httpexception.Error("Can't join Thread",errbuf);
-#endif  
-  }
-}
-
-libhttppp::Thread *libhttppp::Thread::nextThread(){
-    return _nextThread;
-}

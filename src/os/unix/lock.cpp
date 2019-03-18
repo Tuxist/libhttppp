@@ -25,58 +25,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "threadpool.h"
+#include "pthread.h"
+#include "lock.h"
 
-libhttppp::ThreadPool::ThreadPool(){
-    _firstThread=NULL;
-    _lastThread=NULL;
+libhttppp::Lock::Lock(){
+   _CLock=0;
 }
 
-libhttppp::ThreadPool::~ThreadPool(){
-    delete _firstThread;
-    _lastThread=NULL;
+libhttppp::Lock::~Lock(){
+
 }
 
-libhttppp::Thread *libhttppp::ThreadPool::addThread(){
-    if(!_firstThread){
-        _firstThread= new Thread;
-        _lastThread=_firstThread;
-    }else{
-        _lastThread->_nextThread=new Thread;
-        _lastThread=_lastThread->_nextThread;
-    }
-    return _lastThread;  
+
+bool libhttppp::Lock::lock(){
+    while(!__sync_bool_compare_and_swap(&_CLock, 0, 1)){
+        sched_yield();
+    } 
+    return true;
 }
 
-libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread){
-    Thread *prevthr=NULL;
-    for(Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread()){
-        if(curthr==delthread){
-            if(prevthr){
-                prevthr->_nextThread=curthr->_nextThread;
-            }
-            if(curthr==_firstThread){
-              _firstThread=curthr->nextThread();  
-            }
-            if(curthr==_lastThread){
-              _lastThread=prevthr;
-            }
-            curthr->_nextThread=NULL;
-            delete curthr;
-        }
-        prevthr=curthr;
-    }
-    if(prevthr)
-        return prevthr->nextThread();
-    else
-        return _firstThread;
+bool libhttppp::Lock::trylock(){
+  if(!__sync_bool_compare_and_swap(&_CLock, 0, 1)){
+     return false; 
+  }
+  return true;
 }
 
-libhttppp::Thread * libhttppp::ThreadPool::getfirstThread(){
-    return _firstThread;
+bool libhttppp::Lock::unlock(){
+  _CLock=0;
 }
 
-libhttppp::Thread * libhttppp::ThreadPool::getlastThread(){
-    return _lastThread;
+bool libhttppp::Lock::isLocked(){
+  if(_CLock==0)
+      return false;
+  return true;
 }
-

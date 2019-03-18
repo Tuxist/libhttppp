@@ -25,58 +25,26 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "threadpool.h"
+#include <windows.h>
+#include <process.h>
 
-libhttppp::ThreadPool::ThreadPool(){
-    _firstThread=NULL;
-    _lastThread=NULL;
+#include "../../exception.h"
+
+#ifndef LOCK_H
+#define LOCK_H
+
+namespace libhttppp {
+  class Lock {
+  public:
+    Lock();
+    ~Lock();
+    bool            trylock();
+    bool            lock();
+    bool            unlock();
+  private:
+    HANDLE           _CLock;
+    HTTPException    _httpexception;
+  };
 }
 
-libhttppp::ThreadPool::~ThreadPool(){
-    delete _firstThread;
-    _lastThread=NULL;
-}
-
-libhttppp::Thread *libhttppp::ThreadPool::addThread(){
-    if(!_firstThread){
-        _firstThread= new Thread;
-        _lastThread=_firstThread;
-    }else{
-        _lastThread->_nextThread=new Thread;
-        _lastThread=_lastThread->_nextThread;
-    }
-    return _lastThread;  
-}
-
-libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread){
-    Thread *prevthr=NULL;
-    for(Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread()){
-        if(curthr==delthread){
-            if(prevthr){
-                prevthr->_nextThread=curthr->_nextThread;
-            }
-            if(curthr==_firstThread){
-              _firstThread=curthr->nextThread();  
-            }
-            if(curthr==_lastThread){
-              _lastThread=prevthr;
-            }
-            curthr->_nextThread=NULL;
-            delete curthr;
-        }
-        prevthr=curthr;
-    }
-    if(prevthr)
-        return prevthr->nextThread();
-    else
-        return _firstThread;
-}
-
-libhttppp::Thread * libhttppp::ThreadPool::getfirstThread(){
-    return _firstThread;
-}
-
-libhttppp::Thread * libhttppp::ThreadPool::getlastThread(){
-    return _lastThread;
-}
-
+#endif

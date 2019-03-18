@@ -25,37 +25,44 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "mutex.h"
+#include "thread.h" 
 
-libhttppp::Mutex::Mutex(){
-   _CMutex = new pthread_mutex_t;
-   *_CMutex = (pthread_mutex_t)PTHREAD_MUTEX_INITIALIZER;
-   pthread_mutex_init(_CMutex, NULL);
+libhttppp::Thread::Thread(){
+  _ThreadId = -1;
+  _nextThread=NULL;
 }
 
-libhttppp::Mutex::~Mutex(){
-  pthread_mutex_destroy(_CMutex);
-  delete _CMutex;
+libhttppp::Thread::~Thread(){
+  delete _nextThread;
+}
+
+void libhttppp::Thread::Create(void* function(void*), void* arguments) {
+    HTTPException  httpexception;
+	_Thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, arguments, 0, &_ThreadId);
+	if (_Thread == NULL) {
+		httpexception.Critical("Can't create Thread!", GetLastError());
+		throw httpexception;
+	}
+}
+
+void libhttppp::Thread::Detach() {
+    HTTPException   httpexception;
+	httpexception.Note("Detach not support by this OS");
+}
+
+DWORD libhttppp::Thread::getThreadID() {
+  return _ThreadId;
+}
+
+HANDLE libhttppp::Thread::getHandle() {
+	return _Thread;
+}
+
+void libhttppp::Thread::Join(){
+    WaitForSingleObject(_Thread, INFINITE);
 }
 
 
-bool libhttppp::Mutex::lock(){
-  if(pthread_mutex_lock(_CMutex)==0)
-    return true;
-  else
-    return false; 
-}
-
-bool libhttppp::Mutex::trylock(){
-  if(pthread_mutex_trylock(_CMutex)==0)
-    return true;
-  else
-    return false; 
-}
-
-bool libhttppp::Mutex::unlock(){
-  if(pthread_mutex_unlock(_CMutex)==0)
-    return true;
-  else
-    return false; 
+libhttppp::Thread *libhttppp::Thread::nextThread(){
+    return _nextThread;
 }

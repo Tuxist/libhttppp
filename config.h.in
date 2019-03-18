@@ -19,6 +19,10 @@
 
 #define ${CMAKE_SYSTEM_NAME}
 
+#define EVENT ${EVENT}
+
+#define EVENT_HEADER ${EVENT_HEADER}
+
 #define BLOCKSIZE 16384
 
 #define PATHSIZE 1024

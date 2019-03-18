@@ -25,32 +25,24 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <windows.h>
-
 #include "../../exception.h"
 
-#ifndef THREAD_H
-#define THREAD_H
+#ifndef MUTEX_H
+#define MUTEX_H
 
 namespace libhttppp {
-  class ThreadPool;
-
-  class Thread{
+  class Lock {
   public:
-    Thread();
-    ~Thread();
-	void Create(LPTHREAD_START_ROUTINE function, void *arguments);
-	void Detach();
-	DWORD getThreadID();
-	HANDLE getHandle();
-    void Join();
-    Thread *nextThread();
+    Lock();
+    ~Lock();
+    bool            trylock();
+    bool            lock();
+    bool            unlock();
+    bool            isLocked();
   private:
-    HANDLE          _Thread;
-    DWORD           _ThreadId;
-    Thread         *_nextThread;
-    friend class ThreadPool;
+    int              _CLock;
+    HTTPException    _httpexception;
   };
-};
+}
 
 #endif

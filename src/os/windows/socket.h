@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdio>
 
 #include "../../https.h"
-#include "exception.h"
 
 #ifndef SOCKET_H
 #define SOCKET_H
@@ -52,7 +51,6 @@ private:
     SSL             *_SSL;
     struct sockaddr  _ClientAddr;
 	socklen_t        _ClientAddrLen;
-	HTTPException    _httpexception;
     friend class ServerSocket;
 };
 
@@ -87,7 +85,6 @@ private:
     SOCKET          _Socket;
     int             _Port;
     int             _Maxconnections;
-    HTTPException   _httpexception;
 };
 };
 #endif

@@ -14,35 +14,29 @@ set(libhttpSrcs
   https.cpp
   base64.cpp
   utils.cpp
+  event.cpp
 )
 
 #os dependencies
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  list(APPEND libhttpSrcs "os/Windows/socket.cpp")
-  list(APPEND libhttpSrcs "os/Windows/mutex.cpp")
-  list(APPEND libhttpSrcs "os/Windows/thread.cpp")
-  list(APPEND libhttpSrcs "os/Windows/sysinfo.cpp")
+  list(APPEND libhttpSrcs "os/windows/socket.cpp")
+  list(APPEND libhttpSrcs "os/windows/lock.cpp")
+  list(APPEND libhttpSrcs "os/windows/thread.cpp")
+  list(APPEND libhttpSrcs "os/windows/sysinfo.cpp")
+  list(APPEND libhttpSrcs "os/windows/ctrlhandler.cpp")
 ELSE()
-  list(APPEND libhttpSrcs "os/Unix/socket.cpp")
-  list(APPEND libhttpSrcs "os/Unix/mutex.cpp")
-  list(APPEND libhttpSrcs "os/Unix/thread.cpp")
-  list(APPEND libhttpSrcs "os/Unix/sysinfo.cpp")
+  list(APPEND libhttpSrcs "os/unix/socket.cpp")
+  list(APPEND libhttpSrcs "os/unix/lock.cpp")
+  list(APPEND libhttpSrcs "os/unix/thread.cpp")
+  list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
 ENDIF()
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-   ADD_DEFINITIONS(-DWIN)
-   ADD_DEFINITIONS(-DEVENT_IOCP)
-   list(APPEND libhttpSrcs "event/iocp.cpp")
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-   ADD_DEFINITIONS(-DEVENT_EPOLL)
-   list(APPEND libhttpSrcs "event/epoll.cpp")
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
-       ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-   ADD_DEFINITIONS(-DEVENT_KQUEUE)
-   list(APPEND libhttpSrcs "event/kqueue.cpp")
-ELSE()
-   list(APPEND libhttpSrcs "event/select.cpp")
-   ADD_DEFINITIONS(-DEVENT_SELECT)
+IF(${EVENT} MATCHES "IOCP")
+  list(APPEND libhttpSrcs "event/iocp/iocp.cpp")
+ELSEIF(${EVENT} MATCHES "EPOLL")
+  list(APPEND libhttpSrcs "event/epoll/epoll.cpp")
+ELSEIF(${EVENT} MATCHES "KQUEUE")
+  list(APPEND libhttpSrcs "event/kqueue/kqueue.cpp")
 ENDIF()
 
 include_directories(
@@ -97,26 +91,33 @@ install(FILES os/os.h
         DESTINATION include/httppp/os
         COMPONENT Devel
 )
+
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 install(FILES os/Windows/inttype.h 
               os/Windows/socket.h
-              os/Windows/mutex.h
+              os/Windows/lock.h
               os/Windows/thread.h
 			  os/Windows/sysinfo.h
+			  os/event/iocp/iocp.h
         DESTINATION include/httppp/os/Windows
         COMPONENT Devel
 )
 ELSE()
 install(FILES os/Unix/inttype.h 
               os/Unix/socket.h
-              os/Unix/mutex.h
+              os/Unix/lock.h
               os/Unix/thread.h
               os/Unix/sysinfo.h
+	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+			  os/event/event/epoll.h
+	ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
+       ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+	          os/event/event/kqueue.h
+	ENDIF()
         DESTINATION include/httppp/os/Unix
         COMPONENT Devel
 )
 ENDIF()
-
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(

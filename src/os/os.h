@@ -1,20 +1,21 @@
 #ifndef OS_H
 #define OS_H
 
-#include <config.h>
+#include "config.h"
 
 #ifdef Windows
-  #include "Windows/socket.h"
-  #include "Windows/inttype.h"
-  #include "Windows/mutex.h"
-  #include "Windows/thread.h"
-  #include "Windows/sysinfo.h"
+  #include "windows/socket.h"
+  #include "windows/inttype.h"
+  #include "windows/lock.h"
+  #include "windows/thread.h"
+  #include "windows/sysinfo.h"
+  #include "windows/ctrlhandler.h"
 #else
-  #include "Unix/socket.h"
-  #include "Unix/inttype.h"
-  #include "Unix/mutex.h"
-  #include "Unix/thread.h"
-  #include "Unix/sysinfo.h"
+  #include "unix/socket.h"
+  #include "unix/inttype.h"
+  #include "unix/lock.h"
+  #include "unix/thread.h"
+  #include "unix/sysinfo.h"
 #endif
 
 #endif
