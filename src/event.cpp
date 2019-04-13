@@ -76,12 +76,16 @@ void libhttppp::Event::runEventloop(){
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
-    while(eventptr->_Run){
+	while (eventptr->_Run) {
+#ifdef EVENT_IOCP
+		int buffer= eventptr->_EventApi->waitEventHandler();
+#else
         int des=eventptr->_EventApi->waitEventHandler();
 		for (int i = 0; i < des; i++) {
 			
 		}
 		std::cout << "test: " << des <<"\n";
+#endif
     }
 	return NULL;
 }
