@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "http.h"
 #include "httpd.h"
+#include "utils.h"
 
 class Controller : public libhttppp::Event {
 public:
@@ -44,7 +45,7 @@ public:
      libhttppp::HttpRequest curreq;
      curreq.parse(curcon);
      const char *cururl=curreq.getRequestURL();
-     if(strncmp(cururl,"/",getlen(cururl))==0){
+     if(strncmp(cururl,"/",libhttppp::getlen(cururl))==0){
        libhttppp::HttpResponse curres;
        curres.setState(HTTP200);
        curres.setVersion(HTTPVERSION(1.1));
@@ -64,8 +65,8 @@ public:
        condat  << "</ul></body></html>";
        std::string buffer=condat.str();
        curres.send(curcon,buffer.c_str(),buffer.length());
-     }else if(strncmp(cururl,"/httpbasicauth",getlen(cururl))==0 ||
-              strncmp(cururl,"/httpdigestauth",getlen(cururl))==0){
+     }else if(strncmp(cururl,"/httpbasicauth",libhttppp::getlen(cururl))==0 ||
+              strncmp(cururl,"/httpdigestauth",libhttppp::getlen(cururl))==0){
        libhttppp::HttpAuth httpauth;
        httpauth.parse(&curreq);
        const char *username=httpauth.getUsername();
@@ -82,9 +83,9 @@ public:
          curres.setState(HTTP401);
          curres.setVersion(HTTPVERSION(1.1));
          curres.setContentType(NULL);
-         if(strncmp(cururl,"/httpbasicauth",getlen(cururl))==0){
+         if(strncmp(cururl,"/httpbasicauth",libhttppp::getlen(cururl))==0){
            httpauth.setAuthType(BASICAUTH);
-         }else if(strncmp(cururl,"/httpdigestauth",getlen(cururl))==0){
+         }else if(strncmp(cururl,"/httpdigestauth",libhttppp::getlen(cururl))==0){
            httpauth.setAuthType(DIGESTAUTH);
          }
          httpauth.setRealm("httpauthtest");

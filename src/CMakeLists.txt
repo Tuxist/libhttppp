@@ -29,6 +29,7 @@ ELSE()
   list(APPEND libhttpSrcs "os/unix/lock.cpp")
   list(APPEND libhttpSrcs "os/unix/thread.cpp")
   list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
+  list(APPEND libhttpSrcs "os/unix/ctrlhandler.cpp")
 ENDIF()
 
 IF(${EVENT} MATCHES "IOCP")
