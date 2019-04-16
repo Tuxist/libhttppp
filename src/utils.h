@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace libhttppp {
    const char *scopy(const char* first, const char* last, char* des);
+   unsigned int getlen(const char *str);
 };
 
 #endif

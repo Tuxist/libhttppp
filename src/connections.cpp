@@ -199,7 +199,7 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
 
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
 			    const char* keyword){
-  return searchValue(startblock, findblock, keyword,strlen(keyword));
+  return searchValue(startblock, findblock, keyword,getlen(keyword));
 }
 
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 

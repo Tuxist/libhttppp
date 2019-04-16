@@ -35,6 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "os/os.h"
 #include "eventapi.h"
 
+#define EVENT_IOCP
+
 #ifndef IOCP_H
 #define IOCP_H
 

@@ -71,7 +71,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
  _UXSocketAddr = new sockaddr_un;
   _UXSocketAddr->sun_family = AF_UNIX;
   try {
-    std::copy(uxsocket,uxsocket+strlen(uxsocket),_UXSocketAddr->sun_path);
+    std::copy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
   }catch(...){
      _httpexception.Critical("Can't copy Server UnixSocket");
      throw _httpexception;

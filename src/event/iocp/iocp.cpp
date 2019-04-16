@@ -65,7 +65,8 @@ void libhttppp::IOCP::initEventHandler() {
 	HTTPException httpexception;
 	_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (_IOCP == NULL) {
-		httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",GetLastError());
+		httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",
+			GetLastError());
 		throw httpexception;
 	}
 

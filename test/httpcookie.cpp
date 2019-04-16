@@ -66,7 +66,7 @@ public:
     if(curform.getUrlcodedFormData()){
        for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
            cururlform=cururlform->nextUrlcodedFormData()){
-         if(strncmp(key,cururlform->getKey(),strlen(key))==0)
+         if(strncmp(key,cururlform->getKey(),getlen(key))==0)
            return cururlform->getValue();
        }
      }
@@ -79,7 +79,7 @@ public:
     if(curform.getUrlcodedFormData()){
        for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
            cururlform=cururlform->nextUrlcodedFormData()){
-         if(strncmp(key,cururlform->getKey(),strlen(key))==0)
+         if(strncmp(key,cururlform->getKey(),getlen(key))==0)
            return atoi(cururlform->getValue());
        }
      }

@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../eventapi.h"
 
+#define EVENT_EPOLL
+
 #ifndef EPOLL_H
 #define EPOLL_H
 

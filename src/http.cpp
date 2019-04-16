@@ -29,7 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "base64.h"
 #include "utils.h"
 
-#include <cstring>
 #include <sstream>
 #include <openssl/rand.h>
 
@@ -105,11 +104,11 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
   if(pos){
     delete[] pos->_Key;
     delete[] pos->_Value;
-    pos->_Keylen=strlen(key);
+    pos->_Keylen=getlen(key);
     pos->_Key=new char[pos->_Keylen+1];
     scopy(key,key+(pos->_Keylen+1),pos->_Key);
     if(value){
-      pos->_Valuelen=strlen(value);
+      pos->_Valuelen=getlen(value);
       pos->_Value=new char[pos->_Valuelen+1];
       scopy(value,value+(pos->_Valuelen+1),pos->_Value);
     }
@@ -180,11 +179,11 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
     throw _httpexception;
   }
   _nextHeaderData=NULL;
-  _Keylen=strlen(key);
+  _Keylen=getlen(key);
   _Key=new char[_Keylen+1];
   scopy(key,key+(_Keylen+1),_Key);
   if(value){
-    _Valuelen=strlen(value);
+    _Valuelen=getlen(value);
     _Value=new char[_Valuelen+1];
     scopy(value,value+(_Valuelen+1),_Value);
   }else{
@@ -215,7 +214,7 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
     _httpexception.Error("http state not set don't do that !!!");
     throw _httpexception;
   }
-  size_t hlen=strlen(httpstate);
+  size_t hlen=getlen(httpstate);
   if(hlen>254){
     _httpexception.Error("http state with over 255 signs sorry your are drunk !");
     throw _httpexception;
@@ -240,7 +239,7 @@ void libhttppp::HttpResponse::setConnection(const char* type){
 void libhttppp::HttpResponse::setVersion(const char* version){
   if(version==NULL)
     throw "http version not set don't do that !!!";
-  size_t vlen=strlen(version);
+  size_t vlen=getlen(version);
   if(vlen>254)
     throw "http version with over 255 signs sorry your are drunk !";
   _VersionLen=vlen;
@@ -252,7 +251,7 @@ void libhttppp::HttpResponse::parse(ClientConnection *curconnection){
 }
 
 void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
-  send(curconnection,data,strlen(data));
+  send(curconnection,data,getlen(data));
 }
 
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
@@ -498,8 +497,8 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   size_t ctendpos=0;
   const char *boundary="boundary=\0";
   size_t bdpos=0;
-  for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
-    if(bdpos==(strlen(boundary)-1)){
+  for(size_t cpos=0; cpos<getlen(contenttype); cpos++){
+    if(bdpos==(getlen(boundary)-1)){
       break;
     }else if(contenttype[cpos]==boundary[bdpos]){
       if(ctstartpos==0)
@@ -510,15 +509,15 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
       ctstartpos=0;
     }
   }
-  for(size_t cpos=ctstartpos; cpos<strlen(contenttype); cpos++){
+  for(size_t cpos=ctstartpos; cpos<getlen(contenttype); cpos++){
       if(contenttype[cpos]==';'){
           ctendpos=cpos;
       }
   }
   if(ctendpos==0)
-    ctendpos=strlen(contenttype);
+    ctendpos=getlen(contenttype);
   /*cut boundary=*/
-  ctstartpos+=strlen(boundary);
+  ctstartpos+=getlen(boundary);
   if(_Boundary)
     delete[] _Boundary;
   _BoundarySize=(ctendpos-ctstartpos);
@@ -582,7 +581,7 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   _Elements++;
   MultipartFormData *curmultipartformdata=addMultipartFormData();
   const char *windelimter="\r\n\r\n";
-  size_t windelimtersize=strlen(windelimter);
+  size_t windelimtersize=getlen(windelimter);
   size_t fpos=0,fendpos=0,fcurpos=0;
   for(size_t dp=0; dp<sectionsize; dp++){
     if(windelimter[fcurpos]==section[dp]){
@@ -696,7 +695,7 @@ libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm:
 }
 
 void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
-  size_t dislen=strlen(disposition);
+  size_t dislen=getlen(disposition);
   
   for(size_t dpos=0; dpos<dislen; dpos++){
     if(disposition[dpos]==';' || disposition[dpos]=='\r'){
@@ -710,7 +709,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   }
   
   const char *namedelimter="name=\"";
-  ssize_t namedelimtersize=strlen(namedelimter);
+  ssize_t namedelimtersize=getlen(namedelimter);
   ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
   for(size_t dp=0; dp<dislen; dp++){
     if(namedelimter[fcurpos]==disposition[dp]){
@@ -743,7 +742,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   }
   
   const char *filenamedelimter="filename=\"";
-  ssize_t filenamedelimtersize=strlen(filenamedelimter);
+  ssize_t filenamedelimtersize=getlen(filenamedelimter);
   ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
   for(size_t dp=0; dp<dislen; dp++){
     if(filenamedelimter[filecurpos]==disposition[dp]){
@@ -790,7 +789,7 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
   if(!key)
     return NULL;
   for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
-    if(strncmp(curcontent->getKey(),key,strlen(key))==0){
+    if(strncmp(curcontent->getKey(),key,getlen(key))==0){
       return curcontent->getValue();
     }
   }
@@ -810,13 +809,13 @@ libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const c
   if(!key || !value)
     return;
   
-  _Key=new char[strlen(key)+1];
-  scopy(key,key+strlen(key),_Key);
-  _Key[strlen(key)]='\0';
+  _Key=new char[getlen(key)+1];
+  scopy(key,key+getlen(key),_Key);
+  _Key[getlen(key)]='\0';
   
-  _Value=new char[strlen(value)+1];
-  scopy(value,value+strlen(value),_Value);
-  _Value[strlen(value)]='\0';
+  _Value=new char[getlen(value)+1];
+  scopy(value,value+getlen(value),_Value);
+  _Value[getlen(value)]='\0';
 }
 
 libhttppp::HttpForm::MultipartFormData::Content::~Content(){
@@ -863,23 +862,23 @@ char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getName(){
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setDisposition(const char* disposition){
   delete[] _Disposition;
-  _Disposition=new char[strlen(disposition)+1];
-  scopy(disposition,disposition+strlen(disposition),_Disposition);
-  _Disposition[strlen(disposition)]='\0';
+  _Disposition=new char[getlen(disposition)+1];
+  scopy(disposition,disposition+getlen(disposition),_Disposition);
+  _Disposition[getlen(disposition)]='\0';
 }
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setName(const char* name){
   delete[] _Name;
-  _Name=new char[strlen(name)+1];
-  scopy(name,name+strlen(name),_Name);
-  _Name[strlen(name)]='\0';
+  _Name=new char[getlen(name)+1];
+  scopy(name,name+getlen(name),_Name);
+  _Name[getlen(name)]='\0';
 }
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(const char* filename){
   delete[] _Filename;
-  _Filename=new char[strlen(filename)+1];
-  scopy(filename,filename+strlen(filename),_Filename);
-  _Filename[strlen(filename)]='\0';
+  _Filename=new char[getlen(filename)+1];
+  scopy(filename,filename+getlen(filename),_Filename);
+  _Filename[getlen(filename)]='\0';
 }
 
 void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
@@ -891,7 +890,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
       formdat[rsize]='\0';
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequestURL();
-      size_t rurlsize=strlen(rurl);
+      size_t rurlsize=getlen(rurl);
       ssize_t rdelimter=-1;
       for(size_t cpos=0; cpos<rurlsize; cpos++){
         if(rurl[cpos]=='?'){
@@ -913,7 +912,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   }
   size_t fdatstpos=0;
   size_t keyendpos=0;
-  for(size_t fdatpos=0; fdatpos<strlen(formdat)+1; fdatpos++){
+  for(size_t fdatpos=0; fdatpos<getlen(formdat)+1; fdatpos++){
     switch(formdat[fdatpos]){
         case '&': case '\0':{
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
@@ -927,8 +926,8 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
 
             char *urldecdValue;
             char *urldecdKey;
-            urlDecode(value,strlen(value),&urldecdValue);
-            urlDecode(key,strlen(key),&urldecdKey);
+            urlDecode(value,getlen(value),&urldecdValue);
+            urlDecode(key,getlen(key),&urldecdKey);
 
             UrlcodedFormData *newenrty;
             newenrty=addUrlcodedFormData();
@@ -952,17 +951,17 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
 void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
   if(_Key)
     delete[] _Key;
-  _Key=new char [strlen(key)+1];
-  scopy(key,key+strlen(key),_Key);
-  _Key[strlen(key)]='\0';  
+  _Key=new char [getlen(key)+1];
+  scopy(key,key+getlen(key),_Key);
+  _Key[getlen(key)]='\0';  
 }
 
 void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
   if(_Value)
     delete[] _Value;
-  _Value=new char [strlen(value)+1];
-  scopy(value,value+strlen(value),_Value);
-  _Value[strlen(value)]='\0'; 
+  _Value=new char [getlen(value)+1];
+  scopy(value,value+getlen(value),_Value);
+  _Value[getlen(value)]='\0'; 
 }
 
 const char *libhttppp::HttpForm::UrlcodedFormData::getKey(){
@@ -1077,7 +1076,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   size_t keyendpos=0;
   size_t startpos=0;
   
-  for(size_t cpos=0; cpos < strlen(cdat)+1; cpos++){
+  for(size_t cpos=0; cpos < getlen(cdat)+1; cpos++){
     if(cdat[cpos]=='='){
       keyendpos=cpos;  
     }
@@ -1147,14 +1146,14 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
     _Authtype=DIGESTAUTH;
   switch(_Authtype){
     case BASICAUTH:{
-      size_t base64strsize=strlen(authstr+6);
+      size_t base64strsize=getlen(authstr+6);
       char *base64str=new char[base64strsize+1];
-      scopy(authstr+6,authstr+(strlen(authstr)+1),base64str);
+      scopy(authstr+6,authstr+(getlen(authstr)+1),base64str);
       Base64 base64;
       char *clearstr=new char[base64.Decodelen(base64str)];
-      size_t clearstrlen=base64.Decode(clearstr,base64str);
+      size_t cleargetlen=base64.Decode(clearstr,base64str);
       delete[] base64str;
-      for(size_t clearpos=0; clearpos<clearstrlen; clearpos++){
+      for(size_t clearpos=0; clearpos<cleargetlen; clearpos++){
          if(clearstr[clearpos]==':'){
             char *usernm=new char[clearpos+1];
             scopy(clearstr,clearstr+clearpos,usernm);
@@ -1167,7 +1166,7 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
       delete[] clearstr;
     };
     case DIGESTAUTH:{
-      for(size_t authstrpos=7; authstrpos<strlen(authstr)+1; authstrpos++){
+      for(size_t authstrpos=7; authstrpos<getlen(authstr)+1; authstrpos++){
         switch(authstr[authstrpos]){
           case '\0':{
         
@@ -1222,7 +1221,7 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
   if(_Realm)
     delete[] _Realm;
   if(realm){
-    size_t realmsize=strlen(realm);
+    size_t realmsize=getlen(realm);
     _Realm=new char [realmsize+1];
     scopy(realm,realm+realmsize,_Realm);
     _Realm[realmsize]='\0';
@@ -1234,7 +1233,7 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
 void libhttppp::HttpAuth::setUsername(const char* username){
   if(_Username)
     delete[] _Username;
-  size_t usernamelen=strlen(username);
+  size_t usernamelen=getlen(username);
   _Username=new char[usernamelen+1];
   scopy(username,username+(usernamelen+1),_Username);
 }
@@ -1242,7 +1241,7 @@ void libhttppp::HttpAuth::setUsername(const char* username){
 void libhttppp::HttpAuth::setPassword(const char* password){
   if(_Password)
     delete[] _Password;
-  size_t passwordlen=strlen(password);
+  size_t passwordlen=getlen(password);
   _Password=new char[passwordlen+1];
   scopy(password,password+(passwordlen+1),_Password);
 }
