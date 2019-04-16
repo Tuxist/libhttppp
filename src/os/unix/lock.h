@@ -27,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../exception.h"
 
-#ifndef MUTEX_H
-#define MUTEX_H
+#ifndef LOCK_H
+#define LOCK_H
 
 namespace libhttppp {
   class Lock {

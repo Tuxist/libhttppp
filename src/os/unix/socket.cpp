@@ -25,8 +25,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "socket.h"
-
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <sys/fcntl.h>
@@ -39,6 +37,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include <openssl/x509.h>
+
+#include "utils.h"
+#include "socket.h"
+
 
 libhttppp::ClientSocket::ClientSocket(){
   _Socket = 0;

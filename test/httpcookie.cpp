@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "http.h"
 #include "httpd.h"
+#include "utils.h"
 
 class CookieTest {
 public:
@@ -66,7 +67,7 @@ public:
     if(curform.getUrlcodedFormData()){
        for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
            cururlform=cururlform->nextUrlcodedFormData()){
-         if(strncmp(key,cururlform->getKey(),getlen(key))==0)
+         if(strncmp(key,cururlform->getKey(),libhttppp::getlen(key))==0)
            return cururlform->getValue();
        }
      }
@@ -79,7 +80,7 @@ public:
     if(curform.getUrlcodedFormData()){
        for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
            cururlform=cururlform->nextUrlcodedFormData()){
-         if(strncmp(key,cururlform->getKey(),getlen(key))==0)
+         if(strncmp(key,cururlform->getKey(),libhttppp::getlen(key))==0)
            return atoi(cururlform->getValue());
        }
      }
