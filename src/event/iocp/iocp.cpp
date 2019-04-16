@@ -61,6 +61,10 @@ const char * libhttppp::IOCP::getEventType() {
 
 void libhttppp::IOCP::initEventHandler() {
 	HTTPException httpexception;
+	int nRet = 0;
+	DWORD bytes = 0;
+	DWORD dwrecvnumbytes = 0;
+	GUID acceptex_guid = WSAID_ACCEPTEX;
 	_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (_IOCP == NULL) {
 		httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",
@@ -94,11 +98,6 @@ void libhttppp::IOCP::initEventHandler() {
 		httpexception.Critical("createiocompletionport() failed:", GetLastError());
 		throw httpexception;
 	}
-
-	int nRet = 0;
-	DWORD bytes = 0;
-	DWORD dwrecvnumbytes = 0;
-	GUID acceptex_guid = WSAID_ACCEPTEX;
 
 	// load the acceptex extension function from the provider for this socket
 	nRet = WSAIoctl(
@@ -147,6 +146,8 @@ void libhttppp::IOCP::initEventHandler() {
 		httpexception.Critical("acceptex() failed: %d\n", WSAGetLastError());
 		throw httpexception;
 	}
+
+	
 }
 
 int libhttppp::IOCP::waitEventHandler() {

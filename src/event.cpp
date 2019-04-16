@@ -67,7 +67,10 @@ void libhttppp::Event::runEventloop(){
 			Thread *th = thpool.addThread();
 			th->Create(WorkerThread, this);
 		}
-
+#ifdef EVENT_IOCP
+		int buffer = _EventApi->waitEventHandler();
+		std::cout << "test: " << buffer << "\n";
+#endif
 		for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
 			curth->Join();
 		}
@@ -78,8 +81,7 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
 	while (eventptr->_Run) {
 #ifdef EVENT_IOCP
-		int buffer= eventptr->_EventApi->waitEventHandler();
-		std::cout << "test: " << buffer << "\n";
+
 #else
         int des=eventptr->_EventApi->waitEventHandler();
 		for (int i = 0; i < des; i++) {

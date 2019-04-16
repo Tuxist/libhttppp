@@ -44,6 +44,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::ClientSocket::ClientSocket(){
   HTTPException httpexception;
   Socket= INVALID_SOCKET;
+  Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
+  if (Socket == INVALID_SOCKET) {
+	  httpexception.Critical("Clientsocket failed to create error: ", WSAGetLastError());
+	  throw httpexception;
+  }
   _SSL=NULL;
 }
 
