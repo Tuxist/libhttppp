@@ -79,12 +79,12 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
 	while (eventptr->_Run) {
 #ifdef EVENT_IOCP
 		int buffer= eventptr->_EventApi->waitEventHandler();
+		std::cout << "test: " << buffer << "\n";
 #else
         int des=eventptr->_EventApi->waitEventHandler();
 		for (int i = 0; i < des; i++) {
 			
 		}
-		std::cout << "test: " << des <<"\n";
 #endif
     }
 	return NULL;

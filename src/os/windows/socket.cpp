@@ -43,40 +43,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::ClientSocket::ClientSocket(){
   HTTPException httpexception;
-  _Socket= WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
-  if (_Socket == INVALID_SOCKET) {
-	  httpexception.Critical("WSASocket(sdSocket) failed: ",WSAGetLastError());
-	  throw httpexception;
-  }
+  Socket= INVALID_SOCKET;
   _SSL=NULL;
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-  shutdown(_Socket,SD_BOTH);
+  shutdown(Socket,SD_BOTH);
   SSL_free(_SSL);
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
   u_long bmode=1;
-  ioctlsocket(_Socket,FIONBIO,&bmode);
+  ioctlsocket(Socket,FIONBIO,&bmode);
 }
 
 void libhttppp::ClientSocket::disableBuffer(){
 	HTTPException httpexception;
 	int nzero = 0;
-	int nRet = setsockopt(_Socket, SOL_SOCKET, SO_SNDBUF, (char *)&nzero, sizeof(nzero));
+	int nRet = setsockopt(Socket, SOL_SOCKET, SO_SNDBUF, (char *)&nzero, sizeof(nzero));
 	if (nRet == SOCKET_ERROR) {
 		httpexception.Critical("setsockopt(SNDBUF) failed: ", WSAGetLastError());
 		throw httpexception;
 	}
-}
-
-SOCKET libhttppp::ClientSocket::getSocket(){
-  return _Socket;
-}
-
-void libhttppp::ClientSocket::setSocket(SOCKET socket) {
-   _Socket=socket;
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
@@ -177,7 +165,7 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
     strerror_r(errno, errbuf, 255);
     httpexception.Error("Can't accept on  Socket",errbuf);
   }
-  clientsocket->_Socket=socket;
+  clientsocket->Socket=socket;
   if(isSSLTrue()){
      clientsocket->_SSL = SSL_new(_CTX);
      SSL_set_fd(clientsocket->_SSL, socket);
@@ -199,7 +187,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
   }else{
-    rval=sendto(socket->getSocket(),(const char*) data, (int)size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
+    rval=sendto(socket->Socket,(const char*) data, (int)size,flags,&socket->_ClientAddr, socket->_ClientAddrLen);
   }
 
   if(rval==-1){
@@ -216,7 +204,7 @@ ssize_t libhttppp::ServerSocket::sendWSAData(ClientSocket *socket, WSABUF *data,
 	                                         LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
 	                                         LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
   HTTPException httpexception;
-  int	rval = WSASendTo(socket->getSocket(), data, size, numberofbytessend, flags, &socket->_ClientAddr, 
+  int	rval = WSASendTo(socket->Socket, data, size, numberofbytessend, flags, &socket->_ClientAddr, 
 	                     socket->_ClientAddrLen,lpOverlapped, lpCompletionRoutine);
   if (rval == -1) {
 	char errbuf[255];
@@ -238,7 +226,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     recvsize=SSL_read(socket->_SSL,data,size);
   }else{
-    recvsize=recvfrom(socket->getSocket(), (char*)data,(int)size,flags,
+    recvsize=recvfrom(socket->Socket, (char*)data,(int)size,flags,
                               &socket->_ClientAddr, &socket->_ClientAddrLen);
   }
   if(recvsize==-1){
@@ -256,7 +244,7 @@ ssize_t libhttppp::ServerSocket::recvWSAData(ClientSocket *socket, WSABUF *data,
 	LPDWORD numberofbytessend, LPWSAOVERLAPPED lpOverlapped,
 	LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine) {
 	HTTPException httpexception;
-	ssize_t recvsize = WSARecvFrom(socket->getSocket(), data, size, numberofbytessend, flags, &socket->_ClientAddr,
+	ssize_t recvsize = WSARecvFrom(socket->Socket, data, size, numberofbytessend, flags, &socket->_ClientAddr,
 		(LPINT)socket->_ClientAddrLen, lpOverlapped, lpCompletionRoutine);
 	if (recvsize == -1) {
 		char errbuf[255];

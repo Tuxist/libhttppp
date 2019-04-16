@@ -50,11 +50,9 @@ libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
 	_ServerSocket = serversocket;
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
-	_IOCPCon = new IOCPConnection();
 }
 
 libhttppp::IOCP::~IOCP() {
-	delete _IOCPCon;
 }
 
 const char * libhttppp::IOCP::getEventType() {
@@ -70,11 +68,11 @@ void libhttppp::IOCP::initEventHandler() {
 		throw httpexception;
 	}
 
-	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent())){
+	if (WSA_INVALID_EVENT == (_hCleanupEvent[0] = WSACreateEvent())) {
 		httpexception.Critical("WSACreateEvent() failed:", WSAGetLastError());
 		throw httpexception;
 	}
-	
+
 	try {
 		InitializeCriticalSection(&_CriticalSection);
 	}
@@ -88,22 +86,15 @@ void libhttppp::IOCP::initEventHandler() {
 		throw httpexception;
 	}
 
-	_IOCP = CreateIoCompletionPort((HANDLE)_ServerSocket->getSocket(), _IOCP, (DWORD_PTR)_IOCPCon, 0);
+	IOCPConnection *listencon = new IOCPConnection;
+
+	_IOCP = CreateIoCompletionPort((HANDLE)listencon->getClientSocket()->Socket, _IOCP, (DWORD_PTR)listencon, 0);
+
 	if (_IOCP == NULL) {
 		httpexception.Critical("createiocompletionport() failed:", GetLastError());
-		delete _IOCPCon;
-		_IOCPCon = NULL;
 		throw httpexception;
 	}
- 
-	if (_IOCPCon == NULL) {
-		httpexception.Critical("failed to update listen socket to iocp\n");
-		throw httpexception;
-	}
-}
 
-int libhttppp::IOCP::waitEventHandler() {
-	HTTPException httpexception;
 	int nRet = 0;
 	DWORD bytes = 0;
 	DWORD dwrecvnumbytes = 0;
@@ -115,13 +106,13 @@ int libhttppp::IOCP::waitEventHandler() {
 		SIO_GET_EXTENSION_FUNCTION_POINTER,
 		&acceptex_guid,
 		sizeof(acceptex_guid),
-		&_IOCPCon->fnAcceptEx,
-		sizeof(_IOCPCon->fnAcceptEx),
+		&listencon->fnAcceptEx,
+		sizeof(listencon->fnAcceptEx),
 		&bytes,
 		NULL,
 		NULL
 	);
- 
+
 	if (nRet == SOCKET_ERROR) {
 		httpexception.Critical("failed to load acceptex: %d\n", WSAGetLastError());
 		throw httpexception;
@@ -129,9 +120,10 @@ int libhttppp::IOCP::waitEventHandler() {
 
 	/*disable buffer in clientsocket*/
 	try {
-		ClientSocket *lsock = _IOCPCon->getClientSocket();
+		ClientSocket *lsock = listencon->getClientSocket();
 		lsock->disableBuffer();
-	}catch (HTTPException &e) {
+	}
+	catch (HTTPException &e) {
 		if (e.isCritical()) {
 			throw e;
 		}
@@ -142,21 +134,23 @@ int libhttppp::IOCP::waitEventHandler() {
 
 	char buf[BLOCKSIZE];
 	WSAOVERLAPPED *wsaover = new WSAOVERLAPPED;
-	nRet = _IOCPCon->fnAcceptEx(_ServerSocket->getSocket(),
-		_IOCPCon->getClientSocket()->getSocket(),
+	nRet = listencon->fnAcceptEx(_ServerSocket->getSocket(),
+		listencon->getClientSocket()->Socket,
 		(LPVOID)(buf),
 		BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
 		sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
 		&dwrecvnumbytes,
 		(LPOVERLAPPED)wsaover);
- 
+
+
 	if (nRet == SOCKET_ERROR && (ERROR_IO_PENDING != WSAGetLastError())) {
 		httpexception.Critical("acceptex() failed: %d\n", WSAGetLastError());
 		throw httpexception;
 	}
-	
-	WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
-	return nRet;
+}
+
+int libhttppp::IOCP::waitEventHandler() {
+	return WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 }
 
 /*API Events*/

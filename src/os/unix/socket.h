@@ -48,10 +48,8 @@ namespace libhttppp {
     ClientSocket();
     ~ClientSocket();
     void              setnonblocking();
-    int               getSocket();
-    void              setSocket(int socket);
+	int               Socket;
   private:
-    int              _Socket;
     SSL             *_SSL;
     struct sockaddr *_ClientAddr;
     socklen_t        _ClientAddrLen;

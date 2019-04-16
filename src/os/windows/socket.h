@@ -44,10 +44,9 @@ public:
     ~ClientSocket();
     void              setnonblocking();
 	void              disableBuffer();
-    SOCKET            getSocket();
-    void              setSocket(SOCKET socket);
+	SOCKET            Socket;
 private:
-    SOCKET           _Socket;
+    
     SSL             *_SSL;
     struct sockaddr  _ClientAddr;
 	socklen_t        _ClientAddrLen;

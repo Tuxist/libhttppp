@@ -57,14 +57,6 @@ void libhttppp::ClientSocket::setnonblocking(){
   fcntl(_Socket, F_SETFL, O_NONBLOCK);
 }
 
-int libhttppp::ClientSocket::getSocket(){
-  return _Socket;
-}
-
-void libhttppp::ClientSocket::setSocket(int socket) {
-   _Socket=socket;
-}
-
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   int optval = 1;
  _Maxconnections=maxconnections;

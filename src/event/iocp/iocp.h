@@ -25,9 +25,11 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <Windows.h>
-#include <mswsock.h>
-#include <Strsafe.h>
+#ifdef  Windows
+	#include <Windows.h>
+	#include <mswsock.h>
+	#include <Strsafe.h>
+#endif
 
 #include "config.h"
 
@@ -67,7 +69,6 @@ namespace libhttppp {
 		CRITICAL_SECTION		 _CriticalSection;
 		WSAEVENT				 _hCleanupEvent[1];
 		ServerSocket            *_ServerSocket;
-		IOCPConnection          *_IOCPCon;
 		ConnectionPool  		*_ConnectionPool;
 	};
 };
