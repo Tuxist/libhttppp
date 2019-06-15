@@ -43,20 +43,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 libhttppp::ClientSocket::ClientSocket(){
-  _Socket = 0;
+  Socket = 0;
   _SSL=NULL;
   _ClientAddr = new struct sockaddr;
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-  shutdown(_Socket,SHUT_RDWR);
+  shutdown(Socket,SHUT_RDWR);
   if(_SSL)
     SSL_free(_SSL);
   delete _ClientAddr;
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
-  fcntl(_Socket, F_SETFL, O_NONBLOCK);
+  fcntl(Socket, F_SETFL, O_NONBLOCK);
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
@@ -71,14 +71,14 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
      throw _httpexception;
   }
 
-  if ((_Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
+  if ((Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
     _httpexception.Critical("Can't create Socket UnixSocket");
     throw _httpexception;
   }
 
-  setsockopt(_Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
+  setsockopt(Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
   
-  if (bind(_Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
+  if (bind(Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
 #ifdef __GLIBCXX__
 	  char errbuf[255];
 	  _httpexception.Error("Can't bind Server UnixSocket",
@@ -94,7 +94,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 
 
 libhttppp::ServerSocket::ServerSocket(int socket) {
-	_Socket = socket;
+	Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
 	_UXSocketAddr = NULL;
 }
@@ -127,17 +127,17 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   and) try the next address. */
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-	  _Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
-	  if (_Socket == -1)
+	  Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
+	  if (Socket == -1)
 		  continue;
 
 	  int optval = 1;
-	  setsockopt(_Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+	  setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
 
-	  if (bind(_Socket, rp->ai_addr, rp->ai_addrlen) == 0)
+	  if (bind(Socket, rp->ai_addr, rp->ai_addrlen) == 0)
 		  break;                  /* Success */
 
-	  close(_Socket);
+	  close(Socket);
   }
 
   if (rp == NULL) {               /* No address succeeded */
@@ -154,18 +154,18 @@ libhttppp::ServerSocket::~ServerSocket(){
 }
 
 void libhttppp::ServerSocket::setnonblocking(){
-  fcntl(_Socket, F_SETFL, O_NONBLOCK);
+  fcntl(Socket, F_SETFL, O_NONBLOCK);
 }
 
 void libhttppp::ServerSocket::listenSocket(){
-  if(listen(_Socket, _Maxconnections) < 0){
+  if(listen(Socket, _Maxconnections) < 0){
     _httpexception.Critical("Can't listen Server Socket", errno);
     throw _httpexception;
   }
 }
 
 int libhttppp::ServerSocket::getSocket(){
-  return _Socket;
+  return Socket;
 }
 
 int libhttppp::ServerSocket::getMaxconnections(){
@@ -174,7 +174,7 @@ int libhttppp::ServerSocket::getMaxconnections(){
 
 int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
-  int socket = accept(_Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
+  int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket==-1){
 #ifdef __GLIBCXX__
     char errbuf[255];
@@ -185,7 +185,7 @@ int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
     _httpexception.Error("Can't accept on  Socket",errbuf);
 #endif
   }
-  clientsocket->_Socket=socket;
+  clientsocket->Socket=socket;
   if(isSSLTrue()){
      clientsocket->_SSL = SSL_new(_CTX);
      SSL_set_fd(clientsocket->_SSL, socket);
@@ -208,7 +208,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     rval=SSL_write(socket->_SSL,data,size);
   }else{
-      rval=sendto(socket->getSocket(),data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
+      rval=sendto(socket->Socket,data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
   }
   if(rval==-1){
 #ifdef __GLIBCXX__
@@ -234,7 +234,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
   if(isSSLTrue() && socket->_SSL){
     recvsize=SSL_read(socket->_SSL,data,size);
   }else{
-    recvsize=recvfrom(socket->getSocket(),data, size,flags,
+    recvsize=recvfrom(socket->Socket,data, size,flags,
                               socket->_ClientAddr, &socket->_ClientAddrLen);
   }
   if(recvsize==-1){

@@ -72,10 +72,10 @@ namespace libhttppp {
     ssize_t       sendData(ClientSocket *socket,void *data,size_t size,int flags);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size);
     ssize_t       recvData(ClientSocket *socket,void *data,size_t size,int flags);
+    int           Socket;
   private:
     struct addrinfo _SockAddr;
     sockaddr_un    *_UXSocketAddr;
-    int             _Socket;
     int             _Port;
     int             _Maxconnections;
     HTTPException   _httpexception;
