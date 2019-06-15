@@ -40,6 +40,7 @@ class EventApi {
         virtual void initEventHandler()=0;
         virtual int    waitEventHandler()=0;
         virtual const char *getEventType()=0;
+        virtual void ConnectEventHandler(int des)=0;
         /*HTTP API Events*/
 		virtual void RequestEvent(Connection *curcon)=0;
 		virtual void ResponseEvent(Connection *curcon)=0;

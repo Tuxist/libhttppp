@@ -85,7 +85,7 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
 #else
         int des=eventptr->_EventApi->waitEventHandler();
 		for (int i = 0; i < des; i++) {
-			
+			eventptr->_EventApi->ConnectEventHandler(des);
 		}
 #endif
     }

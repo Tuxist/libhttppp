@@ -106,6 +106,40 @@ int libhttppp::EPOLL::waitEventHandler(){
     return n;
 }
 
+void libhttppp::EPOLL::ConnectEventHandler(int des){
+    if(_Events[des].data.fd == _ServerSocket->getSocket()) {
+            HTTPException httpexception;
+            Connection *curct=new Connection();
+            struct epoll_event setevent= (struct epoll_event) {
+                0
+            };
+            try {
+                /*will create warning debug mode that normally because the check already connection
+                 * with this socket if getconnection throw they will be create a new one
+                 */
+                 ClientSocket *clientsocket=curct->getClientSocket();
+                 int fd=_ServerSocket->acceptEvent(clientsocket);
+                 clientsocket->setnonblocking();
+                 if(fd>0) {
+                    setevent.data.ptr = (void*) curct;
+                    setevent.events = EPOLLIN|EPOLLRDHUP;
+                    if(epoll_ctl(_epollFD, EPOLL_CTL_ADD, fd, &setevent)==-1 && errno==EEXIST){
+                        epoll_ctl(_epollFD, EPOLL_CTL_MOD,fd, &setevent);
+                    }
+                    ConnectEvent(curct);
+                 }else{
+                    httpexception.Error("Connect Event invalid fildescriptor");
+                    throw httpexception;
+                    delete curct;
+                }
+            }catch(HTTPException &e) {
+                delete curct;
+                if(e.isCritical())
+                    throw e;
+            }
+     }
+}
+
 /*API Events*/
 
 void libhttppp::EPOLL::RequestEvent(Connection *curcon){
