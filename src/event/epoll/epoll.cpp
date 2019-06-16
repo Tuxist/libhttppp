@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <iostream>
+
 #include <fcntl.h>
 #include <sys/sysinfo.h>
 #include <cstdlib>
@@ -117,9 +119,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des){
                 /*will create warning debug mode that normally because the check already connection
                  * with this socket if getconnection throw they will be create a new one
                  */
-                 ClientSocket *clientsocket=curct->getClientSocket();
-                 int fd=_ServerSocket->acceptEvent(clientsocket);
-                 clientsocket->setnonblocking();
+                 int fd=_ServerSocket->acceptEvent(curct->getClientSocket());
+                 curct->getClientSocket()->setnonblocking();
                  if(fd>0) {
                     setevent.data.ptr = (void*) curct;
                     setevent.events = EPOLLIN|EPOLLRDHUP;
@@ -129,8 +130,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des){
                     ConnectEvent(curct);
                  }else{
                     httpexception.Error("Connect Event invalid fildescriptor");
-                    throw httpexception;
                     delete curct;
+                    throw httpexception;
                 }
             }catch(HTTPException &e) {
                 delete curct;
@@ -139,6 +140,93 @@ void libhttppp::EPOLL::ConnectEventHandler(int des){
             }
      }
 }
+
+int libhttppp::EPOLL::StatusEventHandler(int des){
+    switch(_Events[des].events) {
+        case (EPOLLIN): {
+            return EventHandlerStatus::IN;
+        }
+        case (EPOLLOUT): {
+            return EventHandlerStatus::OUT;
+        }
+        case (EPOLLERR): {
+            return EventHandlerStatus::ERR;
+
+        }
+        case (EPOLLHUP):{
+            return EventHandlerStatus::UP;
+        }
+    }
+    return EventHandlerStatus::WAIT;
+}
+
+void libhttppp::EPOLL::ReadEventHandler(int des){
+    Connection *curct=(Connection*)_Events[des].data.ptr;
+    ClientSocket *clientsocket= curct->getClientSocket();
+    struct epoll_event setevent= (struct epoll_event) {
+        0
+    };
+    try {
+        char buf[BLOCKSIZE];
+        int rcvsize=0;
+        rcvsize=_ServerSocket->recvData(clientsocket,buf,BLOCKSIZE);
+        switch(rcvsize) {
+            case -1: {
+                setevent.events = EPOLLIN|EPOLLRDHUP;
+                epoll_ctl(_epollFD, EPOLL_CTL_MOD, clientsocket->Socket, &setevent);
+            }
+            case 0: {
+                if(curct->getSendSize()<0) {
+                    setevent.events = EPOLLOUT |EPOLLRDHUP;
+                    epoll_ctl(_epollFD, EPOLL_CTL_MOD, clientsocket->Socket, &setevent);;
+                } else {
+                //    goto ClOSECONNECTION;
+                }
+            }
+            default: {
+                curct->addRecvQueue(buf,rcvsize);
+                RequestEvent(curct);
+                setevent.events = EPOLLIN|EPOLLRDHUP;
+                epoll_ctl(_epollFD, EPOLL_CTL_MOD, clientsocket->Socket, &setevent);
+            }
+        }
+    } catch(HTTPException &e) {
+        if(e.isCritical()) {
+            throw e;
+        } else if(e.isError()) {
+            curct->cleanRecvData();
+        }
+    }
+}
+
+void libhttppp::EPOLL::WriteEventHandler(int des){
+    Connection *curct=(Connection*)_Events[des].data.ptr;
+    ClientSocket *clientsocket= curct->getClientSocket();
+    struct epoll_event setevent= (struct epoll_event) {
+        0
+    };
+    int fd=clientsocket->Socket;
+    try {
+        ssize_t sended=0;
+        if(curct->getSendData()) {
+            sended=_ServerSocket->sendData(clientsocket,
+                    (void*)curct->getSendData()->getData(),
+                    curct->getSendData()->getDataSize());
+            if(sended>0) {
+                curct->resizeSendQueue(sended);
+                ResponseEvent(curct);
+            }
+            setevent.events = EPOLLOUT|EPOLLRDHUP;
+            epoll_ctl(_epollFD, EPOLL_CTL_MOD, fd, &setevent);
+        } else {
+            setevent.events = EPOLLIN|EPOLLRDHUP;
+            epoll_ctl(_epollFD, EPOLL_CTL_MOD, fd, &setevent);
+        }
+    } catch(HTTPException &e) {
+        //goto ClOSECONNECTION;
+    }
+}
+
 
 /*API Events*/
 

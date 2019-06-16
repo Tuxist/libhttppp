@@ -41,6 +41,9 @@ namespace libhttppp {
         void       initEventHandler();
         int        waitEventHandler();
         void       ConnectEventHandler(int des);
+        int        StatusEventHandler(int des);
+        void       ReadEventHandler(int des);
+        void       WriteEventHandler(int des);
         const char *getEventType();
         /*HTTP API Events*/
         void RequestEvent(Connection *curcon);

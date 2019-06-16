@@ -226,7 +226,7 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 }
 
 libhttppp::Connection::Connection(){
-  _ClientSocket=new ClientSocket;
+  _ClientSocket=new ClientSocket();
   _ReadDataFirst=NULL;
   _ReadDataLast=NULL;
   _ReadDataSize=0;

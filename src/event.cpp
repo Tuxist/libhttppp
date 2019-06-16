@@ -61,11 +61,11 @@ void libhttppp::Event::runEventloop(){
 	while (_Restart) {
 		ThreadPool thpool;
 		SYSInfo sysinfo;
-		size_t thrs = sysinfo.getNumberOfProcessors();
+		size_t thrs = 1;//sysinfo.getNumberOfProcessors();
 		_EventApi->initEventHandler();
 		for (size_t i = 0; i < thrs; i++) {
 			Thread *th = thpool.addThread();
-			th->Create(WorkerThread, this);
+			th->Create(WorkerThread, (void*)this);
 		}
 #ifdef EVENT_IOCP
 		int buffer = _EventApi->waitEventHandler();
@@ -85,7 +85,16 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
 #else
         int des=eventptr->_EventApi->waitEventHandler();
 		for (int i = 0; i < des; i++) {
-			eventptr->_EventApi->ConnectEventHandler(des);
+			eventptr->_EventApi->ConnectEventHandler(i);
+            int state=eventptr->_EventApi->StatusEventHandler(i);
+            switch(state){
+                case EventApi::EventHandlerStatus::IN:{
+                    eventptr->_EventApi->ReadEventHandler(i);
+                };
+                case EventApi::EventHandlerStatus::OUT:{
+                    eventptr->_EventApi->WriteEventHandler(i);
+                };
+            }
 		}
 #endif
     }
