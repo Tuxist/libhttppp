@@ -144,17 +144,17 @@ void libhttppp::EPOLL::ConnectEventHandler(int des){
 int libhttppp::EPOLL::StatusEventHandler(int des){
     switch(_Events[des].events) {
         case (EPOLLIN): {
-            return EventHandlerStatus::IN;
+            return EventHandlerStatus::EVIN;
         }
         case (EPOLLOUT): {
-            return EventHandlerStatus::OUT;
+            return EventHandlerStatus::EVOUT;
         }
         case (EPOLLERR): {
-            return EventHandlerStatus::ERR;
+            return EventHandlerStatus::EVERR;
 
         }
         case (EPOLLHUP):{
-            return EventHandlerStatus::UP;
+            return EventHandlerStatus::EVUP;
         }
     }
     return EventHandlerStatus::WAIT;
