@@ -88,10 +88,10 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
 			eventptr->_EventApi->ConnectEventHandler(i);
             int state=eventptr->_EventApi->StatusEventHandler(i);
             switch(state){
-                case EventApi::EventHandlerStatus::IN:{
+                case EventApi::EventHandlerStatus::EVIN:{
                     eventptr->_EventApi->ReadEventHandler(i);
                 };
-                case EventApi::EventHandlerStatus::OUT:{
+                case EventApi::EventHandlerStatus::EVOUT:{
                     eventptr->_EventApi->WriteEventHandler(i);
                 };
             }
