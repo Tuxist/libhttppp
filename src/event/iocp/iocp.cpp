@@ -154,6 +154,22 @@ int libhttppp::IOCP::waitEventHandler() {
 	return WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
 }
 
+void libhttppp::IOCP::ConnectEventHandler(int des) {
+
+}
+
+int libhttppp::IOCP::StatusEventHandler(int des) {
+	return EVERR;
+}
+
+void libhttppp::IOCP::ReadEventHandler(int des) {
+
+}
+
+void libhttppp::IOCP::WriteEventHandler(int des) {
+
+}
+
 /*API Events*/
 
 void libhttppp::IOCP::RequestEvent(Connection *curcon) {

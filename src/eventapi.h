@@ -37,7 +37,7 @@ namespace libhttppp {
 class EventApi {
 	public:
         
-        enum EventHandlerStatus{IN=0,OUT=1,UP=2,ERR=3,WAIT=4};
+        enum EventHandlerStatus{EVIN=0,EVOUT=1,EVUP=2,EVERR=3,EVWAIT=4};
         
 		virtual ~EventApi();
         virtual void initEventHandler()=0;
