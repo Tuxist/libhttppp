@@ -157,7 +157,7 @@ int libhttppp::EPOLL::StatusEventHandler(int des){
             return EventHandlerStatus::EVUP;
         }
     }
-    return EventHandlerStatus::WAIT;
+    return EventHandlerStatus::EVWAIT;
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
