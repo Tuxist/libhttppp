@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "../../exception.h"
+#include <atomic>
 
 #ifndef LOCK_H
 #define LOCK_H
@@ -36,8 +37,7 @@ namespace libhttppp {
     Lock();
     ~Lock();
     bool            trylock();
-    bool            lock();
-    bool            unlock();
+    void            unlock();
     bool            isLocked();
   private:
     int              _CLock;

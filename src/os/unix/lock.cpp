@@ -37,13 +37,6 @@ libhttppp::Lock::~Lock(){
 }
 
 
-bool libhttppp::Lock::lock(){
-    while(!__sync_bool_compare_and_swap(&_CLock, 0, 1)){
-        sched_yield();
-    } 
-    return true;
-}
-
 bool libhttppp::Lock::trylock(){
   if(!__sync_bool_compare_and_swap(&_CLock, 0, 1)){
      return false; 
@@ -51,7 +44,7 @@ bool libhttppp::Lock::trylock(){
   return true;
 }
 
-bool libhttppp::Lock::unlock(){
+void libhttppp::Lock::unlock(){
   _CLock=0;
 }
 

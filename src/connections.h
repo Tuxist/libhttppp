@@ -33,10 +33,6 @@
 #ifndef CONNECTIONS_H
 #define CONNECTIONS_H
 
-namespace std {
-    class mutex;
-};
-
 namespace libhttppp {
     
     class ConnectionData {
@@ -83,9 +79,9 @@ namespace libhttppp {
         ConnectionData *resizeRecvQueue(size_t size);
         void                     cleanRecvData();
         ConnectionData *getRecvData();
-        size_t                   getRecvSize();
+        size_t          getRecvSize();
         
-        int                        pollState;
+        int             pollState;
     protected:
         /*Incomming Data*/
         size_t          _ReadDataSize;

@@ -56,45 +56,50 @@ void libhttppp::Event::CTRLBreakEvent() {
 
 void libhttppp::Event::runEventloop(){
     _Run=true;
-	_Restart = true;
-	while (_Restart) {
-		ThreadPool thpool;
-		SYSInfo sysinfo;
-		size_t thrs = sysinfo.getNumberOfProcessors();
-		initEventHandler();
-		for (size_t i = 0; i < thrs; i++) {
-			Thread *th = thpool.addThread();
-			th->Create(WorkerThread, (void*)this);
-		}
-
-		for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
-			curth->Join();
-		}
-	}
+    _Restart = true;
+    while (_Restart) {
+        ThreadPool thpool;
+        SYSInfo sysinfo;
+        size_t thrs = sysinfo.getNumberOfProcessors();
+        initEventHandler();
+        for (size_t i = 0; i < thrs; i++) {
+            Thread *th = thpool.addThread();
+            th->Create(WorkerThread, (void*)this);
+        }
+        
+        for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
+            curth->Join();
+        }
+    }
 }
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
-	while (eventptr->_Run) {
+    while (eventptr->_Run) {
         int des=eventptr->waitEventHandler();
-		for (int i = 0; i < des; ++i) {
-            try{
-                int state=eventptr->StatusEventHandler(i);
-                switch(state){
-                    case EventApi::EventHandlerStatus::EVCON:
-                        eventptr->ConnectEventHandler(i);
-                        break;
-                    case EventApi::EventHandlerStatus::EVIN:
-                        eventptr->ReadEventHandler(i);
-                        break;
-                    case EventApi::EventHandlerStatus::EVOUT:
-                        eventptr->WriteEventHandler(i);
-                        break;
+        for (int i = 0; i < des; ++i) {
+            if(eventptr->LockConnection(i)!=LOCKFAILED){
+                try{
+                    int state=eventptr->StatusEventHandler(i);
+                    switch(state){
+                        case EventApi::EventHandlerStatus::EVCON:
+                            eventptr->ConnectEventHandler(i);
+                            break;
+                        case EventApi::EventHandlerStatus::EVIN:
+                            eventptr->ReadEventHandler(i);
+                            break;
+                        case EventApi::EventHandlerStatus::EVOUT:
+                            eventptr->WriteEventHandler(i);
+                            break;
+                    }
+                }catch(HTTPException &e){
+                    try{
+                        eventptr->CloseEventHandler(i);
+                    }catch(...){}
                 }
-            }catch(HTTPException &e){
-                eventptr->CloseEventHandler(i);
+                eventptr->UnlockConnction(i);
             }
-		}
+        }
     }
-	return NULL;
+    return NULL;
 }

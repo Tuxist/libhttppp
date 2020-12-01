@@ -223,8 +223,8 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
         }
     }
     return -1;
-                                       }
-                                       
+}
+
 libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket();
   _ReadDataFirst=NULL;
