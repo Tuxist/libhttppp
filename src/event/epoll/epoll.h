@@ -44,6 +44,7 @@ namespace libhttppp {
         int        StatusEventHandler(int des);
         void       ReadEventHandler(int des);
         void       WriteEventHandler(int des);
+        void       CloseEventHandler(int des);
         const char *getEventType();
         /*HTTP API Events*/
         void RequestEvent(Connection *curcon);
@@ -51,10 +52,10 @@ namespace libhttppp {
         void ConnectEvent(Connection *curcon);
         void DisconnectEvent(Connection *curcon);
         
-    private:
-        int                             _epollFD;
-         struct epoll_event *_Events;
-        ServerSocket           *_ServerSocket;
+    private:           
+        int                  _epollFD;
+        struct epoll_event  *_Events;
+        ServerSocket        *_ServerSocket;
     };
 };
 

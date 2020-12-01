@@ -35,8 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "event.h"
 
-libhttppp::Event::Event(libhttppp::ServerSocket* serversocket) : CtrlHandler(){
-    _EventApi = new EVENT(serversocket);
+libhttppp::Event::Event(libhttppp::ServerSocket* serversocket) : EVENT(serversocket){
     _Run=true;
 	_Restart = true;
 }
@@ -61,16 +60,13 @@ void libhttppp::Event::runEventloop(){
 	while (_Restart) {
 		ThreadPool thpool;
 		SYSInfo sysinfo;
-		size_t thrs = 1;//sysinfo.getNumberOfProcessors();
-		_EventApi->initEventHandler();
+		size_t thrs = sysinfo.getNumberOfProcessors();
+		initEventHandler();
 		for (size_t i = 0; i < thrs; i++) {
 			Thread *th = thpool.addThread();
 			th->Create(WorkerThread, (void*)this);
 		}
-#ifdef EVENT_IOCP
-		int buffer = _EventApi->waitEventHandler();
-		std::cout << "test: " << buffer << "\n";
-#endif
+
 		for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
 			curth->Join();
 		}
@@ -80,23 +76,25 @@ void libhttppp::Event::runEventloop(){
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
 	while (eventptr->_Run) {
-#ifdef EVENT_IOCP
-
-#else
-        int des=eventptr->_EventApi->waitEventHandler();
-		for (int i = 0; i < des; i++) {
-			eventptr->_EventApi->ConnectEventHandler(i);
-            int state=eventptr->_EventApi->StatusEventHandler(i);
-            switch(state){
-                case EventApi::EventHandlerStatus::EVIN:{
-                    eventptr->_EventApi->ReadEventHandler(i);
-                };
-                case EventApi::EventHandlerStatus::EVOUT:{
-                    eventptr->_EventApi->WriteEventHandler(i);
-                };
+        int des=eventptr->waitEventHandler();
+		for (int i = 0; i < des; ++i) {
+            try{
+                int state=eventptr->StatusEventHandler(i);
+                switch(state){
+                    case EventApi::EventHandlerStatus::EVCON:
+                        eventptr->ConnectEventHandler(i);
+                        break;
+                    case EventApi::EventHandlerStatus::EVIN:
+                        eventptr->ReadEventHandler(i);
+                        break;
+                    case EventApi::EventHandlerStatus::EVOUT:
+                        eventptr->WriteEventHandler(i);
+                        break;
+                }
+            }catch(HTTPException &e){
+                eventptr->CloseEventHandler(i);
             }
 		}
-#endif
     }
 	return NULL;
 }

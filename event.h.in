@@ -36,9 +36,9 @@ namespace libhttppp {
     class EventApi;
     class Connection;
 #ifdef MSVC
-	class __declspec(dllexport) Event : public CtrlHandler {
+	class __declspec(dllexport) Event : public EVENT,CtrlHandler {
 #else
-	class __attribute__((visibility("default"))) Event : public CtrlHandler {
+	class __attribute__((visibility("default"))) Event : public EVENT, CtrlHandler {
 #endif
     public:
         Event(ServerSocket *serversocket);

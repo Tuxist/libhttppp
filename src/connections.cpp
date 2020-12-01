@@ -198,33 +198,33 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
 }
 
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
-			    const char* keyword){
-  return searchValue(startblock, findblock, keyword,getlen(keyword));
+                                       const char* keyword){
+    return searchValue(startblock, findblock, keyword,getlen(keyword));
 }
-
+                                       
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
-			    const char* keyword,size_t keylen){
-  size_t fpos=0,fcurpos=0;
-  for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
-    for(size_t pos=0; pos<curdat->getDataSize(); pos++){
-      if(keyword[fcurpos]==curdat->_Data[pos]){
-        if(fcurpos==0){
-          fpos=pos;
-          *findblock=curdat;
+                                       const char* keyword,size_t keylen){
+    size_t fpos=0,fcurpos=0;
+    for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
+        for(size_t pos=0; pos<curdat->getDataSize(); pos++){
+            if(keyword[fcurpos]==curdat->_Data[pos]){
+                if(fcurpos==0){
+                    fpos=pos;
+                    *findblock=curdat;
+                }
+                fcurpos++;
+            }else{
+                fcurpos=0;
+                fpos=0;
+                *findblock=NULL;
+            }
+            if(fcurpos==keylen)
+                return fpos;
         }
-        fcurpos++;
-      }else{
-        fcurpos=0;
-        fpos=0;
-        *findblock=NULL;
-      }
-      if(fcurpos==keylen)
-        return fpos;
     }
-  }
-  return -1;
-}
-
+    return -1;
+                                       }
+                                       
 libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket();
   _ReadDataFirst=NULL;
