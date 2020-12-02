@@ -75,30 +75,34 @@ void libhttppp::Event::runEventloop(){
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
+    int lock=LockConnectionStatus::LOCKNOTREADY;
     while (eventptr->_Run) {
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
-            if(eventptr->LockConnection(i)!=LOCKFAILED){
-                try{
-                    int state=eventptr->StatusEventHandler(i);
-                    switch(state){
-                        case EventApi::EventHandlerStatus::EVCON:
-                            eventptr->ConnectEventHandler(i);
-                            break;
-                        case EventApi::EventHandlerStatus::EVIN:
+            lock = eventptr->LockConnection(i);
+            try{
+                int state=eventptr->StatusEventHandler(i);
+                switch(state){
+                    case EventApi::EventHandlerStatus::EVCON:
+                        if(lock==LockConnectionStatus::LOCKNOTREADY)
+                        eventptr->ConnectEventHandler(i);
+                        break;
+                    case EventApi::EventHandlerStatus::EVIN:
+                        if(lock==LockConnectionStatus::LOCKREADY)
                             eventptr->ReadEventHandler(i);
-                            break;
-                        case EventApi::EventHandlerStatus::EVOUT:
+                        break;
+                    case EventApi::EventHandlerStatus::EVOUT:
+                        if(lock==LockConnectionStatus::LOCKREADY)
                             eventptr->WriteEventHandler(i);
-                            break;
-                    }
-                }catch(HTTPException &e){
-                    try{
-                        eventptr->CloseEventHandler(i);
-                    }catch(...){}
+                        break;
                 }
-                eventptr->UnlockConnction(i);
+            }catch(HTTPException &e){
+                try{
+                    if(lock==LockConnectionStatus::LOCKREADY)
+                        eventptr->CloseEventHandler(i);
+                }catch(...){}
             }
+            eventptr->UnlockConnction(i);
         }
     }
     return NULL;

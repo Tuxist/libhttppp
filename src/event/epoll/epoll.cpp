@@ -95,7 +95,7 @@ void libhttppp::EPOLL::initEventHandler(){
         throw httpexception;
     }
 
-    setevent.events = EPOLLIN|EPOLLET;
+    setevent.events = EPOLLIN|EPOLLOUT;
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
         httpexception.Critical("can't create epoll");
@@ -133,11 +133,11 @@ int libhttppp::EPOLL::StatusEventHandler(int des){
 void libhttppp::EPOLL::ConnectEventHandler(int des){
     HTTPException httpexception;
     struct epoll_event setevent{0};
+    Connection* curct = new Connection;
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
-        Connection* curct = new Connection;
         curct->getClientSocket()->setnonblocking();
         if(_ServerSocket->acceptEvent(curct->getClientSocket())>0) {
             setevent.events = EPOLLIN | EPOLLOUT;
@@ -145,22 +145,22 @@ void libhttppp::EPOLL::ConnectEventHandler(int des){
             ((ConntectionPtr*)setevent.data.ptr)->_Connection=curct;
             int err=0;
             if((err=epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent))==-1){
-                if(err==EEXIST){
-                    epoll_ctl(_epollFD, EPOLL_CTL_MOD, curct->getClientSocket()->Socket, &setevent);
-                    return;
-                }
                 httpexception.Error("Connection Error: ",strerror(errno));
-                throw httpexception;
+                goto CONNRESET;
             }
             ConnectEvent(curct);
+            return;
         }else{
             httpexception.Error("Connect Event invalid fildescriptor");
-            throw httpexception;
+            goto CONNRESET;
         }
     }catch(HTTPException &e) {
         if(e.isCritical())
-            throw e;
+            goto CONNRESET;
     }
+CONNRESET:
+    delete curct;
+    throw httpexception;
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
@@ -173,7 +173,7 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
             std::cout << buf << std::endl;
             curct->addRecvQueue(buf,rcvsize);
             RequestEvent(curct);
-        }else if(rcvsize <0 ){
+        }else{
             httpexception.Error("Recv Failed",strerror(errno));
             throw httpexception;
         }
@@ -189,11 +189,13 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
         ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
-        if(sended<0){
-            throw httpexception.Error("Could not sendData",strerror(errno));
+        if(sended > 0){
+            curct->resizeSendQueue(sended);
+            ResponseEvent(curct);
+            return;
         }
-        curct->resizeSendQueue(sended);
-        ResponseEvent(curct);
+        curct->cleanSendData();
+        throw httpexception.Error("Could not sendData",strerror(errno));
     } catch(HTTPException &e) {
         throw e;
     }
