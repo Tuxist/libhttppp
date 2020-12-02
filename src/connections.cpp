@@ -67,6 +67,11 @@ libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   * Use it everyday with good health.
   */
 libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,size_t datasize){
+   if(datasize<=0){
+        HTTPException httpexception;
+        httpexception.Error("addSendQueue","wrong datasize");
+        throw httpexception;
+    }
   size_t written=0;
   for(size_t cursize=datasize; cursize>0; cursize=datasize-written){
     if(cursize>BLOCKSIZE){
@@ -93,9 +98,12 @@ void libhttppp::Connection::cleanSendData(){
 }
 
 libhttppp::ConnectionData *libhttppp::Connection::resizeSendQueue(size_t size){
-    if(size>0)
-        return _resizeQueue(&_SendDataFirst,&_SendDataLast,&_SendDataSize,size);
-    return _SendDataFirst;
+    if(size<=0){
+        HTTPException httpexception;
+        httpexception.Error("resizeSendQueue","wrong datasize");
+        throw httpexception;
+    }
+    return _resizeQueue(&_SendDataFirst,&_SendDataLast,&_SendDataSize,size);
 }
 
 libhttppp::ConnectionData* libhttppp::Connection::getSendData(){
@@ -108,8 +116,11 @@ size_t libhttppp::Connection::getSendSize(){
 
 
 libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
-    if(datasize<0)
-        return _ReadDataLast;
+    if(datasize<=0){
+        HTTPException httpexception;
+        httpexception.Error("addRecvQueue","wrong datasize");
+        throw httpexception;
+    }
     if(!_ReadDataFirst){
         _ReadDataFirst= new ConnectionData(data,datasize);
         _ReadDataLast=_ReadDataFirst;
@@ -130,9 +141,12 @@ void libhttppp::Connection::cleanRecvData(){
 
 
 libhttppp::ConnectionData *libhttppp::Connection::resizeRecvQueue(size_t size){
-    if(size>0)
-        return _resizeQueue(&_ReadDataFirst,&_ReadDataLast,&_ReadDataSize,size);
-    return _ReadDataFirst;
+    if(size<=0){
+        HTTPException httpexception;
+        httpexception.Error("resizeRecvQueue","wrong datasize");
+        throw httpexception;
+    }
+    return _resizeQueue(&_ReadDataFirst,&_ReadDataLast,&_ReadDataSize,size);
 }
 
 libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){
