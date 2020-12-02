@@ -44,7 +44,6 @@ namespace libhttppp {
         void runEventloop();
         static void *WorkerThread(void *wrkevent);
         virtual ~Event();
-    protected:
         static bool _Run;
 		static bool _Restart;
     };

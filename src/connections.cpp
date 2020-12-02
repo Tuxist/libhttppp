@@ -179,7 +179,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         *firstdata=newdat;
     }
   }
-  if(size>0){
+  if(size!=0){
 #ifdef DEBUG
         delsize+=size;
 #endif

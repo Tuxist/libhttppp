@@ -173,7 +173,6 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
             httpexception.Error("ReadEventHandler",strerror(errno));
             throw httpexception;
         }
-        std::cout << buf << std::endl;
         curct->addRecvQueue(buf,rcvsize);
         RequestEvent(curct);
     } catch(HTTPException &e) {
