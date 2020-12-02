@@ -75,32 +75,36 @@ void libhttppp::Event::runEventloop(){
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
-    int lock=LockConnectionStatus::LOCKNOTREADY;
     while (eventptr->_Run) {
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
-            lock = eventptr->LockConnection(i);
             try{
                 int state=eventptr->StatusEventHandler(i);
-                switch(state){
-                    case EventApi::EventHandlerStatus::EVCON:
-                        if(lock==LockConnectionStatus::LOCKNOTREADY)
-                        eventptr->ConnectEventHandler(i);
-                        break;
-                    case EventApi::EventHandlerStatus::EVIN:
-                        if(lock==LockConnectionStatus::LOCKREADY)
-                            eventptr->ReadEventHandler(i);
-                        break;
-                    case EventApi::EventHandlerStatus::EVOUT:
-                        if(lock==LockConnectionStatus::LOCKREADY)
-                            eventptr->WriteEventHandler(i);
-                        break;
+                if(eventptr->LockConnection(i)==LockConnectionStatus::LOCKNOTREADY &&
+                    state==EventApi::EventHandlerStatus::EVCON
+                ){
+                    eventptr->ConnectEventHandler(i);
+                }else if(eventptr->LockConnection(i)==LockConnectionStatus::LOCKREADY){
+                    try{
+                        switch(state){
+                            case EventApi::EventHandlerStatus::EVIN:
+                                eventptr->ReadEventHandler(i);
+                                break;
+                            case EventApi::EventHandlerStatus::EVOUT:
+                                eventptr->WriteEventHandler(i);
+                                break;
+                            default:
+                                HTTPException error;
+                                error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
+                                throw error;
+                        }
+                    }catch(HTTPException &e){
+                        eventptr->CloseEventHandler(i);
+                    }
                 }
             }catch(HTTPException &e){
-                try{
-                    if(lock==LockConnectionStatus::LOCKREADY)
-                        eventptr->CloseEventHandler(i);
-                }catch(...){}
+                if(e.isCritical())
+                    throw e;
             }
             eventptr->UnlockConnction(i);
         }
