@@ -211,6 +211,7 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
             throw httpexception;
         }
         delete curct;
+        delete (ConntectionPtr*)_Events[des].data.ptr;
         _Events[des].data.ptr=NULL;
         httpexception.Note("Connection shutdown!");
     } catch(HTTPException &e) {

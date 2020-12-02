@@ -33,12 +33,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EVENT_H
 
 namespace libhttppp {
-    class EventApi;
     class Connection;
 #ifdef MSVC
-	class __declspec(dllexport) Event : public EVENT,CtrlHandler {
+	class __declspec(dllexport) Event : public ${EVENT},CtrlHandler {
 #else
-	class __attribute__((visibility("default"))) Event : public EVENT, CtrlHandler {
+	class __attribute__((visibility("default"))) Event : public ${EVENT}, CtrlHandler {
 #endif
     public:
         Event(ServerSocket *serversocket);
@@ -46,7 +45,6 @@ namespace libhttppp {
         static void *WorkerThread(void *wrkevent);
         virtual ~Event();
     protected:
-        EventApi	 *_EventApi;
         bool          _Run;
 		bool          _Restart;
 	private:
