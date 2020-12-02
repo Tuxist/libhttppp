@@ -83,10 +83,10 @@ class HtmlContent{
 class IndexPage{
 public:
   IndexPage(){
-    sysstream << "<!DOCTYPE html><body>"
-              << "<div id=\"mainbar\" style=\"width:1280px; margin:0px auto;\">"
+    sysstream << "<!DOCTYPE html><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
+              << "<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">"
               << "<div id=\"headerimage\"><img src=\"images/header.png\"/></div>"
-              << "<div id=\"sysinfo\"><span>System Info:</span><br/>"; 
+              << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br/>"; 
     KernelInfo();
     CPUInfo();
     sysstream << "</div></div></body></html>";
@@ -106,13 +106,13 @@ public:
   }
   
   void CPUInfo(){
-#ifndef Windows
+    libhttppp::CpuInfo cpuinfo;
     sysstream << "<h2>CPUInfo:</h2>";
     HtmlTable cputable;
-    int cpus = sysconf(_SC_NPROCESSORS_ONLN);
-    cputable.createRow("Cores ",cpus);
+    cputable.createRow("Cores ",cpuinfo.getCores());
+    cputable.createRow("Running on Thread ",cpuinfo.getActualThread());
+    cputable.createRow("Threads ",cpuinfo.getThreads());
     sysstream << cputable.getTable();
-#endif      
   }
   
   const char *getIndexPage(){

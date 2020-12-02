@@ -208,7 +208,7 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
     try {
         int ect=epoll_ctl(_epollFD, EPOLL_CTL_DEL, curct->getClientSocket()->Socket,&setevent);
         if(ect<0) {
-            httpexception.Error("CloseEventHandler:","can't delete Connection from epoll");
+            httpexception.Error("CloseEventHandler:",strerror(errno));
             throw httpexception;
         }
         delete curct;

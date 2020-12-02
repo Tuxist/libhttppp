@@ -63,8 +63,8 @@ void libhttppp::CtrlHandler::CTRLTermEvent() {
 }
 
 void libhttppp::Event::runEventloop(){
-        SYSInfo sysinfo;
-        size_t thrs = sysinfo.getNumberOfProcessors();
+        CpuInfo cpuinfo;
+        size_t thrs = cpuinfo.getThreads();
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;
@@ -89,10 +89,15 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
             try{
                 int state=eventptr->StatusEventHandler(i);
                 int lock=eventptr->LockConnection(i);
-                if(lock==LockConnectionStatus::LOCKNOTREADY &&
-                    state==EventApi::EventHandlerStatus::EVCON
+                if(lock==LockConnectionStatus::LOCKNOTREADY
                 ){
-                    eventptr->ConnectEventHandler(i);
+                    if(state==EventApi::EventHandlerStatus::EVCON)
+                        eventptr->ConnectEventHandler(i);
+                    else{
+                        HTTPException httpexception;
+                        httpexception.Error("WorkerThread","Lock not Ready and no new Connection");
+                        throw httpexception;
+                    }
                 }else if(lock==LockConnectionStatus::LOCKREADY){
                     try{
                         switch(state){
@@ -102,10 +107,10 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                             case EventApi::EventHandlerStatus::EVOUT:
                                 eventptr->WriteEventHandler(i);
                                 break;
-//                             default:
-//                                 HTTPException error;
-//                                 error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
-//                                 throw error;
+                             default:
+                                 HTTPException error;
+                                 error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
+                                 throw error;
                         }
                     }catch(HTTPException &e){
                         if(e.isError() || e.isCritical())

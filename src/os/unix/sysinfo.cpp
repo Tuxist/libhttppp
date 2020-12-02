@@ -28,18 +28,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "sysinfo.h"
 #include <unistd.h>
 
-libhttppp::SYSInfo::SYSInfo(){
+libhttppp::CpuInfo::CpuInfo(){
+    asm volatile("cpuid"
+        : "=a" (Eax),
+          "=b" (Ebx),
+          "=c" (Ecx),
+          "=d" (Edx)
+        : "0" (Eax), "2" (Ecx)
+    : );
 }
 
-libhttppp::SYSInfo::~SYSInfo(){
+libhttppp::CpuInfo::~CpuInfo(){
 }
 
 
-int libhttppp::SYSInfo::getNumberOfProcessors(){
-    return sysconf(_SC_NPROCESSORS_ONLN);
+int libhttppp::CpuInfo::getCores(){
+    return Eax;
 }
 
-int libhttppp::SYSInfo::getPid(){
+int libhttppp::CpuInfo::getThreads(){
+    return Ebx;
+}
+
+int libhttppp::CpuInfo::getActualThread(){
+    return Edx;
+}
+
+
+int libhttppp::CpuInfo::getPid(){
     return getpid();
 }
 

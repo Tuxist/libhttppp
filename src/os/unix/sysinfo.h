@@ -31,13 +31,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SYSINFO_H
 
 namespace libhttppp {
-	class SYSInfo {
+	class CpuInfo {
 	public:
-		SYSInfo();
-		~SYSInfo();
-		int getNumberOfProcessors();
+		CpuInfo();
+		~CpuInfo();
+		int getCores();
+        int getThreads();
+        int getActualThread();
         int getPid();
 	private:
+        // eax cores | ebx threadsedx | actual thread
+        unsigned int Eax=11,Ebx=0,Ecx=1,Edx=0;
 	};
 };
 
