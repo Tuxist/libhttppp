@@ -93,7 +93,9 @@ void libhttppp::Connection::cleanSendData(){
 }
 
 libhttppp::ConnectionData *libhttppp::Connection::resizeSendQueue(size_t size){
-  return _resizeQueue(&_SendDataFirst,&_SendDataLast,&_SendDataSize,size);
+    if(size>0)
+        return _resizeQueue(&_SendDataFirst,&_SendDataLast,&_SendDataSize,size);
+    return _SendDataFirst;
 }
 
 libhttppp::ConnectionData* libhttppp::Connection::getSendData(){
@@ -106,15 +108,17 @@ size_t libhttppp::Connection::getSendSize(){
 
 
 libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
-  if(!_ReadDataFirst){
-    _ReadDataFirst= new ConnectionData(data,datasize);
-    _ReadDataLast=_ReadDataFirst;
-  }else{
-    _ReadDataLast->_nextConnectionData=new ConnectionData(data,datasize);
-    _ReadDataLast=_ReadDataLast->_nextConnectionData;
-  }
-  _ReadDataSize+=datasize;
-  return _ReadDataLast;
+    if(datasize<0)
+        return _ReadDataLast;
+    if(!_ReadDataFirst){
+        _ReadDataFirst= new ConnectionData(data,datasize);
+        _ReadDataLast=_ReadDataFirst;
+    }else{
+        _ReadDataLast->_nextConnectionData=new ConnectionData(data,datasize);
+        _ReadDataLast=_ReadDataLast->_nextConnectionData;
+    }
+    _ReadDataSize+=datasize;
+    return _ReadDataLast;
 }
 
 void libhttppp::Connection::cleanRecvData(){
@@ -126,7 +130,9 @@ void libhttppp::Connection::cleanRecvData(){
 
 
 libhttppp::ConnectionData *libhttppp::Connection::resizeRecvQueue(size_t size){
-  return _resizeQueue(&_ReadDataFirst,&_ReadDataLast,&_ReadDataSize,size);
+    if(size>0)
+        return _resizeQueue(&_ReadDataFirst,&_ReadDataLast,&_ReadDataSize,size);
+    return _ReadDataFirst;
 }
 
 libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){

@@ -49,7 +49,7 @@ libhttppp::ClientSocket::ClientSocket(){
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-  shutdown(Socket,SHUT_RDWR);
+  close(Socket);
   if(_SSL)
     SSL_free(_SSL);
   delete _ClientAddr;
@@ -219,17 +219,22 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   }else{
       rval=sendto(socket->Socket,data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
   }
-  if(rval==-1){
+  if(rval<0){
 #ifdef __GLIBCXX__
     char errbuf[255];
-    _httpexception.Error("Socket sendata:",strerror_r(errno,errbuf,255));
+    if(errno == EAGAIN)
+        _httpexception.Note("Socket sendata:",strerror_r(errno,errbuf,255));
+    else
+        _httpexception.Error("Socket sendata:",strerror_r(errno,errbuf,255));
 #else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    _httpexception.Error("Socket sendata:",errbuf);
+    if(errno == EAGAIN)
+        _httpexception.Note("Socket sendata:",errbuf);
+    else 
+        _httpexception.Error("Socket sendata:",errbuf);
 #endif
-    if(errno != EAGAIN || errno !=EWOULDBLOCK)
-      throw _httpexception;
+    throw _httpexception;
   }
   return rval;
 }
@@ -246,18 +251,22 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     recvsize=recvfrom(socket->Socket,data, size,flags,
                               socket->_ClientAddr, &socket->_ClientAddrLen);
   }
-  if(recvsize==-1){
+  if(recvsize<0){
 #ifdef __GLIBCXX__ 
     char errbuf[255];
-    _httpexception.Error("Socket recvata:",strerror_r(errno,errbuf,255));
+    if(errno == EAGAIN)
+        _httpexception.Note("Socket recvata:",strerror_r(errno,errbuf,255));
+    else
+        _httpexception.Error("Socket recvata:",strerror_r(errno,errbuf,255));
 #else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    _httpexception.Error("Socket recvata:",errbuf);
+    if(errno == EAGAIN)
+        _httpexception.Note("Socket recvata:",errbuf);
+    else
+        _httpexception.Error("Socket recvata:",errbuf);
 #endif
-    if(errno != EAGAIN || errno !=EWOULDBLOCK){
-      throw _httpexception;
-    }
+    throw _httpexception;
   }
   return recvsize;
 }

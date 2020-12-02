@@ -169,14 +169,13 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
     try {
         char buf[BLOCKSIZE];
         int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),buf,BLOCKSIZE);
-        if(rcvsize > 0){
-            std::cout << buf << std::endl;
-            curct->addRecvQueue(buf,rcvsize);
-            RequestEvent(curct);
-        }else if(errno!=EAGAIN){
-            httpexception.Error("Recv Failed",strerror(errno));
+        if(rcvsize < 0){
+            httpexception.Error("ReadEventHandler",strerror(errno));
             throw httpexception;
         }
+        std::cout << buf << std::endl;
+        curct->addRecvQueue(buf,rcvsize);
+        RequestEvent(curct);
     } catch(HTTPException &e) {
         throw e;
     }
@@ -189,19 +188,20 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
         ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
-        if(sended > 0){
-            curct->resizeSendQueue(sended);
-            ResponseEvent(curct);
-            return;
-        }else if(errno!=EAGAIN){
-            throw httpexception.Error("WriteEventHandler:",strerror(errno));
+        if(sended < 0){
+            httpexception.Error("WriteEventHandler:",strerror(errno));
+            throw httpexception;
         }
+        curct->resizeSendQueue(sended);
+        ResponseEvent(curct);
     } catch(HTTPException &e) {
         throw e;
     }
 }
 
 void libhttppp::EPOLL::CloseEventHandler(int des){
+    if(!_Events[des].data.ptr)
+        return;
     HTTPException httpexception;   
     struct epoll_event setevent{0};
     Connection *curct=((ConntectionPtr*)_Events[des].data.ptr)->_Connection;

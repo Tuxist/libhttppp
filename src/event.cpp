@@ -88,11 +88,12 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
         for (int i = 0; i < des; ++i) {
             try{
                 int state=eventptr->StatusEventHandler(i);
-                if(eventptr->LockConnection(i)==LockConnectionStatus::LOCKNOTREADY &&
+                int lock=eventptr->LockConnection(i);
+                if(lock==LockConnectionStatus::LOCKNOTREADY &&
                     state==EventApi::EventHandlerStatus::EVCON
                 ){
                     eventptr->ConnectEventHandler(i);
-                }else if(eventptr->LockConnection(i)==LockConnectionStatus::LOCKREADY){
+                }else if(lock==LockConnectionStatus::LOCKREADY){
                     try{
                         switch(state){
                             case EventApi::EventHandlerStatus::EVIN:
@@ -101,13 +102,14 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                             case EventApi::EventHandlerStatus::EVOUT:
                                 eventptr->WriteEventHandler(i);
                                 break;
-                            default:
-                                HTTPException error;
-                                error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
-                                throw error;
+//                             default:
+//                                 HTTPException error;
+//                                 error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
+//                                 throw error;
                         }
                     }catch(HTTPException &e){
-                        eventptr->CloseEventHandler(i);
+                        if(e.isError() || e.isCritical())
+                            eventptr->CloseEventHandler(i);
                     }
                 }
                 eventptr->UnlockConnction(i);
