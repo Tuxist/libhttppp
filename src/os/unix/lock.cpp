@@ -28,21 +28,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "lock.h"
 
 libhttppp::Lock::Lock(){
-    _CLock=new pthread_mutex_t;
-    *_CLock=PTHREAD_MUTEX_INITIALIZER;
+    _CLock.store(false);
 }
 
 libhttppp::Lock::~Lock(){
-    delete _CLock;
 }
 
 
 bool libhttppp::Lock::trylock(){
-    if(pthread_mutex_trylock(_CLock)==0)
+    if(_CLock.is_lock_free()){
+        _CLock.store(true);
         return true;
+    }
     return false;
 }
 
 void libhttppp::Lock::unlock(){
-  pthread_mutex_unlock(_CLock);
+  _CLock.store(false);
 }
