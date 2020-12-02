@@ -172,10 +172,19 @@ int libhttppp::ServerSocket::getMaxconnections(){
   return _Maxconnections;
 }
 
-int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
+int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int maxtries){
+    int ctry=0;
+    return acceptEvent(clientsocket,&ctry,maxtries);
+}
+
+int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int *ctry,int maxtries){
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
   int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
-  if(socket==-1){
+  if(socket<0){
+      if(errno==EAGAIN && *ctry<maxtries){
+          usleep(EPOLLWAIT);
+          return acceptEvent(clientsocket,&++(*ctry),maxtries);
+      }
 #ifdef __GLIBCXX__
     char errbuf[255];
     _httpexception.Error("Can't accept on  Socket",strerror_r(errno, errbuf, 255));

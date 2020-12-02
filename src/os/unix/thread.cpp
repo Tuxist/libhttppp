@@ -74,7 +74,7 @@ void libhttppp::Thread::setPid(int pid){
 }
 
 void libhttppp::Thread::Join(){
-  if(pthread_join(_Thread,&_Retval)==0){
+  if(pthread_join(_Thread,&_Retval)<=0){
     return;  
   }else{
     HTTPException httpexception;    

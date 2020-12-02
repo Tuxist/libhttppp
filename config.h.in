@@ -36,3 +36,5 @@
 #define NEWLINE "\r\n"
 
 #define DEBUG
+
+#define DEFAULTCONNECTTRIES 5

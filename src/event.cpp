@@ -35,9 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "event.h"
 
+bool libhttppp::Event::_Run=true;
+bool libhttppp::Event::_Restart=false;
+
 libhttppp::Event::Event(libhttppp::ServerSocket* serversocket) : EVENT(serversocket){
-    _Run=true;
-	_Restart = true;
+    libhttppp::CtrlHandler::initCtrlHandler();
 }
 
 libhttppp::Event::~Event(){
@@ -46,36 +48,42 @@ libhttppp::Event::~Event(){
 libhttppp::EventApi::~EventApi(){
 }
 
-void libhttppp::Event::CTRLCloseEvent() {
-	_Run = false;
+void libhttppp::CtrlHandler::CTRLCloseEvent() {
+	libhttppp::Event::_Run = false;
 }
 
-void libhttppp::Event::CTRLBreakEvent() {
-	_Restart = false;
+void libhttppp::CtrlHandler::CTRLBreakEvent() {
+    libhttppp::Event::_Restart = true;
+    libhttppp::Event::_Run=false;
+    libhttppp::Event::_Run=true;
+}
+
+void libhttppp::CtrlHandler::CTRLTermEvent() {
+	libhttppp::Event::_Run = false;
 }
 
 void libhttppp::Event::runEventloop(){
-    _Run=true;
-    _Restart = true;
-    while (_Restart) {
-        ThreadPool thpool;
         SYSInfo sysinfo;
         size_t thrs = sysinfo.getNumberOfProcessors();
         initEventHandler();
+MAINWORKERLOOP:
+        ThreadPool thpool;
         for (size_t i = 0; i < thrs; i++) {
             Thread *th = thpool.addThread();
             th->Create(WorkerThread, (void*)this);
         }
-        
         for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
             curth->Join();
         }
-    }
+        if(libhttppp::Event::_Restart){
+            libhttppp::Event::_Restart=false;
+            goto MAINWORKERLOOP;
+        }
 }
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
-    while (eventptr->_Run) {
+    while (libhttppp::Event::_Run) {
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
             try{
@@ -102,11 +110,11 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         eventptr->CloseEventHandler(i);
                     }
                 }
+                eventptr->UnlockConnction(i);
             }catch(HTTPException &e){
                 if(e.isCritical())
                     throw e;
             }
-            eventptr->UnlockConnction(i);
         }
     }
     return NULL;

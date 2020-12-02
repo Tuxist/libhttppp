@@ -30,38 +30,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ctrlhandler.h"
 
-
-void *libhttppp::CtrlHandler::CTRLPtr = NULL;
-
-libhttppp::CtrlHandler::CtrlHandler() {
-    CTRLPtr = this;
+void libhttppp::CtrlHandler::initCtrlHandler(){
     signal(SIGINT, CtrlEventHandler);
     signal(SIGQUIT, CtrlEventHandler);
-}
-
-libhttppp::CtrlHandler::~CtrlHandler() {
+    signal(SIGTERM,CtrlEventHandler);
 }
 
 void libhttppp::CtrlHandler::CtrlEventHandler(int sig) {
-    CtrlHandler *curobject = (CtrlHandler*)CtrlHandler::CTRLPtr;
     switch(sig){
         case SIGINT:{
-                curobject->CTRLBreakEvent();
+                CTRLBreakEvent();
             }
             break;
         case SIGQUIT:{
-                curobject->CTRLCloseEvent();
+                CTRLCloseEvent();
+            }
+            break;
+        case SIGTERM:{
+                CTRLTermEvent();
             }
             break;
         default:
             break;
     }
-}
-
-void libhttppp::CtrlHandler::CTRLBreakEvent() {
-	return;
-}
-
-void libhttppp::CtrlHandler::CTRLCloseEvent() {
-	return;
 }

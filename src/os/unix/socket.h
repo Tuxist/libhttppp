@@ -60,7 +60,8 @@ namespace libhttppp {
   public:
     ServerSocket(int socket);
     ServerSocket(const char *uxsocket,int maxconnections);
-    int           acceptEvent(ClientSocket *clientsocket);
+    int           acceptEvent(ClientSocket *clientsocket,int maxtries=DEFAULTCONNECTTRIES);
+    int           acceptEvent(ClientSocket *clientsocket,int *ctry,int maxtries);
     int           getSocket();
     ServerSocket(const char *addr,int port,int maxconnections);
     ~ServerSocket();

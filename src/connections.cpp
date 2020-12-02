@@ -140,7 +140,7 @@ size_t libhttppp::Connection::getRecvSize(){
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
 					 size_t *qsize, size_t size){
   ConnectionData *firstdat=*firstdata;
-  while(firstdat!=NULL && size!=0){
+  while(firstdat!=NULL && size>0){
     size_t delsize=0;
     if(size>=firstdat->getDataSize()){
        delsize=firstdat->getDataSize();
