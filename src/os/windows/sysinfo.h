@@ -29,17 +29,54 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 
+#define FSINFOMAXLEN 255
+
 #ifndef SYSINFO_H
 #define SYSINFO_H
+
 namespace libhttppp {
-	class SYSInfo {
+	class CpuInfo {
 	public:
-		SYSInfo();
-		~SYSInfo();
-		DWORD getNumberOfProcessors();
+		CpuInfo();
+		~CpuInfo();
+		int getCores();
+        int getThreads();
+        int getActualThread();
         int getPid();
 	private:
-		SYSTEM_INFO *_SystemInfo;
+        // eax cores | ebx threadsedx | actual thread
+        unsigned int Eax=11,Ebx=0,Ecx=1,Edx=0;
 	};
+    
+    class SysInfo {
+    public:
+        SysInfo();
+        unsigned int getFreeRam();
+        unsigned int getTotalRam();
+        unsigned int getBufferRam();
+    private:
+		MEMORYSTATUSEX statex;
+    };
+
+    class MountPoint {
+    private:
+        MountPoint();
+        ~MountPoint();
+        char _Device[FSINFOMAXLEN];
+        char _Path[FSINFOMAXLEN];
+        char _FSType[FSINFOMAXLEN];
+        char _Options[FSINFOMAXLEN];
+        MountPoint *_nextMountPoint;
+        friend class FsInfo;
+    };
+
+    class FsInfo {
+    public:
+        FsInfo();
+        ~FsInfo();
+    private:
+        MountPoint *_firstMountPoint;
+        MountPoint *_lastMountPoint;
+    };
 };
 #endif

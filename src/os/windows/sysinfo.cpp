@@ -25,23 +25,67 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <intrin.h>
 #include <process.h>
 
 #include "sysinfo.h"
 
-libhttppp::SYSInfo::SYSInfo() {
-	_SystemInfo = new SYSTEM_INFO;
-	GetSystemInfo(_SystemInfo);
+libhttppp::CpuInfo::CpuInfo(){
+	__int32 regs[4];
+	__cpuid((int *)regs, (int)0);
+	Eax=regs[0];
+	Ebx=regs[0];
+	Ecx=regs[2];
+	Edx=regs[3];
 }
 
-libhttppp::SYSInfo::~SYSInfo() {
-	delete _SystemInfo;
+libhttppp::CpuInfo::~CpuInfo(){
 }
 
-DWORD libhttppp::SYSInfo::getNumberOfProcessors() {
-	return _SystemInfo->dwNumberOfProcessors;
+
+int libhttppp::CpuInfo::getCores(){
+    return Eax;
 }
 
-int libhttppp::SYSInfo::getPid() {
-	return _getpid();
+int libhttppp::CpuInfo::getThreads(){
+    return Ebx;
+}
+
+int libhttppp::CpuInfo::getActualThread(){
+    return Edx;
+}
+
+
+int libhttppp::CpuInfo::getPid(){
+    return _getpid();
+}
+
+libhttppp::SysInfo::SysInfo(){
+  statex.dwLength = sizeof (statex);
+  GlobalMemoryStatusEx (&statex);
+}
+
+unsigned int libhttppp::SysInfo::getTotalRam(){
+	return statex.ullTotalPhys;
+}
+
+unsigned int libhttppp::SysInfo::getBufferRam(){
+    return 0;
+}
+
+unsigned int libhttppp::SysInfo::getFreeRam(){
+	return statex.ullAvailPhys;
+}
+
+libhttppp::MountPoint::MountPoint(){
+}
+
+libhttppp::MountPoint::~MountPoint(){
+}
+
+libhttppp::FsInfo::FsInfo(){
+}
+
+libhttppp::FsInfo::~FsInfo()
+{
 }

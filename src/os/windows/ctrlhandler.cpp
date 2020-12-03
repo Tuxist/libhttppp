@@ -29,43 +29,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ctrlhandler.h"
 
-void *libhttppp::CtrlHandler::CTRLPtr = NULL;
-
-libhttppp::CtrlHandler::CtrlHandler() {
-	CTRLPtr = this;
-	SetConsoleCtrlHandler(CtrlEventHandler, TRUE);
+void libhttppp::CtrlHandler::initCtrlHandler(){
 }
 
-libhttppp::CtrlHandler::~CtrlHandler() {
-	SetConsoleCtrlHandler(CtrlEventHandler, FALSE);
-}
-
-BOOL WINAPI libhttppp::CtrlHandler::CtrlEventHandler(DWORD eventin) {
-	CtrlHandler *curobject = (CtrlHandler*)CtrlHandler::CTRLPtr;
-	switch (eventin) {
+void libhttppp::CtrlHandler::CtrlEventHandler(int sig) {
+	switch (sig) {
 		case CTRL_BREAK_EVENT:
-			curobject->CTRLBreakEvent();
+			CTRLBreakEvent();
 			break;
  		case CTRL_C_EVENT:
  		case CTRL_LOGOFF_EVENT:
  		case CTRL_SHUTDOWN_EVENT:
  		case CTRL_CLOSE_EVENT:
-			curobject->CTRLCloseEvent();
+			CTRLCloseEvent();
  			break;
  
 		default:
 		//
 		// unknown type--better pass it on.
 		//
-		return(FALSE);
+			break;
 	}
- 	return(TRUE);
-}
-
-void libhttppp::CtrlHandler::CTRLBreakEvent() {
-	return;
-}
-
-void libhttppp::CtrlHandler::CTRLCloseEvent() {
-	return;
 }

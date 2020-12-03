@@ -46,16 +46,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define READEVENT 0
 #define SENDEVENT 1
 
-libhttppp::IOCP::IOCP(ServerSocket *serversocket) {
+libhttppp::ConntectionPtr::ConntectionPtr() {
+	_Connection = new Connection;
+}
+
+libhttppp::ConntectionPtr::~ConntectionPtr() {
+	delete _Connection;
+}
+
+libhttppp::IOCP::IOCP(ServerSocket* serversocket) {
+	HTTPException httpexception;
+	try {
+		InitializeCriticalSection(&_CriticalSection);
+		_hCleanupEvent[0] = 0;
+	}
+	catch (...) {
+		HTTPException hexception;
+		hexception.Critical("InitializeCriticalSection raised an exception.\n");
+		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
+			WSACloseEvent(_hCleanupEvent[0]);
+			_hCleanupEvent[0] = WSA_INVALID_EVENT;
+		}
+		throw httpexception;
+	}
 	_ServerSocket = serversocket;
 	_ServerSocket->setnonblocking();
 	_ServerSocket->listenSocket();
+	_IOCP = new HANDLE;
+	_ConnectionPtr = new ConntectionPtr;
 }
 
 libhttppp::IOCP::~IOCP() {
+	delete _ConnectionPtr;
+	delete _IOCP;
 }
 
-const char * libhttppp::IOCP::getEventType() {
+const char* libhttppp::IOCP::getEventType() {
 	return "IOCP";
 }
 
@@ -65,7 +91,7 @@ void libhttppp::IOCP::initEventHandler() {
 	DWORD bytes = 0;
 	DWORD dwrecvnumbytes = 0;
 	GUID acceptex_guid = WSAID_ACCEPTEX;
-	_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	*_IOCP = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	if (_IOCP == NULL) {
 		httpexception.Critical("CreateIoCompletionPort() failed to create I/O completion port:",
 			GetLastError());
@@ -77,22 +103,7 @@ void libhttppp::IOCP::initEventHandler() {
 		throw httpexception;
 	}
 
-	try {
-		InitializeCriticalSection(&_CriticalSection);
-	}
-	catch (...) {
-		HTTPException hexception;
-		hexception.Critical("InitializeCriticalSection raised an exception.\n");
-		if (_hCleanupEvent[0] != WSA_INVALID_EVENT) {
-			WSACloseEvent(_hCleanupEvent[0]);
-			_hCleanupEvent[0] = WSA_INVALID_EVENT;
-		}
-		throw httpexception;
-	}
-
-	IOCPConnection *listencon = new IOCPConnection;
-
-	_IOCP = CreateIoCompletionPort((HANDLE)listencon->getClientSocket()->Socket, _IOCP, (DWORD_PTR)listencon, 0);
+	*_IOCP = CreateIoCompletionPort((HANDLE)_ConnectionPtr->_Connection->getClientSocket()->Socket, _IOCP, (DWORD_PTR)_ConnectionPtr, 0);
 
 	if (_IOCP == NULL) {
 		httpexception.Critical("createiocompletionport() failed:", GetLastError());
@@ -105,8 +116,8 @@ void libhttppp::IOCP::initEventHandler() {
 		SIO_GET_EXTENSION_FUNCTION_POINTER,
 		&acceptex_guid,
 		sizeof(acceptex_guid),
-		&listencon->fnAcceptEx,
-		sizeof(listencon->fnAcceptEx),
+		&_ConnectionPtr->_fnAcceptEx,
+		sizeof(_ConnectionPtr->_fnAcceptEx),
 		&bytes,
 		NULL,
 		NULL
@@ -119,10 +130,10 @@ void libhttppp::IOCP::initEventHandler() {
 
 	/*disable buffer in clientsocket*/
 	try {
-		ClientSocket *lsock = listencon->getClientSocket();
+		ClientSocket* lsock = _ConnectionPtr->_Connection->getClientSocket();
 		lsock->disableBuffer();
 	}
-	catch (HTTPException &e) {
+	catch (HTTPException& e) {
 		if (e.isCritical()) {
 			throw e;
 		}
@@ -132,9 +143,9 @@ void libhttppp::IOCP::initEventHandler() {
 	//
 
 	char buf[BLOCKSIZE];
-	WSAOVERLAPPED *wsaover = new WSAOVERLAPPED;
-	nRet = listencon->fnAcceptEx(_ServerSocket->getSocket(),
-		listencon->getClientSocket()->Socket,
+	WSAOVERLAPPED* wsaover = new WSAOVERLAPPED;
+	nRet = _ConnectionPtr->_fnAcceptEx(_ServerSocket->getSocket(),
+		_ConnectionPtr->_Connection->getClientSocket()->Socket,
 		(LPVOID)(buf),
 		BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
 		sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
@@ -147,7 +158,7 @@ void libhttppp::IOCP::initEventHandler() {
 		throw httpexception;
 	}
 
-	
+
 }
 
 int libhttppp::IOCP::waitEventHandler() {
@@ -155,7 +166,24 @@ int libhttppp::IOCP::waitEventHandler() {
 }
 
 void libhttppp::IOCP::ConnectEventHandler(int des) {
-
+	HTTPException httpexepction;
+	HANDLE hIOCP = _IOCP;
+	ConntectionPtr *curptr;
+	BOOL bSuccess = FALSE;
+	DWORD dwIoSize = 0;
+	LPWSAOVERLAPPED lpOverlapped = NULL;
+	HTTPException httpexception;
+	for (;;) {
+		bSuccess = GetQueuedCompletionStatus(
+			hIOCP,
+			&dwIoSize,
+			(PDWORD_PTR)&curptr,
+			(LPOVERLAPPED*)&lpOverlapped,
+			INFINITE
+		);
+		if (!bSuccess)
+			httpexception.Error("GetQueuedCompletionStatus() failed: ", GetLastError());
+	}
 }
 
 int libhttppp::IOCP::StatusEventHandler(int des) {
@@ -170,21 +198,33 @@ void libhttppp::IOCP::WriteEventHandler(int des) {
 
 }
 
+void libhttppp::IOCP::CloseEventHandler(int des) {
+
+}
+
+int libhttppp::IOCP::LockConnection(int des) {
+	return LockConnectionStatus::LOCKNOTREADY;
+}
+
+void libhttppp::IOCP::UnlockConnction(int des)
+{
+}
+
 /*API Events*/
 
-void libhttppp::IOCP::RequestEvent(Connection *curcon) {
+void libhttppp::IOCP::RequestEvent(Connection* curcon) {
 	return;
 };
 
-void libhttppp::IOCP::ResponseEvent(Connection *curcon) {
+void libhttppp::IOCP::ResponseEvent(Connection* curcon) {
 	return;
 };
 
-void libhttppp::IOCP::ConnectEvent(Connection *curcon) {
+void libhttppp::IOCP::ConnectEvent(Connection* curcon) {
 	return;
 };
 
-void libhttppp::IOCP::DisconnectEvent(Connection *curcon) {
+void libhttppp::IOCP::DisconnectEvent(Connection* curcon) {
 	return;
 };
 

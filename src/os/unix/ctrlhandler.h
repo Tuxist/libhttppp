@@ -32,10 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
 	class CtrlHandler {
 	public:
-        static void initCtrlHandler();
+    	static void initCtrlHandler();
 		static void CTRLCloseEvent();
 		static void CTRLBreakEvent();
-        static void CTRLTermEvent();
+    static void CTRLTermEvent();
 		static void CtrlEventHandler(int sig);
 	};
 };

@@ -32,13 +32,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace libhttppp {
 	class CtrlHandler {
 	public:
-		CtrlHandler();
-		~CtrlHandler();
-		
-		virtual void CTRLCloseEvent()=0;
-		virtual void CTRLBreakEvent()=0;
-		static BOOL WINAPI CtrlEventHandler(DWORD eventin);
-		static void		  *CTRLPtr;
+    	static void initCtrlHandler();
+		static void CTRLCloseEvent();
+		static void CTRLBreakEvent();
+    	static void CTRLTermEvent();
+		static void CtrlEventHandler(int sig);
 	};
 };
 
@@ -48,9 +46,9 @@ namespace libhttppp {
 
 /*
 SIGHUP	1	Logoff
-SIGINT	2	Benutzer-Interrupt (ausgelöst durch [Strg]+[C])
-SIGQUIT	3	Benutzeraufforderung zum Beenden (ausgelöst durch [Strg)+[\])
-SIGFPE	8	Fließkommafehler, beispielsweise Null-Division
+SIGINT	2	Benutzer-Interrupt (ausgelï¿½st durch [Strg]+[C])
+SIGQUIT	3	Benutzeraufforderung zum Beenden (ausgelï¿½st durch [Strg)+[\])
+SIGFPE	8	Flieï¿½kommafehler, beispielsweise Null-Division
 SIGKILL	9	Prozess killen
 SIGUSR1	10	Benutzerdefiniertes Signal
 SIGSEGV	11	Prozess hat versucht, auf Speicher zuzugreifen, der ihm nicht zugewiesen war
@@ -60,5 +58,5 @@ SIGTERM	15	Aufforderung zum Beenden
 SIGCHLD	17	Kindprozess wird aufgefordert, sich zu beenden
 SIGCONT	18	Nach einem SIGSTOP- oder SIGTSTP-Signal fortfahren
 SIGSTOP	19	Den Prozess anhalten
-SIGTSTP	20 Prozess suspendiert, ausgelöst durch [Strg)+[Z].
+SIGTSTP	20 Prozess suspendiert, ausgelï¿½st durch [Strg)+[Z].
 */
