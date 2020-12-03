@@ -51,15 +51,6 @@ bool libhttppp::Lock::trylock(){
     }
 }
 
-bool libhttppp::Lock::lock(){
-  unsigned long ret = WaitForSingleObject(_CLock,INFINITE);
-  if(ret != WAIT_OBJECT_0){
-    return false;
-  }
-  return true;
-}
-
-
 bool libhttppp::Lock::unlock(){
   if(!ReleaseMutex(_CLock))
     return false;

@@ -43,25 +43,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define IOCP_H
 
 namespace libhttppp {
-	class ConntectionPtr {
+	class ConnectionPtr {
 	private:
-		ConntectionPtr();
-		~ConntectionPtr();
-		Connection    *_Connection;
-		LPFN_ACCEPTEX  _fnAcceptEx;		
-		Lock           _ConnectionLock;
+		ConnectionPtr();
+		~ConnectionPtr();		
+		Connection     *_Connection;		
+		Lock            _ConnectionLock;
+		ConnectionPtr  *_forwardPtr;
+		ConnectionPtr  *_backPtr;
 		friend class IOCP;
 	};
 
+	class IOData {
+	private:
+		IOData();
+		WSAOVERLAPPED  _overlapped;
+		WSABUF		   _databuff;
+		int			   _operationType;
+		ConnectionPtr* _connection;
+		friend class IOCP;
+	};
 
 	class IOCP : public EventApi{
 	public:
 		IOCP(ServerSocket *serversocket);
 		~IOCP();
-		void runEventloop();
 		
 		/**/
 		void       initEventHandler();
+		void	   initWorker();
 		int        waitEventHandler();
 		void       ConnectEventHandler(int des);
 		int        StatusEventHandler(int des);
@@ -79,11 +89,12 @@ namespace libhttppp {
 		void ConnectEvent(Connection *curcon);
 		void DisconnectEvent(Connection *curcon);
 	private:
-		HANDLE					*_IOCP;
+		HANDLE					 _IOCP;
 		CRITICAL_SECTION		 _CriticalSection;
 		WSAEVENT				 _hCleanupEvent[1];
-		ServerSocket            *_ServerSocket;
-		ConntectionPtr			*_ConnectionPtr;
+		ServerSocket            *_ServerSocket;		
+		ConnectionPtr			*_firstConnectionPtr;
+		ConnectionPtr			*_lastConnectionPtr;
 	};
 };
 

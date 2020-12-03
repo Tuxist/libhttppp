@@ -39,7 +39,6 @@ namespace libhttppp {
     Lock();
     ~Lock();
     bool            trylock();
-    bool            lock();
     bool            unlock();
   private:
     HANDLE           _CLock;

@@ -107,6 +107,9 @@ void libhttppp::EPOLL::initEventHandler(){
         _Events[i].data.ptr = NULL;
 }
 
+void libhttppp::EPOLL::initWorker() {
+}
+
 int libhttppp::EPOLL::waitEventHandler(){
     int n = epoll_wait(_epollFD,_Events,_ServerSocket->getMaxconnections(), EPOLLWAIT);
     if(n<0) {

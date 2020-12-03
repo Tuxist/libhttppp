@@ -48,6 +48,7 @@ namespace libhttppp {
         ~EPOLL();
         /**/
         void       initEventHandler();
+        void       initWorker();
         int        waitEventHandler();
         void       ConnectEventHandler(int des);
         int        StatusEventHandler(int des);

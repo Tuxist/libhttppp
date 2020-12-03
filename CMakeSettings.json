@@ -4,14 +4,39 @@
       "name": "x64-Debug",
       "generator": "Ninja",
       "configurationType": "Debug",
-      "inheritEnvironments": [
-        "msvc_x64_x64"
-      ],
+      "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
       "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "OPENSSL_INCLUDE_DIR",
+          "value": "C:/Program Files/OpenSSL-Win64/include",
+          "type": "PATH"
+        },
+        {
+          "name": "LIB_EAY_DEBUG",
+          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libcrypto64MDd.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "LIB_EAY_RELEASE",
+          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libcrypto64MD.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "SSL_EAY_DEBUG",
+          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libssl64MDd.lib",
+          "type": "FILEPATH"
+        },
+        {
+          "name": "SSL_EAY_RELEASE",
+          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libssl64MT.lib",
+          "type": "FILEPATH"
+        }
+      ]
     }
   ]
 }

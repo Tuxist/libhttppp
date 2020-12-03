@@ -42,6 +42,7 @@ class EventApi {
         
 		virtual ~EventApi();
         virtual void initEventHandler()=0;
+        virtual void initWorker() = 0;
         virtual int    waitEventHandler()=0;
         virtual const char *getEventType()=0;
         virtual void ConnectEventHandler(int des)=0;

@@ -83,6 +83,10 @@ MAINWORKERLOOP:
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
+
+    //only used by iocp
+    eventptr->initWorker();
+
     while (libhttppp::Event::_Run) {
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
