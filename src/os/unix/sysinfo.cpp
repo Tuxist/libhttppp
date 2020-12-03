@@ -26,7 +26,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "sysinfo.h"
+#include <fstream>
 #include <unistd.h>
+#include <iostream>
+#include <utils.h>
 
 libhttppp::CpuInfo::CpuInfo(){
     asm volatile("cpuid"
@@ -58,5 +61,75 @@ int libhttppp::CpuInfo::getActualThread(){
 int libhttppp::CpuInfo::getPid(){
     return getpid();
 }
+
+libhttppp::SysInfo::SysInfo(){
+    sysinfo(&_Sysinfo);
+}
+
+uint libhttppp::SysInfo::getTotalRam(){
+    return _Sysinfo.totalram;
+}
+
+uint libhttppp::SysInfo::getBufferRam(){
+    return _Sysinfo.bufferram;
+}
+
+uint libhttppp::SysInfo::getFreeRam(){
+    return _Sysinfo.freeram;
+}
+
+libhttppp::MountPoint::MountPoint(){
+}
+
+libhttppp::MountPoint::~MountPoint(){
+}
+
+libhttppp::FsInfo::FsInfo(){
+    std::fstream mountinfo;
+    mountinfo.open("/proc/self/mountinfo",std::fstream::in);
+    char buffer[1024];
+    if(mountinfo.is_open()){
+        while(mountinfo.getline(buffer,1024)){
+            NEXTFSTABLINE:
+            char split[10][FSINFOMAXLEN];
+            int entry=0,entrypos=0;
+            bool ne=false;
+            for(int i=0; i>1024; ++i){
+                switch(buffer[i]){
+                    case ' ':{
+                        if(!ne){
+                            split[entry][entrypos]='\0';
+                            ++entrypos;
+                            if(entry<10)
+                                goto NEXTFSTABLINE;
+                            ++entry;
+                        }
+                        ne=true;
+                    }break;
+                    case '\0':{
+                        goto NEXTFSTABLINE;
+                    }break;
+                    default:{
+                        split[entry][entrypos]=buffer[i];
+                        ++entrypos;
+                        ne=false;
+                    }break;
+                }
+            }
+            for(int i=0; i<10; i++){
+                std::cout << split[i] <<std::endl;
+            }
+        }
+    }else{
+        HTTPException httpexception;
+        httpexception.Error("FsInfo","Could not open Fstab");
+    }
+}
+
+libhttppp::FsInfo::~FsInfo()
+{
+}
+
+
 
 

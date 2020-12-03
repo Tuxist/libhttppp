@@ -31,9 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ctrlhandler.h"
 
 void libhttppp::CtrlHandler::initCtrlHandler(){
-    signal(SIGINT, CtrlEventHandler);
-    signal(SIGQUIT, CtrlEventHandler);
-    signal(SIGTERM,CtrlEventHandler);
+//     signal(SIGINT, CtrlEventHandler);
+//     signal(SIGQUIT, CtrlEventHandler);
+//     signal(SIGTERM,CtrlEventHandler);
 }
 
 void libhttppp::CtrlHandler::CtrlEventHandler(int sig) {

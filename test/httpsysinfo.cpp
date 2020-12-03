@@ -89,8 +89,9 @@ public:
               << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br/>"; 
     KernelInfo();
     CPUInfo();
+    SysInfo();
+    FsInfo();
     sysstream << "</div></div></body></html>";
-              
   }
   
   void KernelInfo(){
@@ -114,6 +115,21 @@ public:
     cputable.createRow("Threads ",cpuinfo.getThreads());
     sysstream << cputable.getTable();
   }
+  
+  void SysInfo(){
+    libhttppp::SysInfo sysinfo;
+    sysstream << "<h2>SysInfo:</h2>";
+    HtmlTable cputable;
+    cputable.createRow("Total Ram ",sysinfo.getTotalRam());
+    cputable.createRow("Free Ram ",sysinfo.getFreeRam());
+    cputable.createRow("Buffered Ram ",sysinfo.getBufferRam());
+    sysstream << cputable.getTable();   
+  }
+  
+    void FsInfo(){
+        libhttppp::FsInfo fsinfo;
+        sysstream << "<h2>SysInfo:</h2>";
+    }
   
   const char *getIndexPage(){
     _Buffer=sysstream.str();
