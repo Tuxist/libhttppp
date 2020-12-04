@@ -99,7 +99,7 @@ install(FILES os/windows/socket.h
               os/windows/thread.h
 			  os/windows/sysinfo.h
 			  event/iocp/iocp.h
-        DESTINATION include/httppp/os/Windows
+        DESTINATION include/httppp/os/windows
         COMPONENT Devel
 )
 ELSE()
@@ -107,7 +107,7 @@ install(FILES os/unix/socket.h
               os/unix/lock.h
               os/unix/thread.h
               os/unix/sysinfo.h
-        DESTINATION include/httppp/os/Unix
+        DESTINATION include/httppp/os/unix
         COMPONENT Devel
 )
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
