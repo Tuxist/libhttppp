@@ -82,13 +82,14 @@ install(FILES connections.h
               mimetypes.h
               utils.h
               "${CMAKE_BINARY_DIR}/config.h"
+              "${CMAKE_BINARY_DIR}/event.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp
         COMPONENT Devel
 )
 
 #os dependencies
-install(FILES os/os.h 
+install(FILES os/os.h
         DESTINATION include/httppp/os
         COMPONENT Devel
 )
@@ -114,13 +115,13 @@ install(FILES os/unix/socket.h
 )
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     install(FILES event/epoll/epoll.h 
-            DESTINATION include/httppp/event 
+            DESTINATION include/httppp/event/epoll
             COMPONENT Devel
     )
 ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
        ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     install(FILES event/kqueue/kqueue.h
-            DESTINATION include/httppp/event
+            DESTINATION include/httppp/event/kqueue
             COMPONENT Devel
     )
 ENDIF()
