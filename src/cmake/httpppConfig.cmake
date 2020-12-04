@@ -5,7 +5,9 @@ if(EXISTS "${httppp_CMAKE_DIR}/CMakeCache.txt")
   # In build tree
   include("${httppp_CMAKE_DIR}/httpppBuildTreeSettings.cmake")
 else()
-  set(httppp_INCLUDE_DIRS "${httppp_CMAKE_DIR}/@CONF_REL_INCLUDE_DIR@")
+  set(httppp_INCLUDE_DIRS "@CMAKE_INSTALL_PREFIX@/include/httppp")
 endif()
 
 set(httppp_LIBRARIES httppp)
+set(httppp_INCLUDE_DIR "httppp")
+
