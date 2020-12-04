@@ -103,11 +103,11 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                  error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
                                  throw error;
                         }
+                        eventptr->UnlockConnction(i);
                     }catch(HTTPException &e){
                         if(e.isError() || e.isCritical())
                             eventptr->CloseEventHandler(i);
                     }
-                    eventptr->UnlockConnction(i);
                 }              
             }catch(HTTPException &e){
                 if(e.isCritical())

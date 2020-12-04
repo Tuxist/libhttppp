@@ -118,46 +118,45 @@ int libhttppp::EPOLL::waitEventHandler(){
 }
 
 int libhttppp::EPOLL::StatusEventHandler(int des){
-    if(((ConntectionPtr*)_Events[des].data.ptr)->_Connection->getSendData())
+    HTTPException httpexception;
+    if(!_Events[des].data.ptr){
+        httpexception.Note("StatusEventHandler","Connection Closed");
+        throw httpexception;
+    }else if(((ConntectionPtr*)_Events[des].data.ptr)->_Connection->getSendData()){
         return EventHandlerStatus::EVOUT;
+    }
     return EventHandlerStatus::EVIN;
 }
 
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
-	if (!_Events[des].data.ptr) {
-		HTTPException httpexception;
-		struct epoll_event setevent { 0 };
-		Connection* curct = new Connection;
-		try {
-			/*will create warning debug mode that normally because the check already connection
-			 * with this socket if getconnection throw they will be create a new one
-			 */
-			curct->getClientSocket()->setnonblocking();
-			if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
-				setevent.events = EPOLLIN | EPOLLOUT;
-				setevent.data.ptr = new ConntectionPtr;
-				((ConntectionPtr*)setevent.data.ptr)->_Connection = curct;
-				int err = 0;
-				if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
-					httpexception.Error("ConnectEventHandler: ", strerror(errno));
-					goto CONNRESET;
-				}
-				ConnectEvent(curct);
-				return;
-			}
-			else {
-				httpexception.Error("ConnectEventHandler:", "Connect Event invalid fildescriptor");
-				goto CONNRESET;
-			}
-		}
-		catch (HTTPException& e) {
-			if (e.isCritical())
-				goto CONNRESET;
-		}
-	CONNRESET:
-		delete curct;
-		throw httpexception;
-	}
+    HTTPException httpexception;
+    if (!_Events[des].data.ptr) {
+        struct epoll_event setevent { 0 };
+        Connection* curct = new Connection;
+        try {
+            /*will create warning debug mode that normally because the check already connection
+             * with this socket if getconnection throw they will be create a new one
+             */
+            curct->getClientSocket()->setnonblocking();
+            if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
+                setevent.events = EPOLLIN | EPOLLOUT;
+                setevent.data.ptr = new ConntectionPtr;
+                ((ConntectionPtr*)setevent.data.ptr)->_Connection = curct;
+                int err = 0;
+                if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
+                    httpexception.Error("ConnectEventHandler: ", strerror(errno));
+                    throw httpexception;
+                }
+                ConnectEvent(curct);
+            }else {
+                httpexception.Error("ConnectEventHandler:", "Connect Event invalid fildescriptor");
+                throw httpexception;
+            }
+        }catch (HTTPException& e) {
+            delete curct;
+            throw e;
+        }
+    }
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){

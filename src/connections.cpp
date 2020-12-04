@@ -184,7 +184,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         delsize+=size;
 #endif
         scopy((*firstdata)->_Data+size,(*firstdata)->_Data+BLOCKSIZE,(*firstdata)->_Data);
-        (*firstdata)->_Data[(*firstdata)->_DataSize]='\0';
+        (*firstdata)->_Data[((*firstdata)->_DataSize)-1]='\0';
         size-=(*firstdata)->getDataSize();
         *firstdata=(*firstdata);
 #ifdef DEBUG
