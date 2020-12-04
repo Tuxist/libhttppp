@@ -5,14 +5,12 @@
 
 #ifdef Windows
   #include "windows/socket.h"
-  #include "windows/inttype.h"
   #include "windows/lock.h"
   #include "windows/thread.h"
   #include "windows/sysinfo.h"
   #include "windows/ctrlhandler.h"
 #else
   #include "unix/socket.h"
-  #include "unix/inttype.h"
   #include "unix/lock.h"
   #include "unix/thread.h"
   #include "unix/sysinfo.h"

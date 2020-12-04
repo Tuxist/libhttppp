@@ -98,6 +98,7 @@ install(FILES os/windows/socket.h
               os/windows/lock.h
               os/windows/thread.h
 			  os/windows/sysinfo.h
+			  os/windows/ctrlhandler.h
 			  event/iocp/iocp.h
         DESTINATION include/httppp/os/windows
         COMPONENT Devel
@@ -107,6 +108,7 @@ install(FILES os/unix/socket.h
               os/unix/lock.h
               os/unix/thread.h
               os/unix/sysinfo.h
+              os/unix/ctrlhandler.h
         DESTINATION include/httppp/os/unix
         COMPONENT Devel
 )

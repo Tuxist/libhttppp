@@ -25,7 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "exception.h"
+#include "../../exception.h"
+
 #include <sys/sysinfo.h>
 #include <sys/mount.h>
 

@@ -25,8 +25,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <config.h>
-
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <cstdio>
