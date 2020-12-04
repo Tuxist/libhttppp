@@ -57,18 +57,13 @@ libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
 libhttppp::EPOLL::~EPOLL(){
 }
 
-int libhttppp::EPOLL::LockConnection(int des){
-    if(!_Events[des].data.ptr)
-        return LockConnectionStatus::LOCKNOTREADY;
-    if(((ConntectionPtr*)_Events[des].data.ptr)->_ConnectionLock.trylock())
-        return LockConnectionStatus::LOCKREADY;
-    return LockConnectionStatus::LOCKFAILED;
+bool libhttppp::EPOLL::LockConnection(int des) {
+    return ((ConntectionPtr*)_Events[des].data.ptr)->_ConnectionLock.trylock();
 }
 
 void libhttppp::EPOLL::UnlockConnction(int des)
 {
-    if(_Events[des].data.ptr)
-        ((ConntectionPtr*)_Events[des].data.ptr)->_ConnectionLock.unlock();
+   ((ConntectionPtr*)_Events[des].data.ptr)->_ConnectionLock.unlock();
 }
 
 const char * libhttppp::EPOLL::getEventType(){
@@ -107,9 +102,6 @@ void libhttppp::EPOLL::initEventHandler(){
         _Events[i].data.ptr = NULL;
 }
 
-void libhttppp::EPOLL::initWorker() {
-}
-
 int libhttppp::EPOLL::waitEventHandler(){
     int n = epoll_wait(_epollFD,_Events,_ServerSocket->getMaxconnections(), EPOLLWAIT);
     if(n<0) {
@@ -126,44 +118,46 @@ int libhttppp::EPOLL::waitEventHandler(){
 }
 
 int libhttppp::EPOLL::StatusEventHandler(int des){
-    if(!_Events[des].data.ptr)
-        return EventHandlerStatus::EVCON;
-    else if(((ConntectionPtr*)_Events[des].data.ptr)->_Connection->getSendData())
+    if(((ConntectionPtr*)_Events[des].data.ptr)->_Connection->getSendData())
         return EventHandlerStatus::EVOUT;
     return EventHandlerStatus::EVIN;
 }
 
-void libhttppp::EPOLL::ConnectEventHandler(int des){
-    HTTPException httpexception;
-    struct epoll_event setevent{0};
-    Connection* curct = new Connection;
-    try {
-        /*will create warning debug mode that normally because the check already connection
-         * with this socket if getconnection throw they will be create a new one
-         */
-        curct->getClientSocket()->setnonblocking();
-        if(_ServerSocket->acceptEvent(curct->getClientSocket())>0) {
-            setevent.events = EPOLLIN | EPOLLOUT;
-            setevent.data.ptr = new ConntectionPtr;
-            ((ConntectionPtr*)setevent.data.ptr)->_Connection=curct;
-            int err=0;
-            if((err=epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent))==-1){
-                httpexception.Error("ConnectEventHandler: ",strerror(errno));
-                goto CONNRESET;
-            }
-            ConnectEvent(curct);
-            return;
-        }else{
-            httpexception.Error("ConnectEventHandler:","Connect Event invalid fildescriptor");
-            goto CONNRESET;
-        }
-    }catch(HTTPException &e) {
-        if(e.isCritical())
-            goto CONNRESET;
-    }
-CONNRESET:
-    delete curct;
-    throw httpexception;
+void libhttppp::EPOLL::ConnectEventHandler(int des) {
+	if (!_Events[des].data.ptr) {
+		HTTPException httpexception;
+		struct epoll_event setevent { 0 };
+		Connection* curct = new Connection;
+		try {
+			/*will create warning debug mode that normally because the check already connection
+			 * with this socket if getconnection throw they will be create a new one
+			 */
+			curct->getClientSocket()->setnonblocking();
+			if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
+				setevent.events = EPOLLIN | EPOLLOUT;
+				setevent.data.ptr = new ConntectionPtr;
+				((ConntectionPtr*)setevent.data.ptr)->_Connection = curct;
+				int err = 0;
+				if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
+					httpexception.Error("ConnectEventHandler: ", strerror(errno));
+					goto CONNRESET;
+				}
+				ConnectEvent(curct);
+				return;
+			}
+			else {
+				httpexception.Error("ConnectEventHandler:", "Connect Event invalid fildescriptor");
+				goto CONNRESET;
+			}
+		}
+		catch (HTTPException& e) {
+			if (e.isCritical())
+				goto CONNRESET;
+		}
+	CONNRESET:
+		delete curct;
+		throw httpexception;
+	}
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){

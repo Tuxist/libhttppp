@@ -83,26 +83,13 @@ MAINWORKERLOOP:
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=(Event*)wrkevent;
-
-    //only used by iocp
-    eventptr->initWorker();
-
     while (libhttppp::Event::_Run) {
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
             try{
-                int state=eventptr->StatusEventHandler(i);
-                int lock=eventptr->LockConnection(i);
-                if(lock==LockConnectionStatus::LOCKNOTREADY
-                ){
-                    if(state==EventApi::EventHandlerStatus::EVCON)
-                        eventptr->ConnectEventHandler(i);
-                    else{
-                        HTTPException httpexception;
-                        httpexception.Error("WorkerThread","Lock not Ready and no new Connection");
-                        throw httpexception;
-                    }
-                }else if(lock==LockConnectionStatus::LOCKREADY){
+                eventptr->ConnectEventHandler(i);
+                int state = eventptr->StatusEventHandler(i);
+                if(eventptr->LockConnection(i)){
                     try{
                         switch(state){
                             case EventApi::EventHandlerStatus::EVIN:
@@ -120,8 +107,8 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         if(e.isError() || e.isCritical())
                             eventptr->CloseEventHandler(i);
                     }
-                }
-                eventptr->UnlockConnction(i);
+                    eventptr->UnlockConnction(i);
+                }              
             }catch(HTTPException &e){
                 if(e.isCritical())
                     throw e;

@@ -37,12 +37,10 @@ namespace libhttppp {
 class EventApi {
 	public:
         
-        enum EventHandlerStatus{EVNOTREADY=-1,EVCON=0,EVIN=1,EVOUT=2,EVUP=3,EVERR=4,EVWAIT=5};
-        enum LockConnectionStatus{LOCKFAILED=-1,LOCKREADY=0,LOCKNOTREADY=2};
+        enum EventHandlerStatus{EVNOTREADY=-1,EVIN=0,EVOUT=1,EVUP=2,EVERR=3,EVWAIT=4};
         
 		virtual ~EventApi();
         virtual void initEventHandler()=0;
-        virtual void initWorker() = 0;
         virtual int    waitEventHandler()=0;
         virtual const char *getEventType()=0;
         virtual void ConnectEventHandler(int des)=0;
@@ -52,7 +50,7 @@ class EventApi {
         virtual void CloseEventHandler(int des)=0;
         
         /*Multithreading options*/
-        virtual int  LockConnection(int des)=0;
+        virtual bool LockConnection(int des)=0;
         virtual void UnlockConnction(int des)=0;
         
         /*HTTP API Events*/

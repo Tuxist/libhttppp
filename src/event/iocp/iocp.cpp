@@ -55,6 +55,8 @@ libhttppp::IOData::IOData() {
 
 libhttppp::ConnectionPtr::ConnectionPtr() {
 	_Connection = new Connection;
+	_forwardPtr = NULL;
+	_backPtr = NULL;
 }
 
 libhttppp::ConnectionPtr::~ConnectionPtr() {
@@ -120,9 +122,6 @@ void libhttppp::IOCP::initWorker() {
 }
 
 int libhttppp::IOCP::waitEventHandler() {
-	if (WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE)) {
-		return 1;
-	}
 	return 0;
 }
 
@@ -133,17 +132,8 @@ void libhttppp::IOCP::ConnectEventHandler(int des) {
 	DWORD dwrecvnumbytes = 0;
 	DWORD bytes = 0;
 	LPFN_ACCEPTEX lpfnAcceptEx;
+	ConnectionPtr conptr;
 	WSAOVERLAPPED wsaover = { NULL };
-
-	int asock = _ServerSocket->acceptEvent(_ConnectionPtr[pos]._Connection->getClientSocket());
-	if (SOCKET_ERROR == asock) {
-		std::cerr << "Accept Socket Error: " << GetLastError() << std::endl;
-	}
-	else {
-		std::cerr << "Connected" << std::endl;
-	}
-
-	_IOCP = CreateIoCompletionPort((HANDLE)asock, _IOCP, (DWORD_PTR)&_ConnectionPtr[pos], 0);
 
 	int nRet = WSAIoctl(
 		_ServerSocket->getSocket(),
@@ -157,22 +147,8 @@ void libhttppp::IOCP::ConnectEventHandler(int des) {
 		NULL
 	);
 
-	if (nRet == SOCKET_ERROR) {
-		httpexception.Critical("failed to load acceptex: %d\n", WSAGetLastError());
-		throw httpexception;
-	}
-
-	try {
-		ClientSocket* lsock = _ConnectionPtr[pos]._Connection->getClientSocket();
-		lsock->disableBuffer();
-	}
-	catch (HTTPException& e) {
-		if (e.isCritical()) {
-			throw e;
-		}
-	}
 	nRet = lpfnAcceptEx(_ServerSocket->getSocket(),
-		_ConnectionPtr[pos]._Connection->getClientSocket()->Socket,
+		conptr._Connection->getClientSocket()->Socket,
 		(LPVOID)(buf),
 		BLOCKSIZE - (2 * (sizeof(SOCKADDR_STORAGE) + 16)),
 		sizeof(SOCKADDR_STORAGE) + 16, sizeof(SOCKADDR_STORAGE) + 16,
@@ -185,18 +161,45 @@ void libhttppp::IOCP::ConnectEventHandler(int des) {
 		throw httpexception;
 	}
 
+	if (nRet == SOCKET_ERROR) {
+		httpexception.Critical("failed to load acceptex: %d\n", WSAGetLastError());
+		throw httpexception;
+	}
+
+	WSAWaitForMultipleEvents(1, _hCleanupEvent, TRUE, WSA_INFINITE, FALSE);
+
+	int asock = _ServerSocket->acceptEvent(conptr._Connection->getClientSocket());
+	if (SOCKET_ERROR == asock) {
+		std::cerr << "Accept Socket Error: " << GetLastError() << std::endl;
+	}
+	else {
+		std::cerr << "Connected" << std::endl;
+	}
+
+	try {
+		ClientSocket* lsock = conptr._Connection->getClientSocket();
+		lsock->disableBuffer();
+	}
+	catch (HTTPException& e) {
+		if (e.isCritical()) {
+			throw e;
+		}
+	}
+
+	_IOCP = CreateIoCompletionPort((HANDLE)asock, _IOCP, (DWORD_PTR)&conptr, 0);
+
 	delete[] buf;
 }
 
 int libhttppp::IOCP::StatusEventHandler(int des) {
-	return EventApi::EventHandlerStatus::EVCON;
+	return 1;
 }
 
 void libhttppp::IOCP::ReadEventHandler(int des) {
 	DWORD recvd = 0;
 	ConnectionPtr perHandlePtr;
 	IOData iodata;
-	_ServerSocket->recvWSAData(_ConnectionPtr[des]._Connection->getClientSocket(), & (iodata._databuff), BLOCKSIZE, 0, & recvd, & (iodata._overlapped), NULL);
+	//_ServerSocket->recvWSAData(_ConnectionPtr[des]._Connection->getClientSocket(), & (iodata._databuff), BLOCKSIZE, 0, & recvd, & (iodata._overlapped), NULL);
 	
 }
 
@@ -209,8 +212,9 @@ void libhttppp::IOCP::CloseEventHandler(int des) {
 }
 
 
-int libhttppp::IOCP::LockConnection(int des) {
-	return LockConnectionStatus::LOCKNOTREADY;
+bool libhttppp::IOCP::LockConnection(int des) {
+	//return _ConnectionLock.
+	return 0;
 }
 
 void libhttppp::IOCP::UnlockConnction(int des)

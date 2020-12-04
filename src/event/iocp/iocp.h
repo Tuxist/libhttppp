@@ -80,7 +80,7 @@ namespace libhttppp {
 		void       CloseEventHandler(int des);
 		const char *getEventType();
 
-		int LockConnection(int des);
+		bool LockConnection(int des);
 		void UnlockConnction(int des);
 
 		/*HTTP API Events*/

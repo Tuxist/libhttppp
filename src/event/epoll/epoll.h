@@ -48,7 +48,6 @@ namespace libhttppp {
         ~EPOLL();
         /**/
         void       initEventHandler();
-        void       initWorker();
         int        waitEventHandler();
         void       ConnectEventHandler(int des);
         int        StatusEventHandler(int des);
@@ -57,7 +56,7 @@ namespace libhttppp {
         void       CloseEventHandler(int des);
         const char *getEventType();
         
-        int LockConnection(int des);
+        bool LockConnection(int des);
         void UnlockConnction(int des);
         
         /*HTTP API Events*/

@@ -121,7 +121,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   and) try the next address. */
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-	  _Socket = WSASocket(rp->ai_family, rp->ai_socktype,rp->ai_protocol, NULL, 0, WSA_FLAG_OVERLAPPED);
+	  _Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
 	  if (_Socket == -1)
 		  continue;
 	  BOOL bOptVal = TRUE;
