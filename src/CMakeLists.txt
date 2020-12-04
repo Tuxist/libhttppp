@@ -137,7 +137,7 @@ export(EXPORT httpppTargets
 )
 configure_file(cmake/httpppConfig.cmake
   "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppConfig.cmake"
-  COPYONLY
+  @ONLY
 )
 
 set(ConfigPackageLocation lib/cmake/httppp)
@@ -152,7 +152,7 @@ install(EXPORT httpppTargets
 
 install(
   FILES
-    cmake/httpppConfig.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppConfig.cmake"
     "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppConfigVersion.cmake"
   DESTINATION
     ${ConfigPackageLocation}

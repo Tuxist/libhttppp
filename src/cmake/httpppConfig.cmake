@@ -9,4 +9,3 @@ else()
 endif()
 
 set(httppp_LIBRARIES httppp)
-set(httppp_INCLUDE_DIR "httppp")
