@@ -77,7 +77,7 @@ install(FILES connections.h
               http.h
               httpdefinitions.h
               exception.h
-              event.h
+              eventapi.h
               https.h
               mimetypes.h
               utils.h
@@ -94,30 +94,34 @@ install(FILES os/os.h
 )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-install(FILES os/Windows/inttype.h 
-              os/Windows/socket.h
-              os/Windows/lock.h
-              os/Windows/thread.h
-			  os/Windows/sysinfo.h
-			  os/event/iocp/iocp.h
+install(FILES os/windows/socket.h
+              os/windows/lock.h
+              os/windows/thread.h
+			  os/windows/sysinfo.h
+			  event/iocp/iocp.h
         DESTINATION include/httppp/os/Windows
         COMPONENT Devel
 )
 ELSE()
-install(FILES os/Unix/inttype.h 
-              os/Unix/socket.h
-              os/Unix/lock.h
-              os/Unix/thread.h
-              os/Unix/sysinfo.h
-	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-			  os/event/event/epoll.h
-	ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
-       ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	          os/event/event/kqueue.h
-	ENDIF()
+install(FILES os/unix/socket.h
+              os/unix/lock.h
+              os/unix/thread.h
+              os/unix/sysinfo.h
         DESTINATION include/httppp/os/Unix
         COMPONENT Devel
 )
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    install(FILES event/epoll/epoll.h 
+            DESTINATION include/httppp/event 
+            COMPONENT Devel
+    )
+ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
+       ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    install(FILES event/kqueue/kqueue.h
+            DESTINATION include/httppp/event
+            COMPONENT Devel
+    )
+ENDIF()
 ENDIF()
 
 include(CMakePackageConfigHelpers)
