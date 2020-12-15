@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <unistd.h>
 #include <iostream>
 #include <utils.h>
+#include <cstring>
 
 libhttppp::CpuInfo::CpuInfo(){
     asm volatile("cpuid"
@@ -79,34 +80,37 @@ uint libhttppp::SysInfo::getFreeRam(){
 }
 
 libhttppp::MountPoint::MountPoint(){
+    _nextMountPoint=nullptr;
 }
 
 libhttppp::MountPoint::~MountPoint(){
 }
 
 libhttppp::FsInfo::FsInfo(){
+    _firstMountPoint=NULL;
+    _lastMountPoint=NULL;
     std::fstream mountinfo;
     mountinfo.open("/proc/self/mountinfo",std::fstream::in);
     char buffer[1024];
     if(mountinfo.is_open()){
-        while(mountinfo.getline(buffer,1024)){
-            NEXTFSTABLINE:
-            char split[10][FSINFOMAXLEN];
-            int entry=0,entrypos=0;
+        NEXTFSTABLINE:
+        if(mountinfo.getline(buffer,1024)){
+            int entrypos=0,entry=0;
             bool ne=false;
-            for(int i=0; i>1024; ++i){
+            char split[10][FSINFOMAXLEN];
+            for(int i=0; i<1024; ++i){
                 switch(buffer[i]){
                     case ' ':{
                         if(!ne){
                             split[entry][entrypos]='\0';
-                            ++entrypos;
-                            if(entry<10)
-                                goto NEXTFSTABLINE;
                             ++entry;
+                            entrypos=0;
                         }
                         ne=true;
                     }break;
                     case '\0':{
+                        MountPoint *curm=addMountpoint();
+                        scopy(split[9],split[9]+FSINFOMAXLEN,curm->_Device);
                         goto NEXTFSTABLINE;
                     }break;
                     default:{
@@ -115,9 +119,6 @@ libhttppp::FsInfo::FsInfo(){
                         ne=false;
                     }break;
                 }
-            }
-            for(int i=0; i<10; i++){
-                std::cout << split[i] <<std::endl;
             }
         }
     }else{
@@ -130,6 +131,28 @@ libhttppp::FsInfo::~FsInfo()
 {
 }
 
+libhttppp::MountPoint * libhttppp::FsInfo::addMountpoint(){
+    if(_firstMountPoint){
+        _lastMountPoint->_nextMountPoint=new MountPoint();
+        _lastMountPoint=_lastMountPoint->_nextMountPoint;
+    }else{
+        _firstMountPoint=new MountPoint();
+        _lastMountPoint=_firstMountPoint;
+    }
+    return _lastMountPoint;
+}
 
+libhttppp::MountPoint * libhttppp::FsInfo::getFirstDevice()
+{
+    return _firstMountPoint;
+}
+
+libhttppp::MountPoint * libhttppp::MountPoint::nextMountPoint(){
+    return _nextMountPoint;
+}
+
+const char * libhttppp::MountPoint::getDevice(){
+    return _Device;
+}
 
 

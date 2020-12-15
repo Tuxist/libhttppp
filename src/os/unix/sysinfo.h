@@ -60,6 +60,10 @@ namespace libhttppp {
     };
 
     class MountPoint {
+    public:
+        enum Datatype{DEVICE=0,PATH=1,FSTYPE=2,OPTIONS=3};
+        MountPoint *nextMountPoint();
+        const char *getDevice();
     private:
         MountPoint();
         ~MountPoint();
@@ -75,6 +79,8 @@ namespace libhttppp {
     public:
         FsInfo();
         ~FsInfo();
+        MountPoint *addMountpoint();
+        MountPoint *getFirstDevice();
     private:
         MountPoint *_firstMountPoint;
         MountPoint *_lastMountPoint;

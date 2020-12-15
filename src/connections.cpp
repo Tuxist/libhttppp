@@ -25,12 +25,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <iostream>
+#include <assert.h>
+
 #include <config.h>
 
 #include "connections.h"
 #include "utils.h"
-#include <assert.h>
 
 const char* libhttppp::ConnectionData::getData(){
   return _Data;
@@ -45,13 +45,15 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
 }
 
 libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
-  _nextConnectionData=NULL;
+  _Data = new char[BLOCKSIZE];
   scopy(data,data+datasize,_Data);
   _DataSize=datasize;
+  _nextConnectionData=nullptr;
 }
 
 libhttppp::ConnectionData::~ConnectionData() {
-  delete _nextConnectionData;
+    delete[] _Data;
+    delete _nextConnectionData;
 }
 
 libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
@@ -68,7 +70,7 @@ libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   * Use it everyday with good health.
   */
 libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,size_t datasize){
-    if(datasize<=0){
+    if(datasize==0){
         HTTPException httpexception;
         httpexception.Error("addSendQueue","wrong datasize");
         throw httpexception;
@@ -78,12 +80,16 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
         if(cursize>BLOCKSIZE){
             cursize=BLOCKSIZE;
         }
-        if(!_SendDataFirst){
-            _SendDataFirst= new ConnectionData(data+written,cursize);
-            _SendDataLast=_SendDataFirst;
+        if(_SendDataLast && cursize<=(BLOCKSIZE-_SendDataLast->getDataSize())){
+            scopy(data,data+cursize,_SendDataLast->_Data+_SendDataLast->_DataSize);
         }else{
-            _SendDataLast->_nextConnectionData=new ConnectionData(data+written,cursize);
-            _SendDataLast=_SendDataLast->_nextConnectionData;
+            if(!_SendDataFirst){
+                _SendDataFirst= new ConnectionData(data+written,cursize);
+                _SendDataLast=_SendDataFirst;
+            }else{
+                _SendDataLast->_nextConnectionData=new ConnectionData(data+written,cursize);
+                _SendDataLast=_SendDataLast->_nextConnectionData;
+            }
         }
         written+=cursize;
     }
@@ -93,8 +99,8 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
 
 void libhttppp::Connection::cleanSendData(){
    delete _SendDataFirst;
-   _SendDataFirst=NULL;
-   _SendDataLast=NULL;
+   _SendDataFirst=nullptr;
+   _SendDataLast=nullptr;
    _SendDataSize=0;
 }
 
@@ -116,10 +122,15 @@ size_t libhttppp::Connection::getSendSize(){
 
 
 libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
-    if(datasize<=0){
+    if(datasize==0){
         HTTPException httpexception;
         httpexception.Error("addRecvQueue","wrong datasize");
         throw httpexception;
+    }
+    if(_ReadDataLast && datasize<=(BLOCKSIZE-_ReadDataLast->getDataSize())){
+       scopy(data,data+datasize,_ReadDataLast->_Data+_ReadDataLast->_DataSize);
+       _ReadDataLast->_DataSize+=datasize;
+       return _ReadDataLast;
     }
     if(!_ReadDataFirst){
         _ReadDataFirst= new ConnectionData(data,datasize);
@@ -134,8 +145,8 @@ libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[B
 
 void libhttppp::Connection::cleanRecvData(){
    delete _ReadDataFirst;
-  _ReadDataFirst=NULL;
-  _ReadDataLast=NULL;
+  _ReadDataFirst=nullptr;
+  _ReadDataLast=nullptr;
   _ReadDataSize=0;
 }
 
@@ -157,44 +168,51 @@ size_t libhttppp::Connection::getRecvSize(){
 }
 
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
-					 size_t *qsize, size_t size){
-  if(size<=0 || !qsize){
+                                                               size_t *qsize, size_t size){
+    if(size==0 || !qsize){
         HTTPException httpexception;
-        httpexception.Error("_resizeQueue","wrong datasize");
+        httpexception.Error("_resizeQueue","wrong datasize or ConnectionData");
         throw httpexception;
-  }
-#ifdef DEBUG
-  size_t delsize=0,presize=*qsize;
-#endif
-  *qsize-=size;
-  for(ConnectionData *curdat=*firstdata; curdat; curdat=curdat->nextConnectionData()){
-    if(size>=curdat->getDataSize()){
-        size-=curdat->getDataSize();
-#ifdef DEBUG
-        delsize+=size;
-#endif
-        ConnectionData *newdat=curdat->_nextConnectionData;
-        curdat->_nextConnectionData=NULL;
-        delete curdat;
-        *firstdata=newdat;
     }
-  }
-  if(size!=0){
-#ifdef DEBUG
-        delsize+=size;
-#endif
-        scopy((*firstdata)->_Data+size,(*firstdata)->_Data+BLOCKSIZE,(*firstdata)->_Data);
-        (*firstdata)->_Data[((*firstdata)->_DataSize)-1]='\0';
-        size-=(*firstdata)->getDataSize();
-        *firstdata=(*firstdata);
-#ifdef DEBUG
-        std::cout << (presize-delsize) << ": " << size << std::endl;
-        assert((presize-delsize)!=size);
-#endif
-  }
-  return *firstdata;
+    #ifdef DEBUG
+    size_t delsize=0,presize=*qsize;
+    #endif
+    *qsize-=size;
+    NEXTBLOCKRESIZE:
+    if(*firstdata){
+        if(size>=(*firstdata)->getDataSize()){
+            size-=(*firstdata)->getDataSize();
+            #ifdef DEBUG
+            delsize+=size;
+            #endif
+            ConnectionData *newdat=(*firstdata)->_nextConnectionData;
+            (*firstdata)->_nextConnectionData=NULL;
+            delete (*firstdata);
+            *firstdata=newdat;
+            if(*firstdata==*lastdata)
+                (*lastdata)=nullptr; 
+            if(*firstdata){
+                goto NEXTBLOCKRESIZE;
+            }
+        }
+        if(size!=0){
+        #ifdef DEBUG
+            delsize+=size;
+        #endif
+            scopy((*firstdata)->_Data+size,(*firstdata)->_Data+BLOCKSIZE,(*firstdata)->_Data);
+            (*firstdata)->_DataSize-=size;
+            *firstdata=(*firstdata);
+        #ifdef DEBUG
+            HTTPException httpexception;
+            httpexception.Note("Current Blocksize",size);
+            httpexception.Note("Calculated Blocksize",presize-delsize);
+            assert((presize-delsize)!=size);
+        #endif
+        }
+    }
+    return *firstdata;
 }
-
+                                                               
 int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos, 
                           ConnectionData* endblock, int endpos, char** buffer){
   size_t copysize=0,copypos=0;
@@ -259,11 +277,11 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 
 libhttppp::Connection::Connection(){
   _ClientSocket=new ClientSocket();
-  _ReadDataFirst=NULL;
-  _ReadDataLast=NULL;
+  _ReadDataFirst=nullptr;
+  _ReadDataLast=nullptr;
   _ReadDataSize=0;
-  _SendDataFirst=NULL;
-  _SendDataLast=NULL;
+  _SendDataFirst=nullptr;
+  _SendDataLast=nullptr;
   _SendDataSize=0;
 }
 

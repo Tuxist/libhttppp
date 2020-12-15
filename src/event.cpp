@@ -87,8 +87,11 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
             try{
-                eventptr->ConnectEventHandler(i);
                 int state = eventptr->StatusEventHandler(i);
+                if(state==EventApi::EventHandlerStatus::EVNOTREADY){
+                    eventptr->ConnectEventHandler(i);
+                    continue;
+                }
                 if(eventptr->LockConnection(i)){
                     try{
                         switch(state){

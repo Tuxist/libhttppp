@@ -44,8 +44,8 @@ namespace libhttppp {
         ConnectionData(const char*data, size_t datasize);
         ~ConnectionData();
     private:
-        char              _Data[BLOCKSIZE];
-        size_t            _DataSize;
+        char              *_Data;
+        size_t             _DataSize;
         ConnectionData   *_nextConnectionData;
         friend class      Connection;
     };
@@ -77,7 +77,7 @@ namespace libhttppp {
         /*Get Data funtions Recv Queue*/
         ConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize);
         ConnectionData *resizeRecvQueue(size_t size);
-        void                     cleanRecvData();
+        void            cleanRecvData();
         ConnectionData *getRecvData();
         size_t          getRecvSize();
         
@@ -102,11 +102,7 @@ namespace libhttppp {
         
         friend class ConnectionPool;
     };
-    
-    class ConnectionPool {
-        
-    };
-    
+
     class ClientConnection {
         
     };

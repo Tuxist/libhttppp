@@ -120,8 +120,7 @@ int libhttppp::EPOLL::waitEventHandler(){
 int libhttppp::EPOLL::StatusEventHandler(int des){
     HTTPException httpexception;
     if(!_Events[des].data.ptr){
-        httpexception.Note("StatusEventHandler","Connection Closed");
-        throw httpexception;
+        return EventHandlerStatus::EVNOTREADY;
     }else if(((ConntectionPtr*)_Events[des].data.ptr)->_Connection->getSendData()){
         return EventHandlerStatus::EVOUT;
     }
