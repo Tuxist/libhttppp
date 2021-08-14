@@ -43,9 +43,11 @@ namespace libhttppp {
      Thread *getfirstThread();
      Thread *getlastThread();
      
+     int     getAmount();
    private:
      Thread *_firstThread;
      Thread *_lastThread;
+     int     _Amount;
    };
 };
 

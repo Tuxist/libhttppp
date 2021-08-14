@@ -44,15 +44,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::ClientSocket::ClientSocket(){
   Socket = 0;
-  _SSL=NULL;
+  _SSL=nullptr;
   _ClientAddr = new struct sockaddr;
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-  close(Socket);
-  if(_SSL)
-    SSL_free(_SSL);
-  delete _ClientAddr;
+    close(Socket);
+    if(_SSL)
+        SSL_free(_SSL);
+    delete _ClientAddr;
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
@@ -61,8 +61,8 @@ void libhttppp::ClientSocket::setnonblocking(){
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   int optval = 1;
- _Maxconnections=maxconnections;
- _UXSocketAddr = new sockaddr_un;
+  _Maxconnections=maxconnections;
+  _UXSocketAddr = new sockaddr_un;
   _UXSocketAddr->sun_family = AF_UNIX;
   try {
     std::copy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
@@ -215,7 +215,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
   ssize_t rval=0;
   if(isSSLTrue() && socket->_SSL){
-    rval=SSL_write(socket->_SSL,data,size);
+       rval=SSL_write(socket->_SSL,data,size);
   }else{
       rval=sendto(socket->Socket,data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
   }
@@ -246,7 +246,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
   ssize_t recvsize=0;
   if(isSSLTrue() && socket->_SSL){
-    recvsize=SSL_read(socket->_SSL,data,size);
+     recvsize=SSL_read(socket->_SSL,data,size);
   }else{
     recvsize=recvfrom(socket->Socket,data, size,flags,
                               socket->_ClientAddr, &socket->_ClientAddrLen);

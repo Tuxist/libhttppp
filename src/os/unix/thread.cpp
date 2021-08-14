@@ -60,9 +60,7 @@ void libhttppp::Thread::Detach(){
 }
 
 int libhttppp::Thread::getThreadID() {
-    HTTPException httpexception;
-	httpexception.Note("ThreadID not support by this OS");
-	return -1;
+	return pthread_self();;
 }
 
 int libhttppp::Thread::getPid(){

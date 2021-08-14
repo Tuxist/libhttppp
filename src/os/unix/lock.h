@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "../../exception.h"
-#include <atomic>
+#include <pthread.h>
 
 #ifndef LOCK_H
 #define LOCK_H
@@ -39,7 +39,7 @@ namespace libhttppp {
     bool            trylock();
     void            unlock();
   private:
-    std::atomic<bool> _CLock;
+    pthread_mutex_t  _MutexLock;
     HTTPException    _httpexception;
   };
 }

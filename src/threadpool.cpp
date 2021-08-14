@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::ThreadPool::ThreadPool(){
     _firstThread=NULL;
     _lastThread=NULL;
+    _Amount=0;
 }
 
 libhttppp::ThreadPool::~ThreadPool(){
@@ -38,6 +39,7 @@ libhttppp::ThreadPool::~ThreadPool(){
 }
 
 libhttppp::Thread *libhttppp::ThreadPool::addThread(){
+    ++_Amount;
     if(!_firstThread){
         _firstThread= new Thread;
         _lastThread=_firstThread;
@@ -62,6 +64,7 @@ libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread
               _lastThread=prevthr;
             }
             curthr->_nextThread=NULL;
+            --_Amount;
             delete curthr;
         }
         prevthr=curthr;
@@ -78,5 +81,9 @@ libhttppp::Thread * libhttppp::ThreadPool::getfirstThread(){
 
 libhttppp::Thread * libhttppp::ThreadPool::getlastThread(){
     return _lastThread;
+}
+
+int libhttppp::ThreadPool::getAmount(){
+    return _Amount;
 }
 

@@ -31,6 +31,7 @@
 #include <sstream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 #include <exception.h>
 
 #include "utils.h"
@@ -186,9 +187,9 @@ public:
     const char *getIndexPage(){
         delete[] _Buffer;
         _Buffer = new char[_Index.size()+1];
-        std::copy(_Index.begin(),_Index.end(),_Buffer);
+        std::copy(_Index.cbegin(),_Index.cend(),_Buffer);
         _Buffer[_Index.size()]='\0';
-        return _Buffer;
+        return _Index.data();
     }
     
     size_t getIndexPageSize(){
@@ -196,7 +197,8 @@ public:
     }
     
 private:
-    char             *_Buffer;
+    char              *_Buffer;
+    char              *_BufferSize; 
     std::vector<char> _Index;
 };
 

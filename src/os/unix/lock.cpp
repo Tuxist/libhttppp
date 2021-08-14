@@ -25,24 +25,25 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+
 #include "lock.h"
 
 libhttppp::Lock::Lock(){
-    _CLock.store(false);
+    
+    pthread_mutex_init(&_MutexLock,nullptr);
 }
 
 libhttppp::Lock::~Lock(){
+    pthread_mutex_destroy(&_MutexLock);
 }
 
 
 bool libhttppp::Lock::trylock(){
-    if(_CLock.is_lock_free()){
-        _CLock.store(true);
+    if(pthread_mutex_trylock(&_MutexLock)==0)
         return true;
-    }
     return false;
 }
 
 void libhttppp::Lock::unlock(){
-  _CLock.store(false);
+    pthread_mutex_unlock(&_MutexLock);
 }

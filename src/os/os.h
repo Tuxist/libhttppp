@@ -1,7 +1,7 @@
 #ifndef OS_H
 #define OS_H
 
-#include "../config.h"
+#include <config.h>
 
 #ifdef Windows
   #include "windows/socket.h"

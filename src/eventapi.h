@@ -51,7 +51,9 @@ class EventApi {
         
         /*Multithreading options*/
         virtual bool LockConnection(int des)=0;
-        virtual void UnlockConnction(int des)=0;
+        virtual void UnlockConnection(int des)=0;
+        virtual void initLockPool(int locks)=0;
+        virtual void destroyLockPool()=0;
         
         /*HTTP API Events*/
 		virtual void RequestEvent(Connection *curcon)=0;

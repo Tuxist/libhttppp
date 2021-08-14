@@ -33,11 +33,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 
 libhttppp::CpuInfo::CpuInfo(){
-    asm volatile("cpuid"
-        : "=a" (Eax),
-          "=b" (Ebx),
-          "=c" (Ecx),
-          "=d" (Edx)
+    asm volatile("cpuid":"=a" (Eax),
+        "=b" (Ebx),
+        "=c" (Ecx),
+        "=d" (Edx)
         : "0" (Eax), "2" (Ecx)
     : );
 }

@@ -70,26 +70,17 @@ libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   * Use it everyday with good health.
   */
 libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,size_t datasize){
-    if(datasize==0){
-        HTTPException httpexception;
-        httpexception.Error("addSendQueue","wrong datasize");
-        throw httpexception;
-    }
     size_t written=0;
     for(size_t cursize=datasize; cursize>0; cursize=datasize-written){
         if(cursize>BLOCKSIZE){
             cursize=BLOCKSIZE;
         }
-        if(_SendDataLast && cursize<=(BLOCKSIZE-_SendDataLast->getDataSize())){
-            scopy(data,data+cursize,_SendDataLast->_Data+_SendDataLast->_DataSize);
+        if(!_SendDataFirst){
+            _SendDataFirst= new ConnectionData(data+written,cursize);
+            _SendDataLast=_SendDataFirst;
         }else{
-            if(!_SendDataFirst){
-                _SendDataFirst= new ConnectionData(data+written,cursize);
-                _SendDataLast=_SendDataFirst;
-            }else{
-                _SendDataLast->_nextConnectionData=new ConnectionData(data+written,cursize);
-                _SendDataLast=_SendDataLast->_nextConnectionData;
-            }
+            _SendDataLast->_nextConnectionData=new ConnectionData(data+written,cursize);
+            _SendDataLast=_SendDataLast->_nextConnectionData;
         }
         written+=cursize;
     }
@@ -122,15 +113,10 @@ size_t libhttppp::Connection::getSendSize(){
 
 
 libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
-    if(datasize==0){
+    if(datasize<=0){
         HTTPException httpexception;
         httpexception.Error("addRecvQueue","wrong datasize");
         throw httpexception;
-    }
-    if(_ReadDataLast && datasize<=(BLOCKSIZE-_ReadDataLast->getDataSize())){
-       scopy(data,data+datasize,_ReadDataLast->_Data+_ReadDataLast->_DataSize);
-       _ReadDataLast->_DataSize+=datasize;
-       return _ReadDataLast;
     }
     if(!_ReadDataFirst){
         _ReadDataFirst= new ConnectionData(data,datasize);
@@ -166,7 +152,7 @@ libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){
 size_t libhttppp::Connection::getRecvSize(){
   return _ReadDataSize;
 }
-
+#define DEBUG
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
     if(size==0 || !qsize){
@@ -256,7 +242,7 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
                                        const char* keyword,size_t keylen){
     size_t fpos=0,fcurpos=0;
     for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
-        for(size_t pos=0; pos<curdat->getDataSize(); pos++){
+        for(size_t pos=0; pos<curdat->getDataSize(); ++pos){
             if(keyword[fcurpos]==curdat->_Data[pos]){
                 if(fcurpos==0){
                     fpos=pos;
@@ -286,7 +272,7 @@ libhttppp::Connection::Connection(){
 }
 
 libhttppp::Connection::~Connection(){
-  delete _ClientSocket;
   delete _ReadDataFirst;
   delete _SendDataFirst;
+  delete _ClientSocket;
 }

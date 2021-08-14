@@ -64,7 +64,7 @@ void libhttppp::CtrlHandler::CTRLTermEvent() {
 
 void libhttppp::Event::runEventloop(){
         CpuInfo cpuinfo;
-        size_t thrs = cpuinfo.getThreads();
+        size_t thrs = 16; //cpuinfo.getCores();
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;
@@ -72,9 +72,11 @@ MAINWORKERLOOP:
             Thread *th = thpool.addThread();
             th->Create(WorkerThread, (void*)this);
         }
+        initLockPool(thrs);
         for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
             curth->Join();
         }
+        destroyLockPool();
         if(libhttppp::Event::_Restart){
             libhttppp::Event::_Restart=false;
             goto MAINWORKERLOOP;
@@ -87,35 +89,30 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
         int des=eventptr->waitEventHandler();
         for (int i = 0; i < des; ++i) {
             try{
-                int state = eventptr->StatusEventHandler(i);
-                if(state==EventApi::EventHandlerStatus::EVNOTREADY){
-                    eventptr->ConnectEventHandler(i);
-                    continue;
-                }
                 if(eventptr->LockConnection(i)){
-                    try{
-                        switch(state){
+
+                    int state = eventptr->StatusEventHandler(i);
+
+                    if(state==EventApi::EventHandlerStatus::EVNOTREADY){
+                        eventptr->ConnectEventHandler(i);
+                    }
+                    switch(state){
                             case EventApi::EventHandlerStatus::EVIN:
                                 eventptr->ReadEventHandler(i);
                                 break;
                             case EventApi::EventHandlerStatus::EVOUT:
                                 eventptr->WriteEventHandler(i);
                                 break;
-                             default:
-                                 HTTPException error;
-                                 error.Error("WorkerThread:","NO EVIN OR EVOUT Event");
-                                 throw error;
-                        }
-                        eventptr->UnlockConnction(i);
-                    }catch(HTTPException &e){
-                        if(e.isError() || e.isCritical())
-                            eventptr->CloseEventHandler(i);
+                            default:
+                                eventptr->CloseEventHandler(i);
+                                break;
                     }
-                }              
+                }
             }catch(HTTPException &e){
                 if(e.isCritical())
                     throw e;
             }
+            eventptr->UnlockConnection(i);
         }
     }
     return NULL;

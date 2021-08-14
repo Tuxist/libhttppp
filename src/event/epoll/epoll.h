@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "../../eventapi.h"
+#include "../../os/os.h"
 #include <sys/epoll.h>
 
 #define EVENT_EPOLL
@@ -34,18 +35,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EPOLL_H
 
 namespace libhttppp {
-    class ConntectionPtr{
+
+    class ConLock {
     private:
-        ConntectionPtr();
-        Connection *_Connection;
-        Lock        _ConnectionLock;
+        ConLock();
+        ~ConLock();
+        int      _Des;
+        Lock     _Lock;
+        ConLock *_nextConLock;
         friend class EPOLL;
     };
-
+    
     class EPOLL : public EventApi{
     public:
         EPOLL(ServerSocket* serversocket);
         ~EPOLL();
+        
+        /*Lock mechanism*/
+        void initLockPool(int locks);
+        void destroyLockPool();
+        bool LockConnection(int des);
+        void UnlockConnection(int des);
+        
         /**/
         void       initEventHandler();
         int        waitEventHandler();
@@ -55,10 +66,7 @@ namespace libhttppp {
         void       WriteEventHandler(int des);
         void       CloseEventHandler(int des);
         const char *getEventType();
-        
-        bool LockConnection(int des);
-        void UnlockConnction(int des);
-        
+
         /*HTTP API Events*/
         void RequestEvent(Connection *curcon);
         void ResponseEvent(Connection *curcon);
@@ -67,6 +75,7 @@ namespace libhttppp {
         
     private:
         int                       _epollFD;
+        ConLock                  *_ConLock;
         struct epoll_event       *_Events;
         ServerSocket             *_ServerSocket;
     };

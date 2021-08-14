@@ -50,6 +50,7 @@ namespace libhttppp {
     int             _Pid;
     pthread_t       _Thread;
     void           *_Retval;
+    int             _Sock;
     Thread         *_nextThread;
     friend class ThreadPool;
   };

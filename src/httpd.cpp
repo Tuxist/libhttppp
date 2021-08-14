@@ -314,7 +314,6 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 	  }
 	  
 	  if (sslcertpath && sslkeypath) {
-		  printf("%s : %s", sslcertpath, sslkeypath);
 		  _ServerSocket->createContext();
 		  _ServerSocket->loadCertfile(sslcertpath);
 		  _ServerSocket->loadKeyfile(sslkeypath);
