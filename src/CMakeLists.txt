@@ -71,6 +71,11 @@ install(TARGETS httppp EXPORT httpppTargets
   INCLUDES DESTINATION include
 )
 
+install(TARGETS httppp-static
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+)
+
 install(FILES connections.h
               threadpool.h
               httpd.h
