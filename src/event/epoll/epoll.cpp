@@ -183,7 +183,14 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
             setevent.data.ptr = curct;
             int err = 0;
             if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
-                httpexception.Error("ConnectEventHandler: ", strerror(errno));
+#ifdef __GLIBCXX__
+                char errbuf[255];
+                httpexception.Error("ConnectEventHandler: ",strerror_r(errno, errbuf, 255));
+#else
+                char errbuf[255];
+                strerror_r(errno, errbuf, 255);
+                httpexception.Error("ConnectEventHandler: ",errbuf);
+#endif
                 throw httpexception;
             }
             ConnectEvent(curct);
