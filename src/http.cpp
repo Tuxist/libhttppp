@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "base64.h"
 #include "utils.h"
 
+#include <cstring>
 #include <sstream>
 #include <openssl/rand.h>
 
