@@ -2,10 +2,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src
 )
 
-add_executable(connection connection.cpp)
-
-target_link_libraries (connection httppp-static)
-
 add_executable (httpcon httpcon.cpp)
 
 target_link_libraries(httpcon httppp-static)
