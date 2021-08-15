@@ -43,7 +43,7 @@ unsigned int libhttppp::getlen(const char *str) {
 }
 
 void libhttppp::rscopy(const char* first, const char* last, char** des){
-    size_t rs=getlen(last)-getlen(first);
+    size_t rs=last-first;
     *des=new char[rs+1];
     scopy(first,last,*des);
     *des[rs]='\0';
