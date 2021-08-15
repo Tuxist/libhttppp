@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/sysinfo.h>
 #include <config.h>
 #include <errno.h>
+#include <cstring>
 #include <signal.h>
 
 #include "os/os.h"
