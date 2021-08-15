@@ -34,11 +34,15 @@ const  char *libhttppp::scopy(const char* first, const char* last, char* des){
     return des;
 }
 
-
 unsigned int libhttppp::getlen(const char *str) {
 	unsigned int getlen = 0;
 	while ((*str++) != '\0') {
 		++getlen;
 	}
 	return getlen;
+}
+
+void libhttppp::rscopy(const char* first, const char* last, char** des){
+    *des=new char[(getlen(last)-getlen(first))];
+    scopy(first,last,*des);
 }
