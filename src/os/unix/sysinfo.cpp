@@ -33,12 +33,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 
 libhttppp::CpuInfo::CpuInfo(){
+#if defined(ARCH_X86_86) || defined(ARCH_I386)
     asm volatile("cpuid":"=a" (Eax),
         "=b" (Ebx),
         "=c" (Ecx),
         "=d" (Edx)
         : "0" (Eax), "2" (Ecx)
     : );
+#else
+    Eax=sysconf(_SC_NPROCESSORS_ONLN);
+    Ebx=0;
+#endif
 }
 
 libhttppp::CpuInfo::~CpuInfo(){

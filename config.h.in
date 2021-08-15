@@ -38,3 +38,5 @@
 #define DEBUG
 
 #define DEFAULTCONNECTTRIES 5
+
+#define ARCH_${TARGET_ARCH_MATCH}
