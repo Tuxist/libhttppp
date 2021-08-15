@@ -24,26 +24,27 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
-#include <iostream>
-#include "utils.h"
-#include <string.h>
 
-void libhttppp::scopy(const char* first, const char* last, char** des){
+#include "utils.h"
+
+const  char *libhttppp::scopy(const char* first, const char* last, char* des){
     while (first != last) {
-        **des++ = *first++;
+        *des++ = *first++;
     }
+    return des;
 }
 
 unsigned int libhttppp::getlen(const char *str) {
-	unsigned int len = 0;
+	unsigned int getlen = 0;
 	while ((*str++) != '\0') {
-		++len;
+		++getlen;
 	}
-	return len;
+	return getlen;
 }
 
 void libhttppp::rscopy(const char* first, const char* last, char** des){
-    size_t rs=getlen(first);
-    *des=new char[rs];
-    memmove(*des,first,rs);
+    size_t rs=last-first;
+    *des=new char[rs+1];
+    scopy(first,last,*des);
+    *des[rs]='\0';
 }
