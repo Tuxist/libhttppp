@@ -30,6 +30,7 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <cstring>
 #include <vector>
 #include <algorithm>
 #include <exception.h>
