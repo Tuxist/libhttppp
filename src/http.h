@@ -92,9 +92,9 @@ namespace libhttppp {
     void   parse(ClientConnection *curconnection); //only use as client
     size_t printHeader(char **buffer);
   private:
-    char          _State[255];
+    char         *_State;
     size_t        _Statelen;
-    char          _Version[255];
+    char         *_Version;
     size_t        _VersionLen;
     HeaderData   *_Connection;
     HeaderData   *_ContentType;

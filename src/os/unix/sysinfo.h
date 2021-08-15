@@ -67,10 +67,10 @@ namespace libhttppp {
     private:
         MountPoint();
         ~MountPoint();
-        char _Device[FSINFOMAXLEN];
-        char _Path[FSINFOMAXLEN];
-        char _FSType[FSINFOMAXLEN];
-        char _Options[FSINFOMAXLEN];
+        char *_Device;
+        char *_Path;
+        char *_FSType;
+        char *_Options;
         MountPoint *_nextMountPoint;
         friend class FsInfo;
     };

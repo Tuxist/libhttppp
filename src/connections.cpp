@@ -45,8 +45,7 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
 }
 
 libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
-  _Data = new char[BLOCKSIZE];
-  scopy(data,data+datasize,_Data);
+  rscopy(data,data+datasize,&_Data);
   _DataSize=datasize;
   _nextConnectionData=nullptr;
 }
@@ -185,7 +184,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         #ifdef DEBUG
             delsize+=size;
         #endif
-            scopy((*firstdata)->_Data+size,(*firstdata)->_Data+BLOCKSIZE,(*firstdata)->_Data);
+            scopy((*firstdata)->_Data+size,(*firstdata)->_Data+BLOCKSIZE,&(*firstdata)->_Data);
             (*firstdata)->_DataSize-=size;
             *firstdata=(*firstdata);
         #ifdef DEBUG
@@ -214,15 +213,15 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
   buf = new char[(copysize+1)]; //one more for termination
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
     if(curdat==startblock && curdat==endblock){
-      scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
+      scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),&buf+copypos);
     }else if(curdat==startblock){
-      scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
+      scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),&buf+copypos);
       copypos+=curdat->getDataSize()-startpos;
     }else if(curdat==endblock){
-      scopy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
+      scopy(curdat->_Data,curdat->_Data+endpos,&buf+copypos);
       copypos+=endpos;
     }else{
-      scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
+      scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),&buf+copypos);
       copypos+=curdat->getDataSize();
     }
     if(curdat==endblock)
