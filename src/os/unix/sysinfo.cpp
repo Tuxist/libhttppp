@@ -114,7 +114,7 @@ libhttppp::FsInfo::FsInfo(){
                     }break;
                     case '\0':{
                         MountPoint *curm=addMountpoint();
-                        rscopy(split[9],split[9]+FSINFOMAXLEN,&curm->_Device);
+                        scopy(split[9],split[9]+FSINFOMAXLEN,curm->_Device);
                         goto NEXTFSTABLINE;
                     }break;
                     default:{

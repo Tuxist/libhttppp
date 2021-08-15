@@ -42,52 +42,9 @@
 #include <sys/utsname.h>
 #endif // !Windows
 
-class HtmlCache{
-public:
-    HtmlCache(){
-        _Data=nullptr;
-        _DataSize=0;
-    }
-    
-    ~HtmlCache(){
-       delete[] _Data; 
-    }
-    
-    const char *c_str(){
-        return _Data;
-    }
-    
-    size_t size(){
-        return _DataSize;
-    }
-    
-    void clear(){
-        delete[] _Data;
-        _Data=nullptr;
-        _DataSize=0;
-    }
-    
-    HtmlCache &operator<<(const char *data){
-        size_t nsize=libhttppp::getlen(data);
-        char *buf=new char[(nsize+_DataSize+1)];
-        libhttppp::scopy(_Data,_Data+_DataSize,&buf);
-        _DataSize+=nsize;
-        libhttppp::scopy(data,data+nsize,&buf+_DataSize);
-        delete[] _Data;
-        libhttppp::rscopy(buf,buf+_DataSize,&_Data);
-        delete[] buf;
-        return *this;
-    }
-    
-    HtmlCache &operator<<(size_t data){
-        char buf[255];
-        snprintf(buf,255, "%zu", data); 
-        return *this<<buf;
-    }
-    
-private:
-    char   *_Data;
-    size_t  _DataSize;       
+std::vector<char> &operator<<(std::vector<char> &data,const char *value){
+    data.assign(value,value+libhttppp::getlen(value));
+    return data;
 };
 
 class HtmlTable{
@@ -105,7 +62,7 @@ public:
     class Row {
     public:
         Row &operator<<(const char *value){
-            libhttppp::rscopy(value,value+libhttppp::getlen(value),&_Data);
+            _Data.assign(value,value+libhttppp::getlen(value));
             return *this;
         };
         
@@ -116,7 +73,7 @@ public:
         };
         
     private:
-        char *_Data;
+        std::vector<char> _Data;
         int   _Size;
         Row(){
             _Size=0;
@@ -150,15 +107,15 @@ public:
             _Buffer << "<table>";
         for(Row *curow=_firstRow; curow; curow=curow->_nextRow){
             _Buffer << "<tr>";
-            _Buffer << curow->_Data;
+            _Buffer.assign(curow->_Data.begin(),curow->_Data.end());
             _Buffer << "</tr>";
         }
         _Buffer << "</table>";
-        return _Buffer.c_str();
+        _Buffer.push_back('\0');
+        return _Buffer.data();
     }
 private:
-    
-    HtmlCache          _Buffer;
+    std::vector<char>  _Buffer;
     const char        *_Id;
     Row               *_firstRow;
     Row               *_lastRow;
@@ -174,6 +131,7 @@ class HtmlContent{
 class IndexPage{
 public:
     IndexPage(){
+        _Buffer=nullptr;
         _Index << "<!DOCTYPE html><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
         << "<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">"
         << "<div id=\"headerimage\"><img src=\"images/header.png\"/></div>"
@@ -228,7 +186,11 @@ public:
     }
     
     const char *getIndexPage(){
-        return _Index.c_str();
+        delete[] _Buffer;
+        _Buffer = new char[_Index.size()+1];
+        std::copy(_Index.cbegin(),_Index.cend(),_Buffer);
+        _Buffer[_Index.size()]='\0';
+        return _Index.data();
     }
     
     size_t getIndexPageSize(){
@@ -236,7 +198,9 @@ public:
     }
     
 private:
-    HtmlCache          _Index;
+    char              *_Buffer;
+    char              *_BufferSize; 
+    std::vector<char> _Index;
 };
 
 class Controller : public libhttppp::Event {
