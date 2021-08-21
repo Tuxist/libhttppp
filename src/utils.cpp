@@ -35,11 +35,11 @@ const  char *libhttppp::scopy(const char* first, const char* last, char* des){
 }
 
 unsigned int libhttppp::getlen(const char *str) {
-	unsigned int getlen = 0;
+	unsigned int len = 0;
 	while ((*str++) != '\0') {
-		++getlen;
+		++len;
 	}
-	return getlen;
+	return len;
 }
 
 void libhttppp::rscopy(const char* first, const char* last, char** des){
