@@ -42,8 +42,9 @@
 #include <sys/utsname.h>
 #endif // !Windows
 
-std::vector<char> &operator<<(std::vector<char> &data,const char *value){
-    data.assign(value,value+libhttppp::getlen(value));
+std::string &operator<<(std::string &data,const char *value){
+//     data.assign(value,value+libhttppp::getlen(value));
+    data+=value;
     return data;
 };
 
@@ -62,7 +63,7 @@ public:
     class Row {
     public:
         Row &operator<<(const char *value){
-            _Data.assign(value,value+libhttppp::getlen(value));
+            _Data+=value;
             return *this;
         };
         
@@ -73,7 +74,7 @@ public:
         };
         
     private:
-        std::vector<char> _Data;
+        std::string  _Data;
         int   _Size;
         Row(){
             _Size=0;
@@ -115,7 +116,7 @@ public:
         return _Buffer.data();
     }
 private:
-    std::vector<char>  _Buffer;
+    std::string         _Buffer;
     const char        *_Id;
     Row               *_firstRow;
     Row               *_lastRow;
@@ -200,7 +201,7 @@ public:
 private:
     char              *_Buffer;
     char              *_BufferSize; 
-    std::vector<char> _Index;
+    std::string        _Index;
 };
 
 class Controller : public libhttppp::Event {

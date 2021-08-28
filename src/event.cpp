@@ -64,7 +64,7 @@ void libhttppp::CtrlHandler::CTRLTermEvent() {
 
 void libhttppp::Event::runEventloop(){
         CpuInfo cpuinfo;
-        size_t thrs = 16; //cpuinfo.getCores();
+        size_t thrs = cpuinfo.getCores();
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;
