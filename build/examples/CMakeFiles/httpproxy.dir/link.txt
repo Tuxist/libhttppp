@@ -1,0 +1,1 @@
+/usr/bin/c++ -O0 -Wall -g -rdynamic CMakeFiles/httpproxy.dir/httpproxy.cpp.o -o httpproxy  ../src/libhttppp-static.a -lhtmlpp -lssl -lcrypto -lpthread 

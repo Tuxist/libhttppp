@@ -41,6 +41,7 @@ namespace libhttppp {
         ConLock();
         ~ConLock();
         int      _Des;
+        Thread  *_Thread;
         Lock     _Lock;
         ConLock *_nextConLock;
         friend class EPOLL;
@@ -52,10 +53,10 @@ namespace libhttppp {
         ~EPOLL();
         
         /*Lock mechanism*/
-        void initLockPool(int locks);
+        void initLockPool(ThreadPool *pool);
         void destroyLockPool();
-        bool LockConnection(int des);
-        void UnlockConnection(int des);
+        bool LockConnection(Thread *cth,int des);
+        void UnlockConnection(Thread *cth,int des);
         
         /**/
         void       initEventHandler();

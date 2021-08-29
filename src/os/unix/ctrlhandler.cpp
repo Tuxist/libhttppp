@@ -31,15 +31,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ctrlhandler.h"
 
 void libhttppp::CtrlHandler::initCtrlHandler(){
-//     signal(SIGINT, CtrlEventHandler);
-//     signal(SIGQUIT, CtrlEventHandler);
-//     signal(SIGTERM,CtrlEventHandler);
+//     signal(SIGINT, CtrlHandler::CtrlEventHandler);
+    signal(SIGQUIT, CtrlHandler::CtrlEventHandler);
+    signal(SIGTERM, CtrlHandler::CtrlEventHandler);
+    signal(SIGPIPE, CtrlHandler::CtrlEventHandler);
 }
 
 void libhttppp::CtrlHandler::CtrlEventHandler(int sig) {
     switch(sig){
         case SIGINT:{
-                CTRLBreakEvent();
+                CTRLTermEvent();
             }
             break;
         case SIGQUIT:{
@@ -48,6 +49,10 @@ void libhttppp::CtrlHandler::CtrlEventHandler(int sig) {
             break;
         case SIGTERM:{
                 CTRLTermEvent();
+            }
+            break;
+        case SIGPIPE:{
+                SIGPIPEEvent();
             }
             break;
         default:

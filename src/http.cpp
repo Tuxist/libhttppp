@@ -99,7 +99,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value,
 								  libhttppp::HttpHeader::HeaderData *pos){
   if(!key){
-    _httpexception.Error("no headerdata key set can't do this");
+    _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
     throw _httpexception;
   }
   if(pos){
@@ -295,7 +295,6 @@ libhttppp::HttpRequest::HttpRequest(){
 void libhttppp::HttpRequest::parse(Connection* curconnection){
     try{
         ConnectionData *curdat=curconnection->getRecvData();
-        
         if(curdat){
             ConnectionData *startblock;
             int startpos=0;
@@ -359,11 +358,12 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             
             delete[] header;
             
+            curconnection->resizeRecvQueue(headersize);
+            
             if(_RequestType==POSTREQUEST){
                 size_t csize=getDataSizet("Content-Length");
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 if(csize<=rsize){
-                    curconnection->resizeRecvQueue(headersize);
                     size_t dlocksize=curconnection->getRecvSize();
                     ConnectionData *dblock=NULL;
                     size_t cdlocksize=0;
@@ -381,14 +381,13 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                     _httpexception.Note("Request incomplete");
                     throw _httpexception;
                 }
-            }else{
-                curconnection->resizeRecvQueue(headersize);  
             }
         }else{
             _httpexception.Note("No Incoming data in queue");
             throw _httpexception;
         }
     }catch(HTTPException &e){
+        curconnection->cleanRecvData();
         throw e;
     }
 }

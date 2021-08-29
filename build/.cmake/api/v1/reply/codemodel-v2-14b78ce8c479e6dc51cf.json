@@ -1,0 +1,203 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2,
+						3,
+						4
+					],
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"projectIndex" : 0,
+					"source" : "."
+				},
+				{
+					"build" : "doc",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "doc",
+					"targetIndexes" : 
+					[
+						1
+					]
+				},
+				{
+					"build" : "src",
+					"hasInstallRule" : true,
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "src",
+					"targetIndexes" : 
+					[
+						6,
+						7
+					]
+				},
+				{
+					"build" : "examples",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "examples",
+					"targetIndexes" : 
+					[
+						2,
+						3,
+						4,
+						5,
+						8,
+						9
+					]
+				},
+				{
+					"build" : "test",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "2.6"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 0,
+					"source" : "test",
+					"targetIndexes" : 
+					[
+						0
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4
+					],
+					"name" : "libhttppp",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 4,
+					"id" : "connection_test::@36f028580bb02cc8272a",
+					"jsonFile" : "target-connection_test-Debug-bc7fc6d4bdd1a1759b09.json",
+					"name" : "connection_test",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "doc::@c2466c91de71b9c692d9",
+					"jsonFile" : "target-doc-Debug-e4ea681c6439d23c6812.json",
+					"name" : "doc",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "httpauth::@714eac15f71a94114fdf",
+					"jsonFile" : "target-httpauth-Debug-7487948d8c03bb1d7b57.json",
+					"name" : "httpauth",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "httpcon::@714eac15f71a94114fdf",
+					"jsonFile" : "target-httpcon-Debug-099ea7d9cdb71bc2e2a3.json",
+					"name" : "httpcon",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "httpcookie::@714eac15f71a94114fdf",
+					"jsonFile" : "target-httpcookie-Debug-28941437d96b15731c11.json",
+					"name" : "httpcookie",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "httpform::@714eac15f71a94114fdf",
+					"jsonFile" : "target-httpform-Debug-30226fbd06ebc3927467.json",
+					"name" : "httpform",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "httppp::@145eef247bfb46b6828c",
+					"jsonFile" : "target-httppp-Debug-382d37724f37ca2c3367.json",
+					"name" : "httppp",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "httppp-static::@145eef247bfb46b6828c",
+					"jsonFile" : "target-httppp-static-Debug-bbe7286923cf6f791d76.json",
+					"name" : "httppp-static",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "httpproxy::@714eac15f71a94114fdf",
+					"jsonFile" : "target-httpproxy-Debug-a0103652cd71618edaac.json",
+					"name" : "httpproxy",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 3,
+					"id" : "httpsysinfo::@714eac15f71a94114fdf",
+					"jsonFile" : "target-httpsysinfo-Debug-222dfd5c6810edb92b96.json",
+					"name" : "httpsysinfo",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/jan.koester/Projekte/libhttppp/build",
+		"source" : "/home/jan.koester/Projekte/libhttppp"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 1
+	}
+}

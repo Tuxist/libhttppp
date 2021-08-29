@@ -49,7 +49,7 @@ libhttppp::EventApi::~EventApi(){
 }
 
 void libhttppp::CtrlHandler::CTRLCloseEvent() {
-	libhttppp::Event::_Run = false;
+    libhttppp::Event::_Run = false;
 }
 
 void libhttppp::CtrlHandler::CTRLBreakEvent() {
@@ -62,6 +62,10 @@ void libhttppp::CtrlHandler::CTRLTermEvent() {
 	libhttppp::Event::_Run = false;
 }
 
+void libhttppp::CtrlHandler::SIGPIPEEvent() {
+	return;
+}
+
 void libhttppp::Event::runEventloop(){
         CpuInfo cpuinfo;
         size_t thrs = cpuinfo.getCores();
@@ -69,10 +73,12 @@ void libhttppp::Event::runEventloop(){
 MAINWORKERLOOP:
         ThreadPool thpool;
         for (size_t i = 0; i < thrs; i++) {
-            Thread *th = thpool.addThread();
-            th->Create(WorkerThread, (void*)this);
+            _wArg arg;
+            arg.event=this;
+            arg.cthread=thpool.addThread();
+            arg.cthread->Create(WorkerThread, (void*)&arg);
         }
-        initLockPool(thrs);
+        initLockPool(&thpool);
         for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
             curth->Join();
         }
@@ -84,35 +90,33 @@ MAINWORKERLOOP:
 }
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
-    Event *eventptr=(Event*)wrkevent;
+    Event *eventptr=((_wArg*)wrkevent)->event;
+    Thread *cthread=((_wArg*)wrkevent)->cthread;
     while (libhttppp::Event::_Run) {
-        int des=eventptr->waitEventHandler();
-        for (int i = 0; i < des; ++i) {
+        for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
             try{
-                if(eventptr->LockConnection(i)){
-
+                if(eventptr->LockConnection(cthread,i)){
                     int state = eventptr->StatusEventHandler(i);
-
-                    if(state==EventApi::EventHandlerStatus::EVNOTREADY){
-                        eventptr->ConnectEventHandler(i);
-                    }
                     switch(state){
-                            case EventApi::EventHandlerStatus::EVIN:
-                                eventptr->ReadEventHandler(i);
-                                break;
-                            case EventApi::EventHandlerStatus::EVOUT:
-                                eventptr->WriteEventHandler(i);
-                                break;
-                            default:
-                                eventptr->CloseEventHandler(i);
-                                break;
+                        case EventApi::EventHandlerStatus::EVNOTREADY:
+                            eventptr->ConnectEventHandler(i);
+                        case EventApi::EventHandlerStatus::EVIN:
+                            eventptr->ReadEventHandler(i);
+                            break;
+                        case EventApi::EventHandlerStatus::EVOUT:
+                            eventptr->WriteEventHandler(i);
+                            break;
+                        default:
+                            eventptr->CloseEventHandler(i);
+                            break;
                     }
-                }
+                    eventptr->UnlockConnection(cthread,i);
+                 }
             }catch(HTTPException &e){
                 if(e.isCritical())
                     throw e;
+                eventptr->UnlockConnection(cthread,i);
             }
-            eventptr->UnlockConnection(i);
         }
     }
     return NULL;

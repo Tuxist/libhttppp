@@ -39,9 +39,9 @@ namespace libhttppp {
   public:
     Thread();
     ~Thread();
-	void Create(void *function(void*), void *arguments);
+    void Create(void *function(void*), void *arguments);
     void Detach();
-	int getThreadID();
+    int getThreadID();
     void setPid(int pid);
     int  getPid();
     void Join();

@@ -48,3 +48,28 @@ void libhttppp::rscopy(const char* first, const char* last, char** des){
     scopy(first,last,*des);
     *des[rs]='\0';
 }
+
+inline void libhttppp::reverse(char s[]){
+    int i, j;
+    char c;
+    
+    for (i = 0, j = getlen(s)-1; i<j; i++, j--) {
+        c = s[i];
+        s[i] = s[j];
+        s[j] = c;
+    }
+}    
+
+inline void libhttppp::itoa(int n, char s[]){
+        int i, sign;
+        if ((sign = n) < 0) 
+            n = -n;
+        i = 0;
+        do {       /* generate digits in reverse order */
+            s[i++] = n % 10 + '0';   /* get next digit */
+        } while ((n /= 10) > 0);     /* delete it */
+        if (sign < 0)
+            s[i++] = '-';
+        s[i] = '\0';
+        reverse(s);
+}

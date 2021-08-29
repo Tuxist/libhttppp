@@ -1,0 +1,1 @@
+/usr/bin/c++ -O0 -Wall -g -rdynamic CMakeFiles/httpcon.dir/httpcon.cpp.o -o httpcon  ../src/libhttppp-static.a -lhtmlpp -lssl -lcrypto -lpthread 

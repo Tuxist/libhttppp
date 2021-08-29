@@ -35,11 +35,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace libhttppp {
 class EventApi {
-	public:
+    public:
         
         enum EventHandlerStatus{EVNOTREADY=-1,EVIN=0,EVOUT=1,EVUP=2,EVERR=3,EVWAIT=4};
         
-		virtual ~EventApi();
+        virtual ~EventApi();
         virtual void initEventHandler()=0;
         virtual int    waitEventHandler()=0;
         virtual const char *getEventType()=0;
@@ -50,16 +50,16 @@ class EventApi {
         virtual void CloseEventHandler(int des)=0;
         
         /*Multithreading options*/
-        virtual bool LockConnection(int des)=0;
-        virtual void UnlockConnection(int des)=0;
-        virtual void initLockPool(int locks)=0;
+        virtual void initLockPool(ThreadPool *pool)=0;
         virtual void destroyLockPool()=0;
+        virtual bool LockConnection(Thread *cth,int des)=0;
+        virtual void UnlockConnection(Thread *cth,int des)=0;
         
         /*HTTP API Events*/
-		virtual void RequestEvent(Connection *curcon)=0;
-		virtual void ResponseEvent(Connection *curcon)=0;
-		virtual void ConnectEvent(Connection *curcon)=0;
-		virtual void DisconnectEvent(Connection *curcon)=0;
+        virtual void RequestEvent(Connection *curcon)=0;
+        virtual void ResponseEvent(Connection *curcon)=0;
+        virtual void ConnectEvent(Connection *curcon)=0;
+        virtual void DisconnectEvent(Connection *curcon)=0;
   };
 };
 

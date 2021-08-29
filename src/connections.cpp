@@ -115,7 +115,7 @@ size_t libhttppp::Connection::getSendSize(){
 libhttppp::ConnectionData *libhttppp::Connection::addRecvQueue(const char data[BLOCKSIZE],size_t datasize){
     if(datasize<=0){
         HTTPException httpexception;
-        httpexception.Error("addRecvQueue","wrong datasize");
+        httpexception[HTTPException::Error] << "addRecvQueue" << "wrong datasize";
         throw httpexception;
     }
     if(!_ReadDataFirst){
@@ -157,7 +157,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
                                                                size_t *qsize, size_t size){
     if(size==0 || !qsize){
         HTTPException httpexception;
-        httpexception.Error("_resizeQueue","wrong datasize or ConnectionData");
+        httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
         throw httpexception;
     }
     #ifdef DEBUG
@@ -190,8 +190,8 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
             *firstdata=(*firstdata);
         #ifdef DEBUG
             HTTPException httpexception;
-            httpexception.Note("Current Blocksize",size);
-            httpexception.Note("Calculated Blocksize",presize-delsize);
+            httpexception[HTTPException::Note]  << "Current Blocksize" <<size
+                                                << "Calculated Blocksize" << presize-delsize;
             assert((presize-delsize)!=size);
         #endif
         }

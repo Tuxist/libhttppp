@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define DEBUG_MUTEX
 
 #include "epoll.h"
+#include "threadpool.h"
 
 libhttppp::ConLock::ConLock()
 {
@@ -64,15 +65,16 @@ libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
 libhttppp::EPOLL::~EPOLL(){
 }
 
-void libhttppp::EPOLL::initLockPool(int locks){
+void libhttppp::EPOLL::initLockPool(ThreadPool *pool){
     _ConLock=nullptr;
-    for(int i=0; i <locks; ++i){
+    for(Thread *curt=pool->getfirstThread(); curt; curt=curt->nextThread()){
         if(!_ConLock){
             _ConLock=new ConLock();
         }else{
             _ConLock->_nextConLock = new ConLock();
             _ConLock = _ConLock->_nextConLock;
         }
+        _ConLock->_Thread=curt;
     }   
 }
 
@@ -81,15 +83,9 @@ void libhttppp::EPOLL::destroyLockPool(){
 }
 
 
-bool libhttppp::EPOLL::LockConnection(int des) {
-    ConLock *curlock=_ConLock;
-    while(curlock){
-        if(curlock->_Des==des)
-            return false;
-        curlock=curlock->_nextConLock;
-    }
+bool libhttppp::EPOLL::LockConnection(Thread *cth,int des) {
     for(ConLock *frlock=_ConLock; frlock; frlock=frlock->_nextConLock){
-        if(frlock->_Des==(-1)){
+        if(frlock->_Thread == cth && frlock->_Des==-1){
             if(frlock->_Lock.trylock()){
                 frlock->_Des=des;
                 return true;
@@ -99,11 +95,12 @@ bool libhttppp::EPOLL::LockConnection(int des) {
     return false;
 }
 
-void libhttppp::EPOLL::UnlockConnection(int des){
+void libhttppp::EPOLL::UnlockConnection(Thread *cth,int des){
     for(ConLock *curlock=_ConLock; curlock; curlock=curlock->_nextConLock){
-        if(curlock->_Des==des){
+        if(curlock->_Thread == cth && curlock->_Des==des){
             _ConLock->_Des=-1;
             _ConLock->_Lock.unlock();
+            return;
         }
     }
 }
@@ -211,6 +208,8 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     try {
+        if(!curct)
+            throw httpexception.Warning("ReadEventHandler: Connection not Valid");
         char buf[BLOCKSIZE];
         int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
         rcvsize ? curct->addRecvQueue(buf,rcvsize) : curct->addRecvQueue(buf,BLOCKSIZE);
@@ -224,6 +223,8 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     try {
+        if(!curct)
+            throw httpexception.Warning("WriteEventHandler: Connection not Valid");
         ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
@@ -231,6 +232,8 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
                                                    curct->getSendData()->getDataSize());
         ResponseEvent(curct);
     } catch(HTTPException &e) {
+        if(errno==EAGAIN)
+            WriteEventHandler(des);
         curct->cleanSendData();
         throw e;
     }

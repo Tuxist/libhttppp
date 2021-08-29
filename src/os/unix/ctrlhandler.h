@@ -35,7 +35,8 @@ namespace libhttppp {
     	static void initCtrlHandler();
 		static void CTRLCloseEvent();
 		static void CTRLBreakEvent();
-    static void CTRLTermEvent();
+        static void CTRLTermEvent();
+        static void SIGPIPEEvent();
 		static void CtrlEventHandler(int sig);
 	};
 };

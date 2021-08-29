@@ -94,7 +94,7 @@ libhttppp::HTTPDCmdController::HTTPDCmdController() {
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey,bool required, const char *defaultvalue, const char *help) {
 	if (!key || !skey || !help) {
-		_httpexception.Critical("cmd parser key,skey or help not set!");
+		_httpexception[HTTPException::Critical] << "cmd parser key,skey or help not set!";
 		throw _httpexception;
 	}
 	/*if key exist overwriting options*/
@@ -148,14 +148,14 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
 }
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, size_t defaultvalue, const char *help) {
-	char buf[255];
-	snprintf(buf, sizeof(buf), "%zu", defaultvalue);
+	char buf[sizeof(size_t)];
+	itoa(defaultvalue,buf);
 	registerCmd(key,skey,required,buf,help);
 }
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, int defaultvalue, const char *help) {
-	char buf[255];
-	snprintf(buf, sizeof(buf), "%d", defaultvalue);
+	char buf[sizeof(size_t)];
+	itoa(defaultvalue,buf);
 	registerCmd(key, skey, required, buf, help);
 }
 
@@ -262,7 +262,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     CmdController->parseCmd(argc,argv);
 	if (!CmdController->checkRequired()) {
 		CmdController->printHelp();
-		_httpexception.Critical("cmd parser not enough arguments given");
+		_httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";
 		throw _httpexception;
 	}
 

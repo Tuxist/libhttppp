@@ -1,0 +1,1 @@
+/usr/bin/c++ -O0 -Wall -g -rdynamic CMakeFiles/httpauth.dir/httpauth.cpp.o -o httpauth  ../src/libhttppp-static.a -lhtmlpp -lssl -lcrypto -lpthread 

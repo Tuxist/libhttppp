@@ -1,0 +1,1 @@
+/usr/bin/c++ -O0 -Wall -g -rdynamic CMakeFiles/connection_test.dir/connection_test.cpp.o -o connection_test  ../src/libhttppp-static.a -lssl -lcrypto -lpthread 
