@@ -1,1 +1,0 @@
-/usr/bin/c++ -O0 -Wall -g -rdynamic CMakeFiles/httpcookie.dir/httpcookie.cpp.o -o httpcookie  ../src/libhttppp-static.a -lhtmlpp -lssl -lcrypto -lpthread 

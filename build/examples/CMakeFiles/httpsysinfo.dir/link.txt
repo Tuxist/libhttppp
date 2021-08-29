@@ -1,1 +1,0 @@
-/usr/bin/c++ -O0 -Wall -g -rdynamic CMakeFiles/httpsysinfo.dir/httpsysinfo.cpp.o -o httpsysinfo  ../src/libhttppp-static.a -lhtmlpp -lssl -lcrypto -lpthread 
