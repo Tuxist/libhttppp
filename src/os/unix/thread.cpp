@@ -45,11 +45,11 @@ void libhttppp::Thread::Create(void *function(void*), void *arguments) {
   if (rth != 0) {
 #ifdef __GLIBCXX__
     char errbuf[255];
-    httpexception.Error("Thread Create",strerror_r(errno, errbuf, 255));
+    httpexception[HTTPException::Error] << "Thread Create" << strerror_r(errno, errbuf, 255);
 #else
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    httpexception.Error("Thread Create",errbuf);
+    httpexception[HTTPException::Error] << "Thread Create" << errbuf;
 #endif
     throw httpexception;
   }
@@ -78,11 +78,11 @@ void libhttppp::Thread::Join(){
     HTTPException httpexception;    
 #ifdef __GLIBCXX__
     char errbuf[255];
-    httpexception.Error("Can't join Thread",strerror_r(errno, errbuf, 255));
+    httpexception[HTTPException::Error] << "Can't join Thread" << strerror_r(errno, errbuf, 255);
 #else
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    httpexception.Error("Can't join Thread",errbuf);
+    httpexception[HTTPException::Error] << "Can't join Thread" << errbuf;
 #endif  
   }
 }

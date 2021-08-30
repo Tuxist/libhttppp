@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "connections.h"
 #include "eventapi.h"
 #include "threadpool.h"
+#include "exception.h"
 
 #include "event.h"
 
@@ -97,23 +98,24 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
             try{
                 if(eventptr->LockConnection(cthread,i)){
                     int state = eventptr->StatusEventHandler(i);
+                    bool changestate=false;
                     switch(state){
                         case EventApi::EventHandlerStatus::EVNOTREADY:
                             eventptr->ConnectEventHandler(i);
+                            changestate=true;
                         case EventApi::EventHandlerStatus::EVIN:
                             eventptr->ReadEventHandler(i);
-                            break;
+                            changestate=true;
                         case EventApi::EventHandlerStatus::EVOUT:
                             eventptr->WriteEventHandler(i);
-                            break;
-                        default:
-                            eventptr->CloseEventHandler(i);
-                            break;
+                            changestate=true;
                     }
+                    if(!changestate)
+                        eventptr->CloseEventHandler(i);
                     eventptr->UnlockConnection(cthread,i);
                  }
             }catch(HTTPException &e){
-                if(e.isCritical())
+                if(e.getErrorType()==HTTPException::Critical)
                     throw e;
                 eventptr->UnlockConnection(cthread,i);
             }

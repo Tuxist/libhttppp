@@ -35,11 +35,11 @@ const  char *libhttppp::scopy(const char* first, const char* last, char* des){
 }
 
 unsigned int libhttppp::getlen(const char *str) {
-	unsigned int len = 0;
-	while ((*str++) != '\0') {
-		++len;
-	}
-	return len;
+    unsigned int len = 0;
+    while ((*str++) != '\0') {
+        ++len;
+    }
+    return len;
 }
 
 void libhttppp::rscopy(const char* first, const char* last, char** des){
@@ -49,7 +49,7 @@ void libhttppp::rscopy(const char* first, const char* last, char** des){
     *des[rs]='\0';
 }
 
-inline void libhttppp::reverse(char s[]){
+void libhttppp::reverse(char s[]){
     int i, j;
     char c;
     
@@ -60,7 +60,7 @@ inline void libhttppp::reverse(char s[]){
     }
 }    
 
-inline void libhttppp::itoa(int n, char s[]){
+void libhttppp::itoa(int n, char s[]){
         int i, sign;
         if ((sign = n) < 0) 
             n = -n;

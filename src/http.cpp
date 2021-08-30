@@ -176,7 +176,7 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 
 libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
   if(!key){
-    _httpexception.Error("no headerdata key set can't do this");
+    _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
     throw _httpexception;
   }
   _nextHeaderData=NULL;
@@ -212,12 +212,12 @@ libhttppp::HttpResponse::HttpResponse(){
 
 void libhttppp::HttpResponse::setState(const char* httpstate){
   if(httpstate==NULL){
-    _httpexception.Error("http state not set don't do that !!!");
+    _httpexception[HTTPException::Error] << "http state not set don't do that !!!";
     throw _httpexception;
   }
   size_t hlen=getlen(httpstate);
   if(hlen>254){
-    _httpexception.Error("http state with over 255 signs sorry your are drunk !");
+    _httpexception[HTTPException::Error] << "http state with over 255 signs sorry your are drunk !";
     throw _httpexception;
   }
   _Statelen=hlen;
@@ -304,14 +304,14 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             }else if((startpos=curconnection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
                 _RequestType=POSTREQUEST;
             }else{
-                _httpexception.Warning("Requesttype not known cleanup");
+                _httpexception[HTTPException::Warning] << "Requesttype not known cleanup";
                 curconnection->cleanRecvData();
                 throw _httpexception;
             }
             ConnectionData *endblock;
             ssize_t endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
             if(endpos==-1){
-                _httpexception.Error("can't find newline headerend");
+                _httpexception[HTTPException::Error] << "can't find newline headerend";
                 throw _httpexception;
             }
             endpos+=4;  
@@ -320,7 +320,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             char *header;
             size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&header);
             if(sscanf(header,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
-                _httpexception.Error("can't parse http head");
+                _httpexception[HTTPException::Error] << "can't parse http head";
                 throw _httpexception;
             }
             
@@ -378,12 +378,12 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                     curconnection->resizeRecvQueue(rcsize);
                     _RequestSize=rcsize;
                 }else{
-                    _httpexception.Note("Request incomplete");
+                    _httpexception[HTTPException::Note] << "Request incomplete";
                     throw _httpexception;
                 }
             }
         }else{
-            _httpexception.Note("No Incoming data in queue");
+            _httpexception[HTTPException::Note] << "No Incoming data in queue";
             throw _httpexception;
         }
     }catch(HTTPException &e){
@@ -907,7 +907,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
       scopy(rurl+rdelimter,rurl+(rdelimter+rsize),formdat);
       formdat[rsize]='\0';
   }else{
-    _httpexception.Error("HttpForm unknown Requestype");
+    _httpexception[HTTPException::Error] << "HttpForm unknown Requestype";
     throw _httpexception;
   }
   size_t fdatstpos=0;
@@ -1045,7 +1045,7 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
                                       int maxage, const char* path,
                                       bool secure,const char *version){
   if(!key || !value){
-    _httpexception.Note("no key or value set in cookie!");
+    _httpexception[HTTPException::Note] << "no key or value set in cookie!";
     return;
   }
   std::stringstream cookiestream;

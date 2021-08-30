@@ -127,7 +127,8 @@ libhttppp::FsInfo::FsInfo(){
         }
     }else{
         HTTPException httpexception;
-        httpexception.Error("FsInfo","Could not open Fstab");
+        httpexception[HTTPException::Error] << "FsInfo"
+                                            <<"Could not open Fstab";
     }
 }
 

@@ -230,7 +230,10 @@ bool libhttppp::HTTPDCmdController::checkRequired() {
 
 void libhttppp::HTTPDCmdController::printHelp() {
 	for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-		printf("--%s -%c %s\n",curhttpdcmd->getKey(),curhttpdcmd->getShortkey(),curhttpdcmd->getHelp());
+        Console con;
+        con << "--" << curhttpdcmd->getKey() 
+            << "-"  << curhttpdcmd->getShortkey()
+            << curhttpdcmd->getHelp() << Console::endl;
 	}
 }
 

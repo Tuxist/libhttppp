@@ -30,6 +30,7 @@ ELSE()
   list(APPEND libhttpSrcs "os/unix/thread.cpp")
   list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/unix/ctrlhandler.cpp")
+  list(APPEND libhttpSrcs "os/unix/console.cpp")
 ENDIF()
 
 IF(${EVENT} MATCHES "IOCP")
@@ -115,6 +116,7 @@ install(FILES os/unix/socket.h
               os/unix/thread.h
               os/unix/sysinfo.h
               os/unix/ctrlhandler.h
+              os/unix/console.h
         DESTINATION include/httppp/os/unix
         COMPONENT Devel
 )

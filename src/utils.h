@@ -34,8 +34,8 @@ namespace libhttppp {
    const char *scopy(const char* first, const char* last, char* des);
    unsigned int getlen(const char *str);
    void rscopy(const char* first, const char* last, char** des);
-   inline void reverse(char s[]);
-   inline void itoa(int n, char s[]);
+   void reverse(char s[]);
+   void itoa(int n, char s[]);
 };
 
 #endif

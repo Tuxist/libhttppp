@@ -15,6 +15,7 @@
   #include "unix/thread.h"
   #include "unix/sysinfo.h"
   #include "unix/ctrlhandler.h"
+  #include "unix/console.h"
 #endif
 
 #endif
