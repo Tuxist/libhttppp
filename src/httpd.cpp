@@ -148,13 +148,13 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
 }
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, size_t defaultvalue, const char *help) {
-	char buf[sizeof(size_t)];
+	char buf[255];
 	itoa(defaultvalue,buf);
 	registerCmd(key,skey,required,buf,help);
 }
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, int defaultvalue, const char *help) {
-	char buf[sizeof(size_t)];
+	char buf[255];
 	itoa(defaultvalue,buf);
 	registerCmd(key, skey, required, buf, help);
 }
