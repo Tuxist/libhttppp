@@ -94,35 +94,43 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=((_wArg*)wrkevent)->event;
     Thread *cthread=((_wArg*)wrkevent)->cthread;
     while (libhttppp::Event::_Run) {
-        for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-            try{
-                if(eventptr->LockConnection(cthread,i)){
-                    switch(eventptr->StatusEventHandler(i)){
-                        case EventApi::EventHandlerStatus::EVNOTREADY:
-                            eventptr->ConnectEventHandler(i);
+        try {
+            for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
+                try{
+                    if(eventptr->LockConnection(cthread,i)){
+                        switch(eventptr->StatusEventHandler(i)){
+                            case EventApi::EventHandlerStatus::EVNOTREADY:
+                                eventptr->ConnectEventHandler(i);
+                                break;
+                            case EventApi::EventHandlerStatus::EVOUT:
+                                eventptr->WriteEventHandler(i);
+                                break;
+                            case EventApi::EventHandlerStatus::EVIN:
+                                eventptr->ReadEventHandler(i);
+                                break;
+                        }
+                        eventptr->UnlockConnection(cthread,i);
+                    }
+                }catch(HTTPException &e){
+                    switch(e.getErrorType()){
+                        case HTTPException::Critical:
+                            throw e;
                             break;
-                        case EventApi::EventHandlerStatus::EVOUT:
-                            eventptr->WriteEventHandler(i);
-                            break;
-                        case EventApi::EventHandlerStatus::EVIN:
-                            eventptr->ReadEventHandler(i);
+                        case HTTPException::Error:
+                            eventptr->CloseEventHandler(i);
                             break;
                     }
+                    Console con;
+                    con << e.what() << con.endl;
                     eventptr->UnlockConnection(cthread,i);
-                 }
-            }catch(HTTPException &e){
-                switch(e.getErrorType()){
-                    case HTTPException::Critical:
-                        throw e;
-                        break;
-                    case HTTPException::Error:
-                        eventptr->CloseEventHandler(i);
-                        break;
                 }
-                Console con;
-                con << e.what() << con.endl;
-                eventptr->UnlockConnection(cthread,i);
             }
+        }catch(HTTPException &e){
+            switch(e.getErrorType()){
+                case HTTPException::Error:
+                    throw e;
+                    break;
+            }           
         }
     }
     return NULL;
