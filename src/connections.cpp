@@ -71,7 +71,9 @@ libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   */
 
 void libhttppp::Connection::SendData(const char* data, size_t datasize){
-    _ServerSocket->sendData(_ClientSocket,(void*)data,datasize);
+    while(datasize>0){
+        datasize-=_ServerSocket->sendData(_ClientSocket,(void*)data,datasize);
+    }
 }
 
 

@@ -4,6 +4,7 @@ enable_testing ()
 
 set(LIBV "1.0.0")
 set(Upstream_VERSION 1.0.0)
+set (BLOCKSIZE "16384" CACHE STRING "Block size from Network Packages")
 
 IF(CMAKE_BUILD_TYPE MATCHES DEBUG)
   if( CMAKE_CXX_COMPILER_ID MATCHES GNU )

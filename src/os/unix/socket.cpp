@@ -195,7 +195,6 @@ int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int &ctry,in
   int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket<0){
       if(errno==EAGAIN && ctry<maxtries){
-          usleep(EPOLLWAIT);
           return acceptEvent(clientsocket,++ctry,maxtries);
       }
 #ifdef __GLIBCXX__
