@@ -98,8 +98,8 @@ bool libhttppp::EPOLL::LockConnection(Thread *cth,int des) {
 void libhttppp::EPOLL::UnlockConnection(Thread *cth,int des){
     for(ConLock *curlock=_ConLock; curlock; curlock=curlock->_nextConLock){
         if(curlock->_Thread == cth && curlock->_Des==des){
-            _ConLock->_Des=-1;
-            _ConLock->_Lock.unlock();
+            curlock->_Des=-1;
+            curlock->_Lock.unlock();
             return;
         }
     }
