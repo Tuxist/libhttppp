@@ -148,7 +148,6 @@ EVENTPOLLWAIT:
         HTTPException httpexception;
         if(errno== EINTR) {
             httpexception[HTTPException::Warning] << "initEventHandler: EINTR";
-            goto EVENTPOLLWAIT;
         } else {
             httpexception[HTTPException::Critical] << "initEventHandler: epoll wait failure";
             throw httpexception;
