@@ -97,16 +97,15 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
         for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
             try{
                 if(eventptr->LockConnection(cthread,i)){
-                    int state = eventptr->StatusEventHandler(i);
-                    switch(state){
+                    switch(eventptr->StatusEventHandler(i)){
                         case EventApi::EventHandlerStatus::EVNOTREADY:
                             eventptr->ConnectEventHandler(i);
                             break;
-                        case EventApi::EventHandlerStatus::EVIN:
-                            eventptr->ReadEventHandler(i);
-                            break;
                         case EventApi::EventHandlerStatus::EVOUT:
                             eventptr->WriteEventHandler(i);
+                            break;
+                        case EventApi::EventHandlerStatus::EVIN:
+                            eventptr->ReadEventHandler(i);
                             break;
                     }
                     eventptr->UnlockConnection(cthread,i);
@@ -115,14 +114,13 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                 switch(e.getErrorType()){
                     case HTTPException::Critical:
                         throw e;
+                        break;
                     case HTTPException::Error:
                         eventptr->CloseEventHandler(i);
                         break;
-                    case HTTPException::Warning:
-                        Console con;
-                        con << e.what() << con.endl;
-                        break;
                 }
+                Console con;
+                con << e.what() << con.endl;
                 eventptr->UnlockConnection(cthread,i);
             }
         }

@@ -130,7 +130,7 @@ void libhttppp::EPOLL::initEventHandler(){
         throw httpexception;
     }
 
-    setevent.events = EPOLLIN | EPOLLOUT;
+    setevent.events = EPOLLIN | EPOLLET;
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
         httpexception[HTTPException::Critical] << "initEventHandler: can't create epoll";
@@ -151,8 +151,8 @@ EVENTPOLLWAIT:
             httpexception[HTTPException::Warning] << "initEventHandler: EINTR";
         } else {
             httpexception[HTTPException::Critical] << "initEventHandler: epoll wait failure";
-            throw httpexception;
         }
+        throw httpexception;
     }
     return n;
 }
@@ -174,27 +174,22 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
-        if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
-            curct->getClientSocket()->setnonblocking();
-            setevent.events = EPOLLIN | EPOLLOUT;
-            setevent.data.ptr = curct;
-            int err = 0;
-            if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
+        _ServerSocket->acceptEvent(curct->getClientSocket());
+        curct->getClientSocket()->setnonblocking();
+        setevent.events = EPOLLIN | EPOLLOUT;
+        setevent.data.ptr = curct;
+        if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent) == -1) {
 #ifdef __GLIBCXX__
-                char errbuf[255];
-                httpexception[HTTPException::Error] << "ConnectEventHandler: " << strerror_r(errno, errbuf, 255);
+            char errbuf[255];
+            httpexception[HTTPException::Error] << "ConnectEventHandler: " << strerror_r(errno, errbuf, 255);
 #else
-                char errbuf[255];
-                strerror_r(errno, errbuf, 255);
-                httpexception.Error("ConnectEventHandler: ",errbuf);
+            char errbuf[255];
+            strerror_r(errno, errbuf, 255);
+            httpexception.Error("ConnectEventHandler: ",errbuf);
 #endif
-                throw httpexception;
-            }
-            ConnectEvent(curct);
-        }else {
-            httpexception[HTTPException::Error] << "ConnectEventHandler: Connect Event invalid fildescriptor";
             throw httpexception;
         }
+        ConnectEvent(curct);
     }catch (HTTPException& e) {
         delete curct;
         setevent.data.ptr=nullptr;
@@ -207,15 +202,10 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     try {
-        if(!curct)
-            throw httpexception[HTTPException::Warning]
-                    <<"ReadEventHandler: Connection not Valid";
         char buf[BLOCKSIZE];
         int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
-        if(rcvsize>0){
-            curct->addRecvQueue(buf,rcvsize);
-            RequestEvent(curct);
-        }
+        curct->addRecvQueue(buf,rcvsize);
+        RequestEvent(curct);
     } catch(HTTPException &e) {
         throw e;
     }
@@ -225,9 +215,6 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     try {
-        if(!curct)
-            throw httpexception[HTTPException::Warning] 
-                    << "WriteEventHandler: Connection not Valid";
         ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
@@ -246,14 +233,14 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
         Connection *curct=((Connection*)_Events[des].data.ptr);
         if(!curct)
             return;
-        delete (Connection*)_Events[des].data.ptr;
-        _Events[des].data.ptr=nullptr;
         int ect=epoll_ctl(_epollFD, EPOLL_CTL_DEL, curct->getClientSocket()->Socket, &setevent);
         if(ect==-1) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;
         }
         DisconnectEvent(curct);
+        delete ((Connection*)_Events[des].data.ptr);
+        _Events[des].data.ptr=nullptr;
         httpexception[HTTPException::Note] << "CloseEventHandler: Connection shutdown!";
     } catch(HTTPException &e) {
         httpexception[HTTPException::Warning] << "CloseEventHandler: Can't do Connection shutdown!";

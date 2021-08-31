@@ -69,151 +69,155 @@ void libhttppp::ClientSocket::Close(){
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
-  fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
+    fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
-  int optval = 1;
-  _Maxconnections=maxconnections;
-  _UXSocketAddr = new sockaddr_un;
-  _UXSocketAddr->sun_family = AF_UNIX;
-  try {
-    scopy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
-  }catch(...){
-     _httpexception[HTTPException::Critical] << "Can't copy Server UnixSocket";
-     throw _httpexception;
-  }
-
-  if ((Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
-    _httpexception[HTTPException::Critical] << "Can't create Socket UnixSocket";
-    throw _httpexception;
-  }
-
-  setsockopt(Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
-  
-  if (bind(Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
-#ifdef __GLIBCXX__
-	  char errbuf[255];
-	  _httpexception[HTTPException::Error] << "Can't bind Server UnixSocket"
-                                           << strerror_r(errno, errbuf, 255);
-#else
-	  char errbuf[255];
-	  strerror_r(errno, errbuf, 255);
-	  _httpexception[HTTPException::Critical] << "Can't bind Server UnixSocket" << errbuf;
-#endif
-    throw _httpexception;
-  }
+    HTTPException httpexception;
+    int optval = 1;
+    _Maxconnections=maxconnections;
+    _UXSocketAddr = new sockaddr_un;
+    _UXSocketAddr->sun_family = AF_UNIX;
+    try {
+        scopy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
+    }catch(...){
+        httpexception[HTTPException::Critical] << "Can't copy Server UnixSocket";
+        throw httpexception;
+    }
+    
+    if ((Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
+        httpexception[HTTPException::Critical] << "Can't create Socket UnixSocket";
+        throw httpexception;
+    }
+    
+    setsockopt(Socket,SOL_SOCKET,SO_REUSEADDR,&optval, sizeof(optval));
+    
+    if (bind(Socket, (struct sockaddr *)_UXSocketAddr, sizeof(struct sockaddr)) < 0){
+        #ifdef __GLIBCXX__
+        char errbuf[255];
+        httpexception[HTTPException::Error] << "Can't bind Server UnixSocket"
+        << strerror_r(errno, errbuf, 255);
+        #else
+        char errbuf[255];
+        strerror_r(errno, errbuf, 255);
+        httpexception[HTTPException::Critical] << "Can't bind Server UnixSocket" << errbuf;
+        #endif
+        throw httpexception;
+    }
 }
 
 
 libhttppp::ServerSocket::ServerSocket(int socket) {
-	Socket = socket;
-	_Maxconnections = MAXDEFAULTCONN;
-	_UXSocketAddr = NULL;
+    Socket = socket;
+    _Maxconnections = MAXDEFAULTCONN;
+    _UXSocketAddr = NULL;
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnections){
-  _Maxconnections=maxconnections;
-  _UXSocketAddr = NULL;
-
-  char port_buffer[6];
-  snprintf(port_buffer,6, "%d", port);
-  struct addrinfo *result, *rp;
-  memset(&_SockAddr, 0, sizeof(struct addrinfo));
-  _SockAddr.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
-  _SockAddr.ai_socktype = SOCK_STREAM; /* Datagram socket */
-  _SockAddr.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
-  _SockAddr.ai_protocol = 0;          /* Any protocol */
-  _SockAddr.ai_canonname = NULL;
-  _SockAddr.ai_addr = NULL;
-  _SockAddr.ai_next = NULL;
-
-  int s = getaddrinfo(addr, port_buffer, &_SockAddr, &result);
-  if (s != 0) {
-    _httpexception[HTTPException::Critical] << "getaddrinfo failed " << gai_strerror(s);
-    throw _httpexception;
-  }
-
-  /* getaddrinfo() returns a list of address structures.
-  Try each address until we successfully bind(2).
-  If socket(2) (or bind(2)) fails, we (close the socket
-  and) try the next address. */
-
-  for (rp = result; rp != NULL; rp = rp->ai_next) {
-	  Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
-	  if (Socket == -1)
-		  continue;
-
-	  int optval = 1;
-	  setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
-	  if (bind(Socket, rp->ai_addr, rp->ai_addrlen) == 0)
-		  break;                  /* Success */
-
-	  close(Socket);
-  }
-
-  if (rp == NULL) {               /* No address succeeded */
-	  _httpexception[HTTPException::Critical] << "Could not bind\n";
-	  throw _httpexception;
-  }
-  freeaddrinfo(result);
+    HTTPException httpexception;
+    _Maxconnections=maxconnections;
+    _UXSocketAddr = NULL;
+    
+    char port_buffer[6];
+    snprintf(port_buffer,6, "%d", port);
+    struct addrinfo *result, *rp;
+    memset(&_SockAddr, 0, sizeof(struct addrinfo));
+    _SockAddr.ai_family = AF_UNSPEC;    /* Allow IPv4 or IPv6 */
+    _SockAddr.ai_socktype = SOCK_STREAM; /* Datagram socket */
+    _SockAddr.ai_flags = AI_PASSIVE;    /* For wildcard IP address */
+    _SockAddr.ai_protocol = 0;          /* Any protocol */
+    _SockAddr.ai_canonname = NULL;
+    _SockAddr.ai_addr = NULL;
+    _SockAddr.ai_next = NULL;
+    
+    int s = getaddrinfo(addr, port_buffer, &_SockAddr, &result);
+    if (s != 0) {
+        httpexception[HTTPException::Critical] << "getaddrinfo failed " << gai_strerror(s);
+        throw httpexception;
+    }
+    
+    /* getaddrinfo() returns a list of address structures.
+     *  Try each address until we successfully bind(2).
+     *  If socket(2) (or bind(2)) fails, we (close the socket
+     *  and) try the next address. */
+    
+    for (rp = result; rp != NULL; rp = rp->ai_next) {
+        Socket = socket(rp->ai_family, rp->ai_socktype,rp->ai_protocol);
+        if (Socket == -1)
+            continue;
+        
+        int optval = 1;
+        setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+        
+        if (bind(Socket, rp->ai_addr, rp->ai_addrlen) == 0)
+            break;                  /* Success */
+            
+        close(Socket);
+    }
+    
+    if (rp == NULL) {               /* No address succeeded */
+        httpexception[HTTPException::Critical] << "Could not bind\n";
+        throw httpexception;
+    }
+    freeaddrinfo(result);
 }
 
 libhttppp::ServerSocket::~ServerSocket(){
-  if(_UXSocketAddr)
-    unlink(_UXSocketAddr->sun_path);
-  delete _UXSocketAddr;
+    if(_UXSocketAddr)
+        unlink(_UXSocketAddr->sun_path);
+    delete _UXSocketAddr;
 }
 
 void libhttppp::ServerSocket::setnonblocking(){
-  fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
+    fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
 }
 
 void libhttppp::ServerSocket::listenSocket(){
-  if(listen(Socket, _Maxconnections) < 0){
-    _httpexception[HTTPException::Critical] << "Can't listen Server Socket"<< errno;
-    throw _httpexception;
-  }
+    HTTPException httpexception;
+    if(listen(Socket, _Maxconnections) < 0){
+        httpexception[HTTPException::Critical] << "Can't listen Server Socket"<< errno;
+        throw httpexception;
+    }
 }
 
 int libhttppp::ServerSocket::getSocket(){
-  return Socket;
+    return Socket;
 }
 
 int libhttppp::ServerSocket::getMaxconnections(){
-  return _Maxconnections;
+    return _Maxconnections;
 }
 
 int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
-  clientsocket->_ClientAddrLen=sizeof(clientsocket);
-  int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
-  if(socket<0){
+    HTTPException httpexception;
+    clientsocket->_ClientAddrLen=sizeof(clientsocket);
+    int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
+    if(socket<0){
 #ifdef __GLIBCXX__
-    char errbuf[255];
-    if(errno == EAGAIN)
-        _httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
-    else
-       _httpexception[HTTPException::Error] << "Can't accept on  Socket" << strerror_r(errno, errbuf, 255);
+        char errbuf[255];
+        if(errno == EAGAIN)
+            httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
+        else
+            httpexception[HTTPException::Error] << "Can't accept on  Socket" << strerror_r(errno, errbuf, 255);
 #else
-    char errbuf[255];
-    strerror_r(errno, errbuf, 255);
-    if(errno == EAGAIN)
-        _httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
-    else
-        _httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
+        char errbuf[255];
+        strerror_r(errno, errbuf, 255);
+        if(errno == EAGAIN)
+            httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
+        else
+            httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
 #endif
-  }
-  clientsocket->Socket=socket;
-  if(isSSLTrue()){
-     clientsocket->_SSL = SSL_new(_CTX);
-     SSL_set_fd(clientsocket->_SSL, socket);
-     if (SSL_accept(clientsocket->_SSL) <= 0) {
-       ERR_print_errors_fp(stderr);
-       return -1;
-     }
-  }
-  return socket;
+    }
+    clientsocket->Socket=socket;
+    if(isSSLTrue()){
+        clientsocket->_SSL = SSL_new(_CTX);
+        SSL_set_fd(clientsocket->_SSL, socket);
+        if (SSL_accept(clientsocket->_SSL) <= 0) {
+            ERR_print_errors_fp(stderr);
+            return -1;
+        }
+    }
+    return socket;
 }
 
 
@@ -223,6 +227,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
 }
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
+    HTTPException httpexception;
     ssize_t rval=0;
     if(isSSLTrue() && socket->_SSL){
         rval=SSL_write(socket->_SSL,data,size);
@@ -230,21 +235,20 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
         rval=sendto(socket->Socket,data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
     }
     if(rval<0){
-        #ifdef __GLIBCXX__
         char errbuf[255];
+#ifdef __GLIBCXX__
         if(errno==EAGAIN)
-            _httpexception[HTTPException::Warning] << "Socket sendata:" << strerror_r(errno,errbuf,255);   
+            httpexception[HTTPException::Warning] << "Socket sendata:" << strerror_r(errno,errbuf,255);   
         else
-            _httpexception[HTTPException::Error] << "Socket sendata:" << strerror_r(errno,errbuf,255);
-        #else
-        char errbuf[255];
+            httpexception[HTTPException::Error] << "Socket sendata:" << strerror_r(errno,errbuf,255);
+#else
         strerror_r(errno,errbuf,255);
         if(errno == EAGAIN)
-            _httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
+            httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
         else 
-            _httpexception[HTTPException::Error] << "Socket sendata:" << errbuf;
-        #endif
-        throw _httpexception;
+            httpexception[HTTPException::Error] << "Socket sendata:" << errbuf;
+#endif
+        throw httpexception;
     }
     return rval;
 }
@@ -254,8 +258,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 }
 
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
-    int ctry=0;
-    RECVDATA:
+    HTTPException httpexception;
     ssize_t recvsize=0;
     if(isSSLTrue() && socket->_SSL){
         recvsize=SSL_read(socket->_SSL,data,size);
@@ -264,21 +267,20 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
                           socket->_ClientAddr, &socket->_ClientAddrLen);
     }
     if(recvsize<0){
+        char errbuf[255];
 #ifdef __GLIBCXX__ 
-        char errbuf[255];
         if(errno==EAGAIN)
-            _httpexception[HTTPException::Warning] << "Socket recvata:" << strerror_r(errno,errbuf,255);
+            httpexception[HTTPException::Warning] << "Socket recvata:" << strerror_r(errno,errbuf,255);
         else
-            _httpexception[HTTPException::Error] << "Socket recvata:" << strerror_r(errno,errbuf,255);
+            httpexception[HTTPException::Error] << "Socket recvata:" << strerror_r(errno,errbuf,255);
 #else
-        char errbuf[255];
         strerror_r(errno,errbuf,255);
         if(errno == EAGAIN)
-            _httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
+            httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
         else
-            _httpexception[HTTPException::Critical] << "Socket recvata:" << errbuf;
+            httpexception[HTTPException::Critical] << "Socket recvata:" << errbuf;
 #endif
-        throw _httpexception;
+        throw httpexception;
     }
     return recvsize;
 }

@@ -76,7 +76,6 @@ namespace libhttppp {
     sockaddr_un    *_UXSocketAddr;
     int             _Port;
     int             _Maxconnections;
-    HTTPException   _httpexception;
   };
 };
 #endif
