@@ -56,7 +56,7 @@ libhttppp::ClientSocket::~ClientSocket(){
 }
 
 void libhttppp::ClientSocket::setnonblocking(){
-  fcntl(Socket, F_SETFL, O_NONBLOCK);
+  fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
@@ -154,7 +154,7 @@ libhttppp::ServerSocket::~ServerSocket(){
 }
 
 void libhttppp::ServerSocket::setnonblocking(){
-  fcntl(Socket, F_SETFL, O_NONBLOCK);
+  fcntl(Socket, F_SETFL, fcntl(Socket, F_GETFL, 0) | O_NONBLOCK);
 }
 
 void libhttppp::ServerSocket::listenSocket(){

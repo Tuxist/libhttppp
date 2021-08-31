@@ -122,7 +122,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, size_t value,
 								  libhttppp::HttpHeader::HeaderData *pos){
   char buf[255];
-  snprintf(buf, sizeof(buf), "%zu", value);
+  itoa(value,buf);
   return setData(key,buf,pos);
 }
 
