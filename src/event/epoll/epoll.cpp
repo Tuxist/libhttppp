@@ -175,8 +175,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
-        curct->getClientSocket()->setnonblocking();
         if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
+            curct->getClientSocket()->setnonblocking();
             setevent.events = EPOLLIN | EPOLLOUT;
             setevent.data.ptr = curct;
             int err = 0;

@@ -98,20 +98,20 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
             try{
                 if(eventptr->LockConnection(cthread,i)){
                     int state = eventptr->StatusEventHandler(i);
-                    bool changestate=false;
                     switch(state){
                         case EventApi::EventHandlerStatus::EVNOTREADY:
                             eventptr->ConnectEventHandler(i);
-                            changestate=true;
+                            break;
                         case EventApi::EventHandlerStatus::EVIN:
                             eventptr->ReadEventHandler(i);
-                            changestate=true;
+                            break;
                         case EventApi::EventHandlerStatus::EVOUT:
                             eventptr->WriteEventHandler(i);
-                            changestate=true;
+                            break;
+                        default:
+                            eventptr->CloseEventHandler(i);
+                            break;
                     }
-                    if(!changestate)
-                        eventptr->CloseEventHandler(i);
                     eventptr->UnlockConnection(cthread,i);
                  }
             }catch(HTTPException &e){
