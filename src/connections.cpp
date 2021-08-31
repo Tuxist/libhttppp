@@ -236,7 +236,7 @@ libhttppp::Connection::Connection(ServerSocket *servsock){
 }
 
 libhttppp::Connection::~Connection(){
-  delete _ReadDataFirst;
-  delete _SendDataFirst;
-  delete _ClientSocket;
+    delete _ClientSocket;
+    delete _ReadDataFirst;
+    delete _SendDataFirst;
 }

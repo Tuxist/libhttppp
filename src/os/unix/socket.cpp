@@ -47,10 +47,24 @@ libhttppp::ClientSocket::ClientSocket(){
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-    close(Socket);
+    Close();
     if(_SSL)
         SSL_free(_SSL);
     delete _ClientAddr;
+}
+
+void libhttppp::ClientSocket::Close(){
+    HTTPException exp;
+    if(close(Socket)>0){
+#ifdef __GLIBCXX__
+        char errbuf[255];
+        exp[HTTPException::Error] << "Can't close Socket: " << strerror_r(errno, errbuf, 255);
+#else
+        char errbuf[255];
+        strerror_r(errno, errbuf, 255);
+        exp[HTTPException::Error] << "Can't close Socket: " << errbuf;
+#endif
+    }
 }
 
 void libhttppp::ClientSocket::setnonblocking(){

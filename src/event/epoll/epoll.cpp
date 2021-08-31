@@ -209,8 +209,10 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
                     <<"ReadEventHandler: Connection not Valid";
         char buf[BLOCKSIZE];
         int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
-        curct->addRecvQueue(buf,rcvsize);
-        RequestEvent(curct);
+        if(rcvsize>0){
+            curct->addRecvQueue(buf,rcvsize);
+            RequestEvent(curct);
+        }
     } catch(HTTPException &e) {
         throw e;
     }
@@ -223,14 +225,14 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
         Connection *curct=((Connection*)_Events[des].data.ptr);
         if(!curct)
             return;
+        delete (Connection*)_Events[des].data.ptr;
+        _Events[des].data.ptr=nullptr;
         int ect=epoll_ctl(_epollFD, EPOLL_CTL_DEL, curct->getClientSocket()->Socket, &setevent);
         if(ect==-1) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;
         }
         DisconnectEvent(curct);
-        delete (Connection*)_Events[des].data.ptr;
-        _Events[des].data.ptr=nullptr;
         httpexception[HTTPException::Note] << "CloseEventHandler: Connection shutdown!";
     } catch(HTTPException &e) {
         httpexception[HTTPException::Warning] << "CloseEventHandler: Can't do Connection shutdown!";

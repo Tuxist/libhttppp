@@ -108,7 +108,7 @@ public:
             _Buffer << "<table>";
         for(Row *curow=_firstRow; curow; curow=curow->_nextRow){
             _Buffer << "<tr>";
-            _Buffer.assign(curow->_Data.begin(),curow->_Data.end());
+            _Buffer+=curow->_Data;
             _Buffer << "</tr>";
         }
         _Buffer << "</table>";
