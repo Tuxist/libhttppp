@@ -185,26 +185,23 @@ int libhttppp::ServerSocket::getMaxconnections(){
   return _Maxconnections;
 }
 
-int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int maxtries){
-    int ctry=0;
-    return acceptEvent(clientsocket,ctry,maxtries);
-}
-
-int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int &ctry,int maxtries){
+int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
   int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket<0){
-      if(errno==EAGAIN && ctry<maxtries){
-          return acceptEvent(clientsocket,++ctry,maxtries);
-      }
 #ifdef __GLIBCXX__
     char errbuf[255];
-    _httpexception[HTTPException::Error] << "Can't accept on  Socket" 
-                                            << strerror_r(errno, errbuf, 255);
+    if(errno == EAGAIN)
+        _httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
+    else
+       _httpexception[HTTPException::Error] << "Can't accept on  Socket" << strerror_r(errno, errbuf, 255);
 #else
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    _httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
+    if(errno == EAGAIN)
+        _httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
+    else
+        _httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
 #endif
   }
   clientsocket->Socket=socket;
@@ -222,64 +219,66 @@ int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int &ctry,in
 
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size){
-  return sendData(socket,data,size,0);
+    return sendData(socket,data,size,0);
 }
 
 ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size_t size,int flags){
-  ssize_t rval=0;
-  if(isSSLTrue() && socket->_SSL){
-       rval=SSL_write(socket->_SSL,data,size);
-  }else{
-      rval=sendto(socket->Socket,data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
-  }
-  if(rval<0){
-#ifdef __GLIBCXX__
-    char errbuf[255];
-    if(errno == EAGAIN)
-        _httpexception[HTTPException::Note] << "Socket sendata:" << strerror_r(errno,errbuf,255);
-    else
-        _httpexception[HTTPException::Error] << "Socket sendata:" << strerror_r(errno,errbuf,255);
-#else
-    char errbuf[255];
-    strerror_r(errno,errbuf,255);
-    if(errno == EAGAIN)
-        _httpexception[HTTPException::Note] << "Socket sendata:" << errbuf;
-    else 
-        _httpexception[HTTPException::Error] << "Socket sendata:" << errbuf;
-#endif
-    throw _httpexception;
-  }
-  return rval;
+    ssize_t rval=0;
+    if(isSSLTrue() && socket->_SSL){
+        rval=SSL_write(socket->_SSL,data,size);
+    }else{
+        rval=sendto(socket->Socket,data,size,flags,(struct sockaddr*)socket->_ClientAddr,sizeof(struct sockaddr));
+    }
+    if(rval<0){
+        #ifdef __GLIBCXX__
+        char errbuf[255];
+        if(errno==EAGAIN)
+            _httpexception[HTTPException::Warning] << "Socket sendata:" << strerror_r(errno,errbuf,255);   
+        else
+            _httpexception[HTTPException::Error] << "Socket sendata:" << strerror_r(errno,errbuf,255);
+        #else
+        char errbuf[255];
+        strerror_r(errno,errbuf,255);
+        if(errno == EAGAIN)
+            _httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
+        else 
+            _httpexception[HTTPException::Error] << "Socket sendata:" << errbuf;
+        #endif
+        throw _httpexception;
+    }
+    return rval;
 }
 
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size){
-   return recvData(socket,data,size,0);
+    return recvData(socket,data,size,0);
 }
 
 ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size_t size,int flags){
-  ssize_t recvsize=0;
-  if(isSSLTrue() && socket->_SSL){
-     recvsize=SSL_read(socket->_SSL,data,size);
-  }else{
-    recvsize=recvfrom(socket->Socket,data, size,flags,
-                              socket->_ClientAddr, &socket->_ClientAddrLen);
-  }
-  if(recvsize<0){
+    int ctry=0;
+    RECVDATA:
+    ssize_t recvsize=0;
+    if(isSSLTrue() && socket->_SSL){
+        recvsize=SSL_read(socket->_SSL,data,size);
+    }else{
+        recvsize=recvfrom(socket->Socket,data, size,flags,
+                          socket->_ClientAddr, &socket->_ClientAddrLen);
+    }
+    if(recvsize<0){
 #ifdef __GLIBCXX__ 
-    char errbuf[255];
-    if(errno == EAGAIN)
-        _httpexception[HTTPException::Error] << "Socket recvata:" << strerror_r(errno,errbuf,255);
-    else
-        _httpexception[HTTPException::Critical] << "Socket recvata:" << strerror_r(errno,errbuf,255);
+        char errbuf[255];
+        if(errno==EAGAIN)
+            _httpexception[HTTPException::Warning] << "Socket recvata:" << strerror_r(errno,errbuf,255);
+        else
+            _httpexception[HTTPException::Error] << "Socket recvata:" << strerror_r(errno,errbuf,255);
 #else
-    char errbuf[255];
-    strerror_r(errno,errbuf,255);
-    if(errno == EAGAIN)
-        _httpexception[HTTPException::Error] << "Socket recvata:" << errbuf;
-    else
-        _httpexception[HTTPException::Critical] << "Socket recvata:" << errbuf;
+        char errbuf[255];
+        strerror_r(errno,errbuf,255);
+        if(errno == EAGAIN)
+            _httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
+        else
+            _httpexception[HTTPException::Critical] << "Socket recvata:" << errbuf;
 #endif
-    throw _httpexception;
-  }
-  return recvsize;
+        throw _httpexception;
+    }
+    return recvsize;
 }

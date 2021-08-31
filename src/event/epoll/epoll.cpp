@@ -234,10 +234,8 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
         curct->resizeSendQueue(sended);
         ResponseEvent(curct);
     } catch(HTTPException &e) {
-        if(errno==EAGAIN)
-            WriteEventHandler(des);
-        curct->cleanSendData();
-        throw e;
+        if(errno!=EAGAIN)
+            throw e;
     }
 }
 

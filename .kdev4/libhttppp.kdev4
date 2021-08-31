@@ -17,6 +17,7 @@ Runtime=Host System
 
 [MakeBuilder]
 Install As Root=true
+Number Of Jobs=4
 Su Command=kdesudo
 
 [Project]
