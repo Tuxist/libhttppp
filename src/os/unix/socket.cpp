@@ -29,8 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <arpa/inet.h>
 #include <sys/fcntl.h>
 #include <sys/types.h>
-#include <algorithm>
-#include <cstring>
 #include <config.h>
 #include <errno.h>
 
@@ -65,7 +63,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   _UXSocketAddr = new sockaddr_un;
   _UXSocketAddr->sun_family = AF_UNIX;
   try {
-    std::copy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
+    scopy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
   }catch(...){
      _httpexception[HTTPException::Critical] << "Can't copy Server UnixSocket";
      throw _httpexception;
