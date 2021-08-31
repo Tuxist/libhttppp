@@ -105,15 +105,13 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         case EventApi::EventHandlerStatus::EVIN:
                             eventptr->ReadEventHandler(i);
                             break;
-                        default:
-                            eventptr->CloseEventHandler(i);
-                            break;
                     }
                     eventptr->UnlockConnection(cthread,i);
                  }
             }catch(HTTPException &e){
                 if(e.getErrorType()==HTTPException::Critical)
                     throw e;
+                eventptr->CloseEventHandler(i);
                 eventptr->UnlockConnection(cthread,i);
             }
         }
