@@ -144,7 +144,7 @@ void libhttppp::EPOLL::initEventHandler(){
 
 int libhttppp::EPOLL::waitEventHandler(){
 EVENTPOLLWAIT:
-    int n = epoll_wait(_epollFD,_Events,_ServerSocket->getMaxconnections(), EPOLLWAIT);
+    int n = epoll_wait(_epollFD,_Events,_ServerSocket->getMaxconnections(), -1);
     if(n<0) {
         HTTPException httpexception;
         if(errno== EINTR) {

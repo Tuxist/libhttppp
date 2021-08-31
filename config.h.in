@@ -31,8 +31,6 @@
 
 #define MAXHEADERSIZE 16384
 
-#define EPOLLWAIT 5000
-
 #define NEWLINE "\r\n"
 
 #define DEBUG
