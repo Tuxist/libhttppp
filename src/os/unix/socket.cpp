@@ -172,16 +172,16 @@ int libhttppp::ServerSocket::getMaxconnections(){
 
 int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int maxtries){
     int ctry=0;
-    return acceptEvent(clientsocket,&ctry,maxtries);
+    return acceptEvent(clientsocket,ctry,maxtries);
 }
 
-int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int *ctry,int maxtries){
+int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket,int &ctry,int maxtries){
   clientsocket->_ClientAddrLen=sizeof(clientsocket);
   int socket = accept(Socket,clientsocket->_ClientAddr, &clientsocket->_ClientAddrLen);
   if(socket<0){
-      if(errno==EAGAIN && *ctry<maxtries){
+      if(errno==EAGAIN && ctry<maxtries){
           usleep(EPOLLWAIT);
-          return acceptEvent(clientsocket,&++(*ctry),maxtries);
+          return acceptEvent(clientsocket,++ctry,maxtries);
       }
 #ifdef __GLIBCXX__
     char errbuf[255];
@@ -254,16 +254,16 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
 #ifdef __GLIBCXX__ 
     char errbuf[255];
     if(errno == EAGAIN)
-        _httpexception[HTTPException::Note] << "Socket recvata:" << strerror_r(errno,errbuf,255);
-    else
         _httpexception[HTTPException::Error] << "Socket recvata:" << strerror_r(errno,errbuf,255);
+    else
+        _httpexception[HTTPException::Critical] << "Socket recvata:" << strerror_r(errno,errbuf,255);
 #else
     char errbuf[255];
     strerror_r(errno,errbuf,255);
     if(errno == EAGAIN)
-        _httpexception[HTTPException::Note] << "Socket recvata:" << errbuf;
-    else
         _httpexception[HTTPException::Error] << "Socket recvata:" << errbuf;
+    else
+        _httpexception[HTTPException::Critical] << "Socket recvata:" << errbuf;
 #endif
     throw _httpexception;
   }
