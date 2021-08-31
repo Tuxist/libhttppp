@@ -127,10 +127,11 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
             }
         }catch(HTTPException &e){
             switch(e.getErrorType()){
-                case HTTPException::Error:
-                    throw e;
+                case HTTPException::Warning:
                     break;
-            }           
+                default:
+                    throw e;
+            }
         }
     }
     return NULL;
