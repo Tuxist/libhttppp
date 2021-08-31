@@ -55,7 +55,7 @@ libhttppp::ClientSocket::~ClientSocket(){
 
 void libhttppp::ClientSocket::Close(){
     HTTPException exp;
-    if(close(Socket)>0){
+    if(close(Socket)<0){
 #ifdef __GLIBCXX__
         char errbuf[255];
         exp[HTTPException::Error] << "Can't close Socket: " << strerror_r(errno, errbuf, 255);
@@ -64,6 +64,7 @@ void libhttppp::ClientSocket::Close(){
         strerror_r(errno, errbuf, 255);
         exp[HTTPException::Error] << "Can't close Socket: " << errbuf;
 #endif
+        throw exp;
     }
 }
 
