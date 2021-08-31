@@ -105,9 +105,6 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         case EventApi::EventHandlerStatus::EVIN:
                             eventptr->ReadEventHandler(i);
                             break;
-                        case EventApi::EventHandlerStatus::EVOUT:
-                            eventptr->WriteEventHandler(i);
-                            break;
                         default:
                             eventptr->CloseEventHandler(i);
                             break;

@@ -129,7 +129,7 @@ void libhttppp::EPOLL::initEventHandler(){
         throw httpexception;
     }
 
-    setevent.events = EPOLLIN|EPOLLOUT;
+    setevent.events = EPOLLIN;
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
         httpexception[HTTPException::Critical] << "initEventHandler: can't create epoll";
@@ -159,25 +159,22 @@ EVENTPOLLWAIT:
 
 int libhttppp::EPOLL::StatusEventHandler(int des){
     HTTPException httpexception;
-    if(!_Events[des].data.ptr){
+    if(!_Events[des].data.ptr)
         return EventHandlerStatus::EVNOTREADY;
-    }else if(((Connection*)_Events[des].data.ptr)->getSendData()){
-        return EventHandlerStatus::EVOUT;
-    }
     return EventHandlerStatus::EVIN;
 }
 
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
     struct epoll_event setevent { 0 };
-    Connection* curct = new Connection;
+    Connection* curct = new Connection(_ServerSocket);
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
         if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
             curct->getClientSocket()->setnonblocking();
-            setevent.events = EPOLLIN | EPOLLOUT;
+            setevent.events = EPOLLIN;
             setevent.data.ptr = curct;
             int err = 0;
             if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
@@ -216,26 +213,6 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
         curct->addRecvQueue(buf,rcvsize);
         RequestEvent(curct);
     } catch(HTTPException &e) {
-        throw e;
-    }
-}
-
-void libhttppp::EPOLL::WriteEventHandler(int des){
-    HTTPException httpexception;
-    Connection *curct=((Connection*)_Events[des].data.ptr);
-    try {
-        if(!curct)
-            throw httpexception[HTTPException::Warning] 
-                    << "WriteEventHandler: Connection not Valid";
-        ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
-                                       (void*)curct->getSendData()->getData(),
-                                       curct->getSendData()->getDataSize());
-        curct->resizeSendQueue(sended);
-        ResponseEvent(curct);
-    } catch(HTTPException &e) {
-        if(errno==EAGAIN)
-            WriteEventHandler(des);
-        curct->cleanSendData();
         throw e;
     }
 }

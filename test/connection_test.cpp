@@ -31,39 +31,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define SENDDATA "6a3a08f0-f84f-11eb-b83a-97319b38c7ae"
 
-libhttppp::Connection testcon;
-
-void addsenddata(int amount){
-    for(int i = 0; i<amount; ++i){
-        testcon.addSendQueue(SENDDATA,46);
-    }
-    const char *dat=testcon.getSendData()->getData();
-    for(int i = 0; i<46; ++i){
-        if(SENDDATA[i]!=dat[i])
-            assert("data failed");
-    }
-    std::cout << "addsenddata ok!" << std::endl;
-}
-
-void resizeSendQueue(int size){
-    testcon.resizeSendQueue(size);
-    const char *dat=testcon.getSendData()->getData();
-    int ii=4;
-    for(int i = 0; i<42; ++i){
-        if(SENDDATA[ii]!=dat[i++])
-            assert("data failed");
-    }
-    std::cout << "resizeSendQueue ok!" << std::endl;
-}
-
-void resizeval(){
-    addsenddata(1);
-    resizeSendQueue(4);
-    addsenddata(1);
-    resizeSendQueue(4);
-    std::cout<<testcon.getSendSize()<<std::endl;
-};
-
 int main(int argc,char *argv[]){
-    resizeval();
 }

@@ -277,10 +277,10 @@ void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, s
     setData("content-length",datalen,_ContentLength);
   char *header;
   size_t headersize = printHeader(&header);
-  curconnection->addSendQueue(header,headersize);
+  curconnection->SendData(header,headersize);
   delete[] header;
   if(datalen>=0)
-    curconnection->addSendQueue(data,datalen);
+    curconnection->SendData(data,datalen);
 }
 
 libhttppp::HttpResponse::~HttpResponse(){

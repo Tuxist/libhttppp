@@ -52,7 +52,7 @@ namespace libhttppp {
     
     class Connection {
     public:
-        Connection();
+        Connection(ServerSocket *servsock);
         ~Connection();
         
         /*get client Socket from Connection*/
@@ -67,12 +67,7 @@ namespace libhttppp {
         int             searchValue(ConnectionData* startblock, ConnectionData** findblock,
                                     const char* keyword,size_t keylen);
         
-        /*Get Data funtions Send Queue*/
-        ConnectionData *addSendQueue(const char *data,size_t datasize);
-        ConnectionData *resizeSendQueue(size_t size);
-        void            cleanSendData();
-        ConnectionData *getSendData();
-        size_t          getSendSize();
+        void SendData(const char *data,size_t datasize);
         
         /*Get Data funtions Recv Queue*/
         ConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize);
@@ -91,6 +86,7 @@ namespace libhttppp {
         ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
                                      size_t *qsize,size_t size);
         ClientSocket      *_ClientSocket;
+        ServerSocket      *_ServerSocket;
         
         /*Incomming Data*/
         ConnectionData *_ReadDataFirst;

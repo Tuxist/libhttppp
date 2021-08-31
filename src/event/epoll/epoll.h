@@ -64,7 +64,6 @@ namespace libhttppp {
         void       ConnectEventHandler(int des);
         int        StatusEventHandler(int des);
         void       ReadEventHandler(int des);
-        void       WriteEventHandler(int des);
         void       CloseEventHandler(int des);
         const char *getEventType();
 

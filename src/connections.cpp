@@ -69,46 +69,9 @@ libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   * And returns exceptionally the new connection data block.
   * Use it everyday with good health.
   */
-libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,size_t datasize){
-    size_t written=0;
-    for(size_t cursize=datasize; cursize>0; cursize=datasize-written){
-        if(cursize>BLOCKSIZE){
-            cursize=BLOCKSIZE;
-        }
-        if(!_SendDataFirst){
-            _SendDataFirst= new ConnectionData(data+written,cursize);
-            _SendDataLast=_SendDataFirst;
-        }else{
-            _SendDataLast->_nextConnectionData=new ConnectionData(data+written,cursize);
-            _SendDataLast=_SendDataLast->_nextConnectionData;
-        }
-        written+=cursize;
-    }
-    _SendDataSize+=written;
-    return _SendDataLast;
-}
 
-void libhttppp::Connection::cleanSendData(){
-   delete _SendDataFirst;
-   _SendDataFirst=nullptr;
-   _SendDataLast=nullptr;
-   _SendDataSize=0;
-}
-
-libhttppp::ConnectionData *libhttppp::Connection::resizeSendQueue(size_t size){
-    try{
-        return _resizeQueue(&_SendDataFirst,&_SendDataLast,&_SendDataSize,size);
-    }catch(HTTPException &e){
-        throw e; 
-    }
-}
-
-libhttppp::ConnectionData* libhttppp::Connection::getSendData(){
-  return _SendDataFirst;
-}
-
-size_t libhttppp::Connection::getSendSize(){
-  return _SendDataSize;
+void libhttppp::Connection::SendData(const char* data, size_t datasize){
+    _ServerSocket->sendData(_ClientSocket,(void*)data,datasize);
 }
 
 
@@ -261,8 +224,9 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
     return -1;
 }
 
-libhttppp::Connection::Connection(){
+libhttppp::Connection::Connection(ServerSocket *servsock){
   _ClientSocket=new ClientSocket();
+  _ServerSocket = servsock;
   _ReadDataFirst=nullptr;
   _ReadDataLast=nullptr;
   _ReadDataSize=0;
