@@ -90,6 +90,7 @@ bool libhttppp::EPOLL::LockConnection(Thread *cth,int des) {
                 frlock->_Des=des;
                 return true;
             }
+            return false;
         }
     }
     return false;
