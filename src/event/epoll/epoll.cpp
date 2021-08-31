@@ -130,7 +130,7 @@ void libhttppp::EPOLL::initEventHandler(){
         throw httpexception;
     }
 
-    setevent.events = EPOLLIN;
+    setevent.events = EPOLLIN | EPOLLOUT;
 
     if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, _ServerSocket->getSocket(), &setevent) < 0) {
         httpexception[HTTPException::Critical] << "initEventHandler: can't create epoll";
@@ -161,6 +161,8 @@ int libhttppp::EPOLL::StatusEventHandler(int des){
     HTTPException httpexception;
     if(!_Events[des].data.ptr)
         return EventHandlerStatus::EVNOTREADY;
+    if(((Connection*)_Events[des].data.ptr)->getSendSize()!=0)
+        return EventHandlerStatus::EVOUT;
     return EventHandlerStatus::EVIN;
 }
 
@@ -174,7 +176,7 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
          */
         if (_ServerSocket->acceptEvent(curct->getClientSocket()) > 0) {
             curct->getClientSocket()->setnonblocking();
-            setevent.events = EPOLLIN;
+            setevent.events = EPOLLIN | EPOLLOUT;
             setevent.data.ptr = curct;
             int err = 0;
             if ((err = epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, &setevent)) == -1) {
@@ -215,6 +217,26 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
             RequestEvent(curct);
         }
     } catch(HTTPException &e) {
+        throw e;
+    }
+}
+
+void libhttppp::EPOLL::WriteEventHandler(int des){
+    HTTPException httpexception;
+    Connection *curct=((Connection*)_Events[des].data.ptr);
+    try {
+        if(!curct)
+            throw httpexception[HTTPException::Warning] 
+                    << "WriteEventHandler: Connection not Valid";
+        ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
+                                       (void*)curct->getSendData()->getData(),
+                                       curct->getSendData()->getDataSize());
+        curct->resizeSendQueue(sended);
+        ResponseEvent(curct);
+    } catch(HTTPException &e) {
+        if(errno==EAGAIN)
+            WriteEventHandler(des);
+        curct->cleanSendData();
         throw e;
     }
 }

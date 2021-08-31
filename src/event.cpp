@@ -105,6 +105,9 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         case EventApi::EventHandlerStatus::EVIN:
                             eventptr->ReadEventHandler(i);
                             break;
+                        case EventApi::EventHandlerStatus::EVOUT:
+                            eventptr->WriteEventHandler(i);
+                            break;
                     }
                     eventptr->UnlockConnection(cthread,i);
                  }

@@ -67,7 +67,11 @@ namespace libhttppp {
         int             searchValue(ConnectionData* startblock, ConnectionData** findblock,
                                     const char* keyword,size_t keylen);
         
-        void SendData(const char *data,size_t datasize);
+        ConnectionData *addSendQueue(const char *data,size_t datasize);
+        ConnectionData *resizeSendQueue(size_t size);
+        void            cleanSendData();
+        ConnectionData *getSendData();
+        size_t          getSendSize();
         
         /*Get Data funtions Recv Queue*/
         ConnectionData *addRecvQueue(const char data[BLOCKSIZE],size_t datasize);
