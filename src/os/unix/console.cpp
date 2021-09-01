@@ -42,7 +42,7 @@ libhttppp::Console &libhttppp::Console::operator<< (const char* out){
 }
 
 libhttppp::Console &libhttppp::Console::operator<< (int out){
-    char buf[sizeof(out)];
+    char buf[255];
     itoa(out,buf);
     write(STDOUT_FILENO,buf,getlen(buf));
     return *this;

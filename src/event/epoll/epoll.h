@@ -57,8 +57,8 @@ namespace libhttppp {
         void destroyLockPool();
         bool LockConnection(Thread *cth,int des);
         void UnlockConnection(Thread *cth,int des);
-        
-        /**/
+               
+        /*event handler function*/
         void       initEventHandler();
         int        waitEventHandler();
         void       ConnectEventHandler(int des);
@@ -74,7 +74,11 @@ namespace libhttppp {
         void ConnectEvent(Connection *curcon);
         void DisconnectEvent(Connection *curcon);
         
+        /*Connection Ready to send Data*/
+        void sendReady(Connection *curcon,bool ready);
+        
     private:
+        void                      _setEpollEvents(Connection *curcon,int events);
         int                       _epollFD;
         ConLock                  *_ConLock;
         struct epoll_event       *_Events;

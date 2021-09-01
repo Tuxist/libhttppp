@@ -96,7 +96,7 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
         #ifdef __GLIBCXX__
         char errbuf[255];
         httpexception[HTTPException::Error] << "Can't bind Server UnixSocket"
-        << strerror_r(errno, errbuf, 255);
+                                            << strerror_r(errno, errbuf, 255);
         #else
         char errbuf[255];
         strerror_r(errno, errbuf, 255);
@@ -148,7 +148,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
         
         int optval = 1;
         setsockopt(Socket, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-        
+       
         if (bind(Socket, rp->ai_addr, rp->ai_addrlen) == 0)
             break;                  /* Success */
             
@@ -195,17 +195,11 @@ int libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
     if(socket<0){
 #ifdef __GLIBCXX__
         char errbuf[255];
-        if(errno == EAGAIN)
-            httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
-        else
-            httpexception[HTTPException::Error] << "Can't accept on  Socket" << strerror_r(errno, errbuf, 255);
+        httpexception[HTTPException::Error] << "Can't accept on  Socket" << strerror_r(errno, errbuf, 255);
 #else
         char errbuf[255];
         strerror_r(errno, errbuf, 255);
-        if(errno == EAGAIN)
-            httpexception[HTTPException::Warning] << "Can't accept on  Socket"  << errbuf;
-        else
-            httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
+        httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
 #endif
     }
     clientsocket->Socket=socket;
@@ -269,16 +263,17 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     if(recvsize<0){
         char errbuf[255];
 #ifdef __GLIBCXX__ 
-        if(errno==EAGAIN)
-            httpexception[HTTPException::Warning] << "Socket recvata:" << strerror_r(errno,errbuf,255);
-        else
-            httpexception[HTTPException::Error] << "Socket recvata:" << strerror_r(errno,errbuf,255);
+        if(errno==EAGAIN){
+            httpexception[HTTPException::Warning] << "Socket recvdata "  <<  socket->Socket << ": "<< strerror_r(errno,errbuf,255);
+        }else{
+            httpexception[HTTPException::Error] << "Socket recvdata " << socket->Socket << ": " << strerror_r(errno,errbuf,255);
+        }
 #else
         strerror_r(errno,errbuf,255);
         if(errno == EAGAIN)
-            httpexception[HTTPException::Warning] << "Socket sendata:" << errbuf;
+            httpexception[HTTPException::Warning] << "Socket recvdata:" << socket->Socket << ": " << errbuf;
         else
-            httpexception[HTTPException::Critical] << "Socket recvata:" << errbuf;
+            httpexception[HTTPException::Critical] << "Socket recvdata:" << socket->Socket << ":" <<  errbuf;
 #endif
         throw httpexception;
     }

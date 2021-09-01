@@ -37,6 +37,9 @@ libhttppp::Lock::~Lock(){
     pthread_mutex_destroy(&_MutexLock);
 }
 
+void libhttppp::Lock::lock(){
+    pthread_mutex_lock(&_MutexLock);
+}
 
 bool libhttppp::Lock::trylock(){
     if(pthread_mutex_trylock(&_MutexLock)==0)

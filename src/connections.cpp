@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "connections.h"
 #include "utils.h"
+#include "eventapi.h"
 
 const char* libhttppp::ConnectionData::getData(){
   return _Data;
@@ -86,6 +87,7 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
         written+=cursize;
     }
     _SendDataSize+=written;
+    _EventApi->sendReady(this,true);
     return _SendDataLast;
 }
 
@@ -261,7 +263,7 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
     return -1;
 }
 
-libhttppp::Connection::Connection(ServerSocket *servsock){
+libhttppp::Connection::Connection(ServerSocket *servsock,EventApi *event){
   _ClientSocket=new ClientSocket();
   _ServerSocket = servsock;
   _ReadDataFirst=nullptr;
@@ -270,6 +272,7 @@ libhttppp::Connection::Connection(ServerSocket *servsock){
   _SendDataFirst=nullptr;
   _SendDataLast=nullptr;
   _SendDataSize=0;
+  _EventApi=event;
 }
 
 libhttppp::Connection::~Connection(){

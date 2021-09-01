@@ -60,6 +60,9 @@ class EventApi {
         virtual void ResponseEvent(Connection *curcon)=0;
         virtual void ConnectEvent(Connection *curcon)=0;
         virtual void DisconnectEvent(Connection *curcon)=0;
+        
+        /*Connection Ready to send Data*/
+        virtual void sendReady(Connection *curcon,bool ready)=0;
   };
 };
 

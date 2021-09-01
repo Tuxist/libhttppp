@@ -60,11 +60,11 @@ void libhttppp::CtrlHandler::CTRLBreakEvent() {
 }
 
 void libhttppp::CtrlHandler::CTRLTermEvent() {
-	libhttppp::Event::_Run = false;
+    libhttppp::Event::_Run = false;
 }
 
 void libhttppp::CtrlHandler::SIGPIPEEvent() {
-	return;
+    return;
 }
 
 void libhttppp::Event::runEventloop(){
@@ -93,35 +93,44 @@ MAINWORKERLOOP:
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=((_wArg*)wrkevent)->event;
     Thread *cthread=((_wArg*)wrkevent)->cthread;
+    cthread->setPid(getpid());
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
                 try{
-                    if(eventptr->LockConnection(cthread,i)){
+                     if(eventptr->LockConnection(cthread,i)){
                         switch(eventptr->StatusEventHandler(i)){
                             case EventApi::EventHandlerStatus::EVNOTREADY:
                                 eventptr->ConnectEventHandler(i);
                                 break;
+                            case EventApi::EventHandlerStatus::EVIN:
+                                eventptr->ReadEventHandler(i);
+                                break;
                             case EventApi::EventHandlerStatus::EVOUT:
                                 eventptr->WriteEventHandler(i);
                                 break;
-                            case EventApi::EventHandlerStatus::EVIN:
-                                eventptr->ReadEventHandler(i);
+                            default:
+                                eventptr->CloseEventHandler(i);
                                 break;
                         }
                         eventptr->UnlockConnection(cthread,i);
                     }
                 }catch(HTTPException &e){
+                    Console con;
+                    con << "Thread " << cthread->getPid() << ": " << e.what() << con.endl;
                     switch(e.getErrorType()){
                         case HTTPException::Critical:
                             throw e;
                             break;
                         case HTTPException::Error:
-                            eventptr->CloseEventHandler(i);
-                            break;
-                    }
-                    Console con;
-                    con << e.what() << con.endl;
+                            try{
+                                eventptr->CloseEventHandler(i);
+                            }catch(HTTPException &e){ 
+                                eventptr->UnlockConnection(cthread,i);
+                                throw e;
+                            };
+                            break;            
+                    }                 
                     eventptr->UnlockConnection(cthread,i);
                 }
             }

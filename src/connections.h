@@ -34,7 +34,7 @@
 #define CONNECTIONS_H
 
 namespace libhttppp {
-    
+    class EventApi;
     class ConnectionData {
     public:
         const char*      getData();
@@ -52,7 +52,7 @@ namespace libhttppp {
     
     class Connection {
     public:
-        Connection(ServerSocket *servsock);
+        Connection(ServerSocket *servsock,EventApi *event);
         ~Connection();
         
         /*get client Socket from Connection*/
@@ -99,7 +99,7 @@ namespace libhttppp {
         /*Outgoing Data*/
         ConnectionData *_SendDataFirst;
         ConnectionData *_SendDataLast;
-        
+        EventApi       *_EventApi;
         friend class ConnectionPool;
     };
 
