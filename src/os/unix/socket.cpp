@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <config.h>
 #include <errno.h>
+#include <cstring>
 
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -263,11 +264,10 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
     if(recvsize<0){
         char errbuf[255];
 #ifdef __GLIBCXX__ 
-        if(errno==EAGAIN){
+        if(errno==EAGAIN)
             httpexception[HTTPException::Warning] << "Socket recvdata "  <<  socket->Socket << ": "<< strerror_r(errno,errbuf,255);
-        }else{
+        else
             httpexception[HTTPException::Error] << "Socket recvdata " << socket->Socket << ": " << strerror_r(errno,errbuf,255);
-        }
 #else
         strerror_r(errno,errbuf,255);
         if(errno == EAGAIN)
