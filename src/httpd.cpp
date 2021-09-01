@@ -204,11 +204,11 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
 			} else if (keytype == KTSKEY) {
 				if (curhttpdcmd->getShortkey()== skey) {
 					curhttpdcmd->_Found = true;
-					int valuesize = (getlen(argv[args]) - (kendpos + 1));
+					int valuesize = getlen(argv[++args]);
 					if (valuesize > 0) {
 						delete[] curhttpdcmd->_Value;
 						curhttpdcmd->_Value = new char[valuesize + 1];
-						scopy(argv[args] + (kendpos + 1), argv[args] + getlen(argv[args]), curhttpdcmd->_Value);
+						scopy(argv[args], argv[args] + getlen(argv[args]), curhttpdcmd->_Value);
 						curhttpdcmd->_Value[valuesize] = '\0';
 					}
 				}
@@ -232,8 +232,8 @@ void libhttppp::HTTPDCmdController::printHelp() {
 	for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
         Console con;
         con << "--" << curhttpdcmd->getKey() 
-            << "-"  << curhttpdcmd->getShortkey()
-            << curhttpdcmd->getHelp() << Console::endl;
+            << " -" << curhttpdcmd->getShortkey()
+            << " "  << curhttpdcmd->getHelp() << Console::endl;
 	}
 }
 
@@ -271,7 +271,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 
 	if (CmdController->getHTTPDCmdbyKey("help") && CmdController->getHTTPDCmdbyKey("help")->getFound()) {
 		CmdController->printHelp();
-		return;
+		throw _httpexception[HTTPException::Note]<< "^-libhttppp default args-^";
 	}
 
 	/*get port from console paramter*/

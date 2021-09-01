@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 #include "utils.h"
 #include "console.h"
+#include <stdio.h>
 
 const char* libhttppp::Console::endl="\n";
 
@@ -47,6 +48,12 @@ libhttppp::Console &libhttppp::Console::operator<< (int out){
     write(STDOUT_FILENO,buf,getlen(buf));
     return *this;
 }
+
+libhttppp::Console &libhttppp::Console::operator<< (char out){
+    write(STDOUT_FILENO,&out,sizeof(char));
+    return *this;
+}
+
 
 libhttppp::Console & libhttppp::Console::operator<<(libhttppp::Console& console){
     return console;

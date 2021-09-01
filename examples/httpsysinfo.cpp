@@ -269,5 +269,7 @@ private:
 };
 
 int main(int argc, char** argv){
-    HttpConD(argc,argv);
+    try{
+        HttpConD(argc,argv);
+    }catch(...){};
 }
