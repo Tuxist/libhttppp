@@ -1,6 +1,6 @@
 find_package(htmlpp COMPONENTS)
 
-option(BUILD_EXAMPLES "Create and install the HTML examples (requires Doxygen)" [TRUE])
+option(BUILD_EXAMPLES "Create and install the HTML examples (requires Doxygen)" TRUE)
 
 if(BUILD_EXAMPLES)
     include_directories(
