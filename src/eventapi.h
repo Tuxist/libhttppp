@@ -61,7 +61,9 @@ class EventApi {
         virtual void ConnectEvent(Connection *curcon)=0;
         virtual void DisconnectEvent(Connection *curcon)=0;
         
-        /*Connection Ready to send Data*/
+        /*Connection Ready to send Data 
+         *DANGEROUS to burnout your cpu
+         *only use this if know what you do!*/
         virtual void sendReady(Connection *curcon,bool ready)=0;
   };
 };
