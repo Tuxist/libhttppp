@@ -44,9 +44,6 @@ namespace libhttppp {
         int getThreads();
         int getActualThread();
         int getPid();
-	private:
-        // eax cores | ebx threads edx | actual thread
-        unsigned int Eax=11,Ebx=0,Ecx=1,Edx=0;
 	};
     
     class SysInfo {
