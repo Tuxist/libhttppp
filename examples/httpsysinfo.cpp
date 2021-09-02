@@ -25,19 +25,20 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <string>
+
 #include <http.h>
 #include <httpd.h>
-#include <iostream>
-#include <sstream>
-#include <fstream>
-#include <cstring>
-#include <vector>
-#include <algorithm>
 #include <exception.h>
+#include <os/os.h>
+#include <utils.h>
 
-#include "utils.h"
+#include "htmlpp/exception.h"
+#include "htmlpp/html.h"
+
 #include "header_png.h"
 #include "favicon_ico.h"
+
 #ifndef Windows
 #include <sys/utsname.h>
 #endif // !Windows
@@ -215,7 +216,6 @@ public:
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
-            std::cerr << "Requesturl: " << cururl << "\n";
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(1.1));
@@ -244,7 +244,8 @@ public:
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() << "\n";
+            libhttppp::Console con;
+            con << e.what() << con.endl;
             throw e;
         }
     }
@@ -267,7 +268,8 @@ int main(int argc, char** argv){
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
-        std::cerr << e.what() << "\n";
+        libhttppp::Console con;
+        con << e.what() << con.endl;
         if(e.getErrorType()==libhttppp::HTTPException::Note 
             || libhttppp::HTTPException::Warning)
             return 0;
