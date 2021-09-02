@@ -40,7 +40,7 @@ libhttppp::CpuInfo::~CpuInfo(){
 int libhttppp::CpuInfo::getCores(){
 	SYSTEM_INFO sysinfo;
 	GetSystemInfo(&sysinfo);
-	int numCPU = sysinfo.dwNumberOfProcessors;
+	return sysinfo.dwNumberOfProcessors;
 }
 
 int libhttppp::CpuInfo::getThreads(){
