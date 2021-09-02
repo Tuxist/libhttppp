@@ -155,6 +155,7 @@ int libhttppp::SELECT::waitEventHandler(){
     //    throw httpexception;
     //}
     //return n;
+	return 0;
 }
 
 int libhttppp::SELECT::StatusEventHandler(int des){
