@@ -293,5 +293,5 @@ void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
         httpexception.Error("ConnectEventHandler: ",errbuf);
         #endif
         throw httpexception;
-    }   
+    }
 }

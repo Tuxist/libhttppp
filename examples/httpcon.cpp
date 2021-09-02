@@ -25,8 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <iostream>
-#include <sstream>
+#include "htmlpp/html.h"
+
 #include "../src/exception.h"
 
 #include "http.h"
@@ -37,7 +37,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
      curres.setState(HTTP200);
      curres.setVersion(HTTPVERSION(1.1));
      curres.setContentType("text/html");
-     std::stringstream condat;
+     libhtmlpp::HtmlString condat;
      condat  << "<!DOCTYPE HTML>"
              << " <html>"
              << "  <head>"
@@ -54,29 +54,28 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
                << "<br/>";
      }
      condat  << "</body></html>";
-     std::string buffer=condat.str();
-     curres.send(curcon,buffer.c_str(),buffer.length());
+     curres.send(curcon,condat.c_str(),condat.size());
 };
 
 class Controller : public libhttppp::Event {
 public:
-  Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
-    
-  };
-  void RequestEvent(libhttppp::Connection *curcon){
-   try{
-     std::cerr << "Parse Request\n";
-     libhttppp::HttpRequest curreq;
-     curreq.parse(curcon);
-     std::cerr << "Send answer\n";
-     sendResponse(curcon,&curreq);
-   }catch(libhttppp::HTTPException &e){
-     std::cerr << e.what() << "\n";
-     throw e;
-   }
-  }
+    Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
+        
+    };
+    void RequestEvent(libhttppp::Connection *curcon){
+        libhttppp::Console con;
+        try{
+            con << "Parse Request" << con.endl;
+            libhttppp::HttpRequest curreq;
+            curreq.parse(curcon);
+            con << "Send answer" << con.endl;
+            sendResponse(curcon,&curreq);
+        }catch(libhttppp::HTTPException &e){
+            con << e.what() << con.endl;
+            throw e;
+        }
+    }
 private:
-  
 };
 
 
@@ -85,11 +84,12 @@ class HttpConD : public libhttppp::HttpD {
 public:
   HttpConD(int argc, char** argv) : HttpD(argc,argv){
     libhttppp::HTTPException httpexception;
+    libhttppp::Console con;
     try {
       Controller controller(getServerSocket());
       controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
-      std::cerr << e.what() << "\n";
+      con << e.what() << con.endl;
     }
   };
 private:
