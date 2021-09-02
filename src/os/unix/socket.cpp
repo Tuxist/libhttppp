@@ -156,7 +156,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
         close(Socket);
     }
     
-    if (rp == NULL) {               /* No address succeeded */
+    if (rp == NULL || Socket <0) {               /* No address succeeded */
         httpexception[HTTPException::Critical] << "Could not bind\n";
         throw httpexception;
     }

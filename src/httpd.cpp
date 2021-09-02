@@ -322,7 +322,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 		  _ServerSocket->loadKeyfile(sslkeypath);
 	  }
   }catch (HTTPException &e) {
-
+        throw e;
   }
 }
 
