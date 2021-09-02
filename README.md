@@ -9,11 +9,10 @@
 - Httpbasicauth
 - Https
 - Multithreading
+- epoll (linux support)
 
 ## On Work
-
 - iocp (Windows support)
-- epoll (linux support)
 - kqueue (Mac OS BSD support)
 - select (other os)
 
