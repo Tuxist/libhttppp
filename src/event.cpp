@@ -93,7 +93,6 @@ MAINWORKERLOOP:
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=((_wArg*)wrkevent)->event;
     Thread *cthread=((_wArg*)wrkevent)->cthread;
-    cthread->setPid(getpid());
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
