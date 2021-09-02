@@ -33,12 +33,14 @@ ELSE()
   list(APPEND libhttpSrcs "os/unix/console.cpp")
 ENDIF()
 
-IF(${EVENT} MATCHES "IOCP")
-  list(APPEND libhttpSrcs "event/iocp/iocp.cpp")
+IF(${EVENT} MATCHES "SELECT")
+    list(APPEND libhttpSrcs "event/select/select.cpp")
+ELSEIF(${EVENT} MATCHES "IOCP")
+    list(APPEND libhttpSrcs "event/iocp/iocp.cpp")
 ELSEIF(${EVENT} MATCHES "EPOLL")
-  list(APPEND libhttpSrcs "event/epoll/epoll.cpp")
+    list(APPEND libhttpSrcs "event/epoll/epoll.cpp")
 ELSEIF(${EVENT} MATCHES "KQUEUE")
-  list(APPEND libhttpSrcs "event/kqueue/kqueue.cpp")
+    list(APPEND libhttpSrcs "event/kqueue/kqueue.cpp")
 ENDIF()
 
 include_directories(
