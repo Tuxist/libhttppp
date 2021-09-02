@@ -203,6 +203,8 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     char buf[BLOCKSIZE];
+    if(!curct)
+            throw httpexception[HTTPException::Error] << "ReadEventHandler: no valid data !";
     int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
     curct->addRecvQueue(buf,rcvsize);
     RequestEvent(curct);
@@ -212,6 +214,8 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     try {
+        if(!curct)
+            throw httpexception[HTTPException::Error] << "WriteEventHandler: no valid data !";
         ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());

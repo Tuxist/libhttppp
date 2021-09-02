@@ -25,8 +25,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <string>
-
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
@@ -42,12 +40,6 @@
 #ifndef Windows
 #include <sys/utsname.h>
 #endif // !Windows
-
-std::string &operator<<(std::string &data,const char *value){
-//     data.assign(value,value+libhttppp::getlen(value));
-    data+=value;
-    return data;
-};
 
 class HtmlTable{
 public:
@@ -70,13 +62,13 @@ public:
         
         Row &operator<<(int value){
             char buf[255];
-            snprintf(buf,255, "%d", value); 
+            libhttppp::itoa(value,buf);
             return *this << buf;
         };
         
     private:
-        std::string  _Data;
-        int   _Size;
+        libhtmlpp::HtmlString  _Data;
+        int                    _Size;
         Row(){
             _Size=0;
             _nextRow=nullptr;
@@ -109,18 +101,17 @@ public:
             _Buffer << "<table>";
         for(Row *curow=_firstRow; curow; curow=curow->_nextRow){
             _Buffer << "<tr>";
-            _Buffer+=curow->_Data;
+            _Buffer += curow->_Data;
             _Buffer << "</tr>";
         }
         _Buffer << "</table>";
-        _Buffer.push_back('\0');
-        return _Buffer.data();
+        return _Buffer.c_str();
     }
 private:
-    std::string         _Buffer;
-    const char        *_Id;
-    Row               *_firstRow;
-    Row               *_lastRow;
+    libhtmlpp::HtmlString _Buffer;
+    const char           *_Id;
+    Row                  *_firstRow;
+    Row                  *_lastRow;
 };
 
 class HtmlContent{
@@ -188,11 +179,7 @@ public:
     }
     
     const char *getIndexPage(){
-        delete[] _Buffer;
-        _Buffer = new char[_Index.size()+1];
-        std::copy(_Index.cbegin(),_Index.cend(),_Buffer);
-        _Buffer[_Index.size()]='\0';
-        return _Index.data();
+        return _Index.c_str();
     }
     
     size_t getIndexPageSize(){
@@ -200,9 +187,9 @@ public:
     }
     
 private:
-    char              *_Buffer;
-    char              *_BufferSize; 
-    std::string        _Index;
+    char                  *_Buffer;
+    char                  *_BufferSize; 
+    libhtmlpp::HtmlString  _Index;
 };
 
 class Controller : public libhttppp::Event {
