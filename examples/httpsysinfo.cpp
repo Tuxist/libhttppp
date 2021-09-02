@@ -257,19 +257,15 @@ private:
 class HttpConD : public libhttppp::HttpD {
 public:
     HttpConD(int argc, char** argv) : HttpD(argc,argv){
-        libhttppp::HTTPException httpexception;
-        try {
-            Controller controller(getServerSocket());
-            controller.runEventloop();
-        }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() << "\n";
-        }
+        Controller controller(getServerSocket());
+        controller.runEventloop();
     };
-private:
 };
 
 int main(int argc, char** argv){
     try{
         HttpConD(argc,argv);
-    }catch(...){};
+    }catch(libhttppp::HTTPException &e){
+        std::cerr << e.what() << "\n";
+    };
 }
