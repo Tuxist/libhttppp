@@ -204,8 +204,8 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
             } else if (keytype == KTSKEY) {
                 if (curhttpdcmd->getShortkey()== skey) {
                     curhttpdcmd->_Found = true;
-                    if (args<argc) {
-                        int valuesize = getlen(argv[++args]);
+                    if (++args<argc) {
+                        int valuesize = getlen(argv[args]);
                         delete[] curhttpdcmd->_Value;
                         curhttpdcmd->_Value = new char[valuesize + 1];
                         scopy(argv[args], argv[args] + getlen(argv[args]), curhttpdcmd->_Value);
