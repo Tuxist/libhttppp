@@ -254,76 +254,73 @@ libhttppp::HTTPDCmdController::~HTTPDCmdController() {
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
     CmdController= new HTTPDCmdController;
-	/*Register Parameters*/
-	CmdController->registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
+    /*Register Parameters*/
+    CmdController->registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
     CmdController->registerCmd("httpaddr",'a', true,(const char*) NULL,"Address to listen");
     CmdController->registerCmd("httpport", 'p', false, 8080, "Port to listen");
     CmdController->registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
     CmdController->registerCmd("httpscert", 'c',false,(const char*) NULL, "HTTPS Certfile");
     CmdController->registerCmd("httpskey", 'k',false, (const char*) NULL, "HTTPS Keyfile");
-  /*Parse Parameters*/
+    /*Parse Parameters*/
     CmdController->parseCmd(argc,argv);
-	if (!CmdController->checkRequired()) {
-		CmdController->printHelp();
-		_httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";
-		throw _httpexception;
-	}
-
-	if (CmdController->getHTTPDCmdbyKey("help") && CmdController->getHTTPDCmdbyKey("help")->getFound()) {
-		CmdController->printHelp();
-		throw _httpexception[HTTPException::Note]<< "^-libhttppp default args-^";
-	}
-
-	/*get port from console paramter*/
-	int port = 0;
+    if (!CmdController->checkRequired()) {
+        CmdController->printHelp();
+        _httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";
+        throw _httpexception;
+    }
+    
+    if (CmdController->getHTTPDCmdbyKey("help") && CmdController->getHTTPDCmdbyKey("help")->getFound()) {
+        CmdController->printHelp();
+        throw _httpexception[HTTPException::Note]<< "^-libhttppp default args-^";
+    }
+    
+    /*get port from console paramter*/
+    int port = 0;
     bool portset=false;
-	if(CmdController->getHTTPDCmdbyKey("httpport")){
-	    port = CmdController->getHTTPDCmdbyKey("httpport")->getValueInt();
+    if(CmdController->getHTTPDCmdbyKey("httpport")){
+        port = CmdController->getHTTPDCmdbyKey("httpport")->getValueInt();
         portset = CmdController->getHTTPDCmdbyKey("httpport")->getFound();
     }
-
-	/*get httpaddress from console paramter*/
-	const char *httpaddr = NULL;
-	if (CmdController->getHTTPDCmdbyKey("httpaddr"))
-		httpaddr = CmdController->getHTTPDCmdbyKey("httpaddr")->getValue();
-
-	/*get max connections from console paramter*/
-	int maxconnections = 0;
-	if (CmdController->getHTTPDCmdbyKey("maxconnections"))
-		maxconnections = CmdController->getHTTPDCmdbyKey("maxconnections")->getValueInt();
-
-	/*get httpaddress from console paramter*/
-	const char *sslcertpath = NULL;
-	if (CmdController->getHTTPDCmdbyKey("httpscert"))
-		sslcertpath = CmdController->getHTTPDCmdbyKey("httpscert")->getValue();
-
-	/*get httpaddress from console paramter*/
-	const char *sslkeypath = NULL;
-	if (CmdController->getHTTPDCmdbyKey("httpskey"))
-		sslkeypath = CmdController->getHTTPDCmdbyKey("httpskey")->getValue();
-
-  try {
-#ifndef Windows
-	  if (portset == true)
-		  _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
-	  else
-		  _ServerSocket = new ServerSocket(httpaddr, maxconnections);
-#else
-      _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
-#endif
-
-      if (!_ServerSocket) {
-		  throw _httpexception;
-	  }
-	  
-	  if (sslcertpath && sslkeypath) {
-		  _ServerSocket->createContext();
-		  _ServerSocket->loadCertfile(sslcertpath);
-		  _ServerSocket->loadKeyfile(sslkeypath);
-	  }
-  }catch (HTTPException &e) {
+    
+    /*get httpaddress from console paramter*/
+    const char *httpaddr = NULL;
+    if (CmdController->getHTTPDCmdbyKey("httpaddr"))
+        httpaddr = CmdController->getHTTPDCmdbyKey("httpaddr")->getValue();
+    
+    /*get max connections from console paramter*/
+    int maxconnections = 0;
+    if (CmdController->getHTTPDCmdbyKey("maxconnections"))
+        maxconnections = CmdController->getHTTPDCmdbyKey("maxconnections")->getValueInt();
+    
+    /*get httpaddress from console paramter*/
+    const char *sslcertpath = NULL;
+    if (CmdController->getHTTPDCmdbyKey("httpscert"))
+        sslcertpath = CmdController->getHTTPDCmdbyKey("httpscert")->getValue();
+    
+    /*get httpaddress from console paramter*/
+    const char *sslkeypath = NULL;
+    if (CmdController->getHTTPDCmdbyKey("httpskey"))
+        sslkeypath = CmdController->getHTTPDCmdbyKey("httpskey")->getValue();
+    
+    try {
+        #ifndef Windows
+        if (portset == true)
+            _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
+        else
+            _ServerSocket = new ServerSocket(httpaddr, maxconnections);
+        #else
+        _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
+        #endif
+        
+        
+        if (sslcertpath && sslkeypath) {
+            _ServerSocket->createContext();
+            _ServerSocket->loadCertfile(sslcertpath);
+            _ServerSocket->loadKeyfile(sslkeypath);
+        }
+    }catch (HTTPException &e) {
         throw e;
-  }
+    }
 }
 
 libhttppp::ServerSocket *libhttppp::HttpD::getServerSocket(){
