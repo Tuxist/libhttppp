@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <windows.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 #include "exception.h"
@@ -38,31 +38,19 @@ const char* libhttppp::Console::endl="\n";
 libhttppp::Console &libhttppp::Console::operator<< (const char* out){
     if(!out)
         return *this;
-	HANDLE stdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (stdOut != NULL && stdOut != INVALID_HANDLE_VALUE){
-		DWORD written = 0;
-		WriteConsoleA(stdOut, out, getlen(out), &written, NULL);
-	}
+    write(STDOUT_FILENO,out,getlen(out));
     return *this;    
 }
 
 libhttppp::Console &libhttppp::Console::operator<< (int out){
     char buf[255];
     itoa(out,buf);
-	HANDLE stdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (stdOut != NULL && stdOut != INVALID_HANDLE_VALUE){
-		DWORD written = 0;
-		WriteConsoleA(stdOut, buf,getlen(buf), &written, NULL);
-	}
+    write(STDOUT_FILENO,buf,getlen(buf));
     return *this;
 }
 
 libhttppp::Console &libhttppp::Console::operator<< (char out){
-	HANDLE stdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (stdOut != NULL && stdOut != INVALID_HANDLE_VALUE){
-		DWORD written = 0;
-		WriteConsoleA(stdOut, (void*)&out, sizeof(char), &written, NULL);
-	}
+    write(STDOUT_FILENO,&out,sizeof(char));
     return *this;
 }
 
