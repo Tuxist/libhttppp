@@ -44,7 +44,7 @@ namespace libhttppp {
         Thread  *_Thread;
         Lock     _Lock;
         ConLock *_nextConLock;
-        friend class EPOLL;
+        friend class SELECT;
     };
     
     class SELECT : public EventApi{
