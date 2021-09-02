@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright (c) 2018, Jan Koester jan.koester@gmx.net
+Copyright (c) 2021, Jan Koester jan.koester@gmx.net
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,35 +25,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "lock.h"
+#include <unistd.h>
+#include <fcntl.h>
 
-libhttppp::Lock::Lock(){
-  _CLock = (HANDLE)::CreateMutex(0, 0, 0);    
+#include "exception.h"
+#include "utils.h"
+#include "console.h"
+#include <stdio.h>
+
+const char* libhttppp::Console::endl="\n";
+
+libhttppp::Console &libhttppp::Console::operator<< (const char* out){
+    if(!out)
+        return *this;
+    write(STDOUT_FILENO,out,getlen(out));
+    return *this;    
+}
+
+libhttppp::Console &libhttppp::Console::operator<< (int out){
+    char buf[255];
+    itoa(out,buf);
+    write(STDOUT_FILENO,buf,getlen(buf));
+    return *this;
+}
+
+libhttppp::Console &libhttppp::Console::operator<< (char out){
+    write(STDOUT_FILENO,&out,sizeof(char));
+    return *this;
 }
 
 
-libhttppp::Lock::~Lock(){
-    CloseHandle(_CLock);
+libhttppp::Console & libhttppp::Console::operator<<(libhttppp::Console& console){
+    return console;
 }
 
-bool libhttppp::Lock::trylock(){
-    unsigned long ret = WaitForSingleObject(_CLock, 0);
-    if(ret == WAIT_OBJECT_0){
-        return true;
-    } else if(ret == WAIT_TIMEOUT){
-        return false;
-    } else if(ret == WAIT_ABANDONED){
-        ReleaseMutex(_CLock);
-		_httpexception[HTTPException::Critical] << "Mutex","Mutex wasn't Released by owned thread";
-        throw _httpexception;
-    } else{
-        return false;
-    }
-}
 
-bool libhttppp::Lock::unlock(){
-  if(!ReleaseMutex(_CLock))
-    return false;
-  else
-    return true;  
-}

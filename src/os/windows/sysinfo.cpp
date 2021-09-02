@@ -31,12 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "sysinfo.h"
 
 libhttppp::CpuInfo::CpuInfo(){
-	__int32 regs[4];
-	__cpuid((int *)regs, (int)0);
-	Eax=regs[0];
-	Ebx=regs[0];
-	Ecx=regs[2];
-	Edx=regs[3];
 }
 
 libhttppp::CpuInfo::~CpuInfo(){
@@ -44,15 +38,17 @@ libhttppp::CpuInfo::~CpuInfo(){
 
 
 int libhttppp::CpuInfo::getCores(){
-    return Eax;
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	int numCPU = sysinfo.dwNumberOfProcessors;
 }
 
 int libhttppp::CpuInfo::getThreads(){
-    return Ebx;
+    return 0;
 }
 
 int libhttppp::CpuInfo::getActualThread(){
-    return Edx;
+    return 0;
 }
 
 

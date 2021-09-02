@@ -1,5 +1,5 @@
 /*******************************************************************************
-Copyright (c) 2018, Jan Koester jan.koester@gmx.net
+Copyright (c) 2021, Jan Koester jan.koester@gmx.net
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,35 +25,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "lock.h"
+#include <sys/types.h>
 
-libhttppp::Lock::Lock(){
-  _CLock = (HANDLE)::CreateMutex(0, 0, 0);    
-}
+#ifndef SYSTEM_H
+#define SYSTEM_H
 
+namespace libhttppp {
+    class Console {
+    public:
+        static const char *endl;
+        Console &operator<<(const char *out);
+        Console &operator<<(int out);
+        Console &operator<<(char out);
+        Console &operator<<(Console &console);
+    };
+};
 
-libhttppp::Lock::~Lock(){
-    CloseHandle(_CLock);
-}
+#endif
 
-bool libhttppp::Lock::trylock(){
-    unsigned long ret = WaitForSingleObject(_CLock, 0);
-    if(ret == WAIT_OBJECT_0){
-        return true;
-    } else if(ret == WAIT_TIMEOUT){
-        return false;
-    } else if(ret == WAIT_ABANDONED){
-        ReleaseMutex(_CLock);
-		_httpexception[HTTPException::Critical] << "Mutex","Mutex wasn't Released by owned thread";
-        throw _httpexception;
-    } else{
-        return false;
-    }
-}
-
-bool libhttppp::Lock::unlock(){
-  if(!ReleaseMutex(_CLock))
-    return false;
-  else
-    return true;  
-}

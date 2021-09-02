@@ -32,7 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 #include <algorithm>
 #include <cstring>
-#include <config.h>
 #include <errno.h>
 
 #include <openssl/ssl.h>
@@ -46,7 +45,7 @@ libhttppp::ClientSocket::ClientSocket(){
   Socket= INVALID_SOCKET;
   Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_IP, NULL, 0, WSA_FLAG_OVERLAPPED);
   if (Socket == INVALID_SOCKET) {
-	  httpexception.Critical("Clientsocket failed to create error: ", WSAGetLastError());
+	  httpexception[HTTPException::Critical] << "Clientsocket failed to create error: " << WSAGetLastError();
 	  throw httpexception;
   }
   _SSL=NULL;
@@ -67,14 +66,14 @@ void libhttppp::ClientSocket::disableBuffer(){
 	int nzero = 0;
 	int nRet = setsockopt(Socket, SOL_SOCKET, SO_SNDBUF, (char *)&nzero, sizeof(nzero));
 	if (nRet == SOCKET_ERROR) {
-		httpexception.Critical("setsockopt(SNDBUF) failed: ", WSAGetLastError());
+		httpexception[HTTPException::Critical] << "setsockopt(SNDBUF) failed: " << WSAGetLastError();
 		throw httpexception;
 	}
 }
 
 libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
   HTTPException httpexception;
-  httpexception.Critical("ServerSocket","Unix Socket not soppurted by this OS");
+  httpexception[HTTPException::Critical] << "ServerSocket","Unix Socket not soppurted by this OS";
   throw httpexception;
 }
 
@@ -82,7 +81,6 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
 
 libhttppp::ServerSocket::ServerSocket(SOCKET socket) {
 	_Port = 0;
-	_SockAddr = { NULL };
 	_Socket = socket;
 	_Maxconnections = MAXDEFAULTCONN;
 }
@@ -94,7 +92,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   WSADATA wsaData;
   iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
   if (iResult != 0) {
-	  httpexception.Critical("WSAStartup failed");
+	  httpexception[HTTPException::Critical] << "WSAStartup failed";
   }
 
   char port_buffer[6];
@@ -111,7 +109,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
 
   int s = getaddrinfo(addr, port_buffer, &_SockAddr, &result);
   if (s != 0) {
-	  httpexception.Critical("getaddrinfo failed ", gai_strerror(s));
+	  httpexception[HTTPException::Critical] << "getaddrinfo failed " << gai_strerror(s);
 	  throw httpexception;
   }
 
@@ -133,7 +131,7 @@ libhttppp::ServerSocket::ServerSocket(const char* addr, int port,int maxconnecti
   }
 
   if (rp == NULL) {               /* No address succeeded */
-	  httpexception.Critical("Could not bind\n");
+	  httpexception[HTTPException::Critical] << "Could not bind\n";
 	  throw httpexception;
   }
   freeaddrinfo(result);
@@ -150,7 +148,7 @@ void libhttppp::ServerSocket::setnonblocking(){
 void libhttppp::ServerSocket::listenSocket(){
   HTTPException httpexception;
   if(listen(_Socket, _Maxconnections) < 0){
-    httpexception.Critical("Can't listen Server Socket", errno);
+    httpexception[HTTPException::Critical] << "Can't listen Server Socket" << errno;
     throw httpexception;
   }
 }
@@ -170,7 +168,7 @@ SOCKET libhttppp::ServerSocket::acceptEvent(ClientSocket *clientsocket){
   if(socket==-1){
     char errbuf[255];
     strerror_r(errno, errbuf, 255);
-    httpexception.Error("Can't accept on  Socket",errbuf);
+    httpexception[HTTPException::Error] << "Can't accept on  Socket" << errbuf;
   }
   clientsocket->Socket=socket;
   if(isSSLTrue()){
@@ -200,7 +198,7 @@ ssize_t libhttppp::ServerSocket::sendData(ClientSocket* socket, void* data, size
   if(rval==-1){
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    httpexception.Error("Socket sendata:",errbuf);
+    httpexception[HTTPException::Error] << "Socket sendata:" << errbuf;
     if(errno != EAGAIN || errno !=EWOULDBLOCK)
       throw httpexception;
   }
@@ -216,7 +214,7 @@ ssize_t libhttppp::ServerSocket::sendWSAData(ClientSocket *socket, WSABUF *data,
   if (rval == -1) {
 	char errbuf[255];
 	strerror_r(errno, errbuf, 255);
-	httpexception.Error("Socket sendata:", errbuf);
+	httpexception[HTTPException::Error] << "Socket sendata:" << errbuf;
 	if (errno != EAGAIN || errno != EWOULDBLOCK)
 		throw httpexception;
   }
@@ -239,7 +237,7 @@ ssize_t libhttppp::ServerSocket::recvData(ClientSocket* socket, void* data, size
   if(recvsize==-1){
     char errbuf[255];
     strerror_r(errno,errbuf,255);
-    httpexception.Error("Socket recvata:",errbuf);
+    httpexception[HTTPException::Error] << "Socket recvata: " << errbuf;
     if(errno != EAGAIN || errno !=EWOULDBLOCK){
       throw httpexception;
     }
@@ -256,7 +254,7 @@ ssize_t libhttppp::ServerSocket::recvWSAData(ClientSocket *socket, WSABUF *data,
 	if (recvsize == -1) {
 		char errbuf[255];
 		strerror_r(errno, errbuf, 255);
-		httpexception.Error("Socket sendata:", errbuf);
+		httpexception[HTTPException::Error] << "Socket sendata: " << errbuf;
 		if (errno != EAGAIN || errno != EWOULDBLOCK)
 			throw httpexception;
 	}

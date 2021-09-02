@@ -15,6 +15,7 @@
     #define EWOULDBLOCK WSAEWOULDBLOCK
   #endif
   #define snprintf(buf,len, format,...) _snprintf_s(buf, len,len, format, __VA_ARGS__)
+  #define nullptr NULL
 #endif
 
 #define ${CMAKE_SYSTEM_NAME}

@@ -40,14 +40,15 @@ void libhttppp::Thread::Create(void* function(void*), void* arguments) {
     HTTPException  httpexception;
 	_Thread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)function, arguments, 0, &_ThreadId);
 	if (_Thread == NULL) {
-		httpexception.Critical("Can't create Thread!", GetLastError());
+		httpexception[HTTPException::Critical] << "Can't create Thread!"<< GetLastError();
 		throw httpexception;
 	}
 }
 
 void libhttppp::Thread::Detach() {
     HTTPException   httpexception;
-	httpexception.Note("Detach not support by this OS");
+	httpexception[HTTPException::Note] << "Detach not support by this OS";
+	throw httpexception;
 }
 
 DWORD libhttppp::Thread::getThreadID() {

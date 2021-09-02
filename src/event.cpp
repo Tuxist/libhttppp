@@ -116,8 +116,6 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         eventptr->UnlockConnection(cthread,i);
                     }
                 }catch(HTTPException &e){
-                    Console con;
-                    con << "Thread " << cthread->getPid() << ": " << e.what() << con.endl;
                     switch(e.getErrorType()){
                         case HTTPException::Critical:
                             throw e;

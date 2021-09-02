@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <cstdio>
+#include <config.h>
 
 #include "../../https.h"
 

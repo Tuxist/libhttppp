@@ -27,7 +27,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../../eventapi.h"
 #include "../../os/os.h"
-#include <sys/epoll.h>
 
 #define EVENT_SELECT
 

@@ -86,4 +86,3 @@ libhttppp::Thread * libhttppp::ThreadPool::getlastThread(){
 int libhttppp::ThreadPool::getAmount(){
     return _Amount;
 }
-
