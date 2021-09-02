@@ -265,7 +265,13 @@ public:
 int main(int argc, char** argv){
     try{
         HttpConD(argc,argv);
+        return 0;
     }catch(libhttppp::HTTPException &e){
         std::cerr << e.what() << "\n";
+        if(e.getErrorType()==libhttppp::HTTPException::Note 
+            || libhttppp::HTTPException::Warning)
+            return 0;
+        else
+            return -1;
     };
 }

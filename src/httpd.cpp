@@ -204,7 +204,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
             } else if (keytype == KTSKEY) {
                 if (curhttpdcmd->getShortkey()== skey) {
                     curhttpdcmd->_Found = true;
-                    if (args>argc) {
+                    if (args<argc) {
                         int valuesize = getlen(argv[++args]);
                         delete[] curhttpdcmd->_Value;
                         curhttpdcmd->_Value = new char[valuesize + 1];
@@ -263,17 +263,18 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     CmdController->registerCmd("httpskey", 'k',false, (const char*) NULL, "HTTPS Keyfile");
     /*Parse Parameters*/
     CmdController->parseCmd(argc,argv);
+
+    if (CmdController->getHTTPDCmdbyKey("help") && CmdController->getHTTPDCmdbyKey("help")->getFound()) {
+        CmdController->printHelp();
+        throw _httpexception[HTTPException::Note] << "Help Menu printed";
+    }
+
     if (!CmdController->checkRequired()) {
         CmdController->printHelp();
         _httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";
         throw _httpexception;
     }
-    
-    if (CmdController->getHTTPDCmdbyKey("help") && CmdController->getHTTPDCmdbyKey("help")->getFound()) {
-        CmdController->printHelp();
-        throw _httpexception[HTTPException::Note]<< "^-libhttppp default args-^";
-    }
-    
+      
     /*get port from console paramter*/
     int port = 0;
     bool portset=false;

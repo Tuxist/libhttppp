@@ -79,12 +79,13 @@ libhttppp::ServerSocket::ServerSocket(const char* uxsocket,int maxconnections){
     _Maxconnections=maxconnections;
     _UXSocketAddr = new sockaddr_un;
     _UXSocketAddr->sun_family = AF_UNIX;
-    try {
-        scopy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
-    }catch(...){
+
+    if(!uxsocket){
         httpexception[HTTPException::Critical] << "Can't copy Server UnixSocket";
         throw httpexception;
     }
+    
+    scopy(uxsocket,uxsocket+getlen(uxsocket),_UXSocketAddr->sun_path);
     
     if ((Socket = socket(AF_LOCAL, SOCK_STREAM, 0)) < 0){
         httpexception[HTTPException::Critical] << "Can't create Socket UnixSocket";
