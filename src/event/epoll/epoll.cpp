@@ -46,17 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "epoll.h"
 #include "threadpool.h"
 
-libhttppp::ConLock::ConLock()
-{
-    _Des=-1;
-    _nextConLock=nullptr;
-}
-
-libhttppp::ConLock::~ConLock()
-{
-    delete _nextConLock;
-}
-
 libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
     HTTPException httpexception;
     _ServerSocket=serversocket;
@@ -65,47 +54,30 @@ libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
 libhttppp::EPOLL::~EPOLL(){
 }
 
-void libhttppp::EPOLL::initLockPool(ThreadPool *pool){
-    _ConLock=nullptr;
-    for(Thread *curt=pool->getfirstThread(); curt; curt=curt->nextThread()){
-        if(!_ConLock){
-            _ConLock=new ConLock();
-        }else{
-            _ConLock->_nextConLock = new ConLock();
-            _ConLock = _ConLock->_nextConLock;
+int libhttppp::EPOLL::LockConnection(int des) {
+    _ConLock.lock();
+    Connection *curct=(Connection*)_Events[des].data.ptr;
+    if(curct){
+        if(curct->ConnectionLock.trylock()){
+             _ConLock.unlock();
+            return LockState::LOCKED;
         }
-        _ConLock->_Thread=curt;
-    }   
-}
-
-void libhttppp::EPOLL::destroyLockPool(){
-    delete _ConLock;
-}
-
-
-bool libhttppp::EPOLL::LockConnection(Thread *cth,int des) {
-    for(ConLock *frlock=_ConLock; frlock; frlock=frlock->_nextConLock){
-        if(frlock->_Thread == cth){
-            if(frlock->_Lock.trylock()){
-                frlock->_Des=des;
-                return true;
-            }
-            return false;
-        }
+    }else{
+        _ConLock.unlock();
+        return LockState::NOLOCK;
     }
-    return false;
+    _ConLock.unlock();
+    return LockState::ERRLOCK;
 }
 
-void libhttppp::EPOLL::UnlockConnection(Thread *cth,int des){
+void libhttppp::EPOLL::UnlockConnection(int des){
     HTTPException excep;
-    for(ConLock *curlock=_ConLock; curlock; curlock=curlock->_nextConLock){
-        if(curlock->_Thread == cth && curlock->_Des==des){
-            curlock->_Des=-1;
-            curlock->_Lock.unlock();
-            return;
-        }
+    _ConLock.lock();
+    Connection *curct=(Connection*)_Events[des].data.ptr;
+    if(curct){
+        curct->ConnectionLock.unlock();
     }
-    throw excep[HTTPException::Critical] << "Can unlock!" << des;
+    _ConLock.unlock();
 }
 
 const char * libhttppp::EPOLL::getEventType(){
@@ -160,10 +132,11 @@ int libhttppp::EPOLL::waitEventHandler(){
 
 int libhttppp::EPOLL::StatusEventHandler(int des){
     HTTPException httpexception;
-    if(!_Events[des].data.ptr)
+    Connection *curct=(Connection*)_Events[des].data.ptr;
+    if(!curct)
         return EventHandlerStatus::EVNOTREADY;
-    if(((Connection*)_Events[des].data.ptr)->getSendSize()!=0)
-        return EventHandlerStatus::EVOUT;
+    if(curct->getSendSize()>0)
+            return EventHandlerStatus::EVOUT;
     return EventHandlerStatus::EVIN;
 }
 
@@ -221,7 +194,7 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
                                        curct->getSendData()->getDataSize());
         curct->resizeSendQueue(sended);
         if(curct->getSendSize()<=0)
-            sendReady(curct,false);
+            _setEpollEvents(curct,EPOLLIN);
         ResponseEvent(curct);
     } catch(HTTPException &e) {
             throw e;
@@ -259,6 +232,7 @@ void libhttppp::EPOLL::RequestEvent(Connection *curcon){
 };
 
 void libhttppp::EPOLL::ResponseEvent(Connection *curcon){
+    return;
 };
 
 void libhttppp::EPOLL::ConnectEvent(Connection *curcon){

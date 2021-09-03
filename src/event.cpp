@@ -74,16 +74,12 @@ void libhttppp::Event::runEventloop(){
 MAINWORKERLOOP:
         ThreadPool thpool;
         for (size_t i = 0; i < thrs; i++) {
-            _wArg arg;
-            arg.event=this;
-            arg.cthread=thpool.addThread();
-            arg.cthread->Create(WorkerThread, (void*)&arg);
+            Thread *cthread=thpool.addThread();
+            cthread->Create(WorkerThread, (void*)this);
         }
-        initLockPool(&thpool);
         for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
             curth->Join();
         }
-        destroyLockPool();
         if(libhttppp::Event::_Restart){
             libhttppp::Event::_Restart=false;
             goto MAINWORKERLOOP;
@@ -91,13 +87,12 @@ MAINWORKERLOOP:
 }
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
-    Event *eventptr=((_wArg*)wrkevent)->event;
-    Thread *cthread=((_wArg*)wrkevent)->cthread;
+    Event *eventptr=((Event*)wrkevent);
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
                 try{
-                     if(eventptr->LockConnection(cthread,i)){
+                    if(eventptr->LockConnection(i)!=ERRLOCK){
                         switch(eventptr->StatusEventHandler(i)){
                             case EventApi::EventHandlerStatus::EVNOTREADY:
                                 eventptr->ConnectEventHandler(i);
@@ -112,23 +107,19 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                 eventptr->CloseEventHandler(i);
                                 break;
                         }
-                        eventptr->UnlockConnection(cthread,i);
-                    }
+                        eventptr->UnlockConnection(i);
+                    }                        
                 }catch(HTTPException &e){
                     switch(e.getErrorType()){
                         case HTTPException::Critical:
                             throw e;
                             break;
                         case HTTPException::Error:
-                            try{
                                 eventptr->CloseEventHandler(i);
-                            }catch(HTTPException &e){ 
-                                eventptr->UnlockConnection(cthread,i);
-                                throw e;
-                            };
+                                eventptr->UnlockConnection(i);
                             break;            
                     }                 
-                    eventptr->UnlockConnection(cthread,i);
+                    eventptr->UnlockConnection(i);
                 }
             }
         }catch(HTTPException &e){

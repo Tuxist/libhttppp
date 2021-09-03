@@ -80,7 +80,7 @@ namespace libhttppp {
         ConnectionData *getRecvData();
         size_t          getRecvSize();
         
-        int             pollState;
+        Lock            ConnectionLock;
     protected:
         /*Incomming Data*/
         size_t          _ReadDataSize;

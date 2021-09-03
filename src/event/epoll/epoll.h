@@ -35,18 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define EPOLL_H
 
 namespace libhttppp {
-
-    class ConLock {
-    private:
-        ConLock();
-        ~ConLock();
-        int      _Des;
-        Thread  *_Thread;
-        Lock     _Lock;
-        ConLock *_nextConLock;
-        friend class EPOLL;
-    };
-    
+   
     class EPOLL : public EventApi{
     public:
         EPOLL(ServerSocket* serversocket);
@@ -55,8 +44,8 @@ namespace libhttppp {
         /*Lock mechanism*/
         void initLockPool(ThreadPool *pool);
         void destroyLockPool();
-        bool LockConnection(Thread *cth,int des);
-        void UnlockConnection(Thread *cth,int des);
+        int  LockConnection(int des);
+        void UnlockConnection(int des);
                
         /*event handler function*/
         void       initEventHandler();
@@ -80,7 +69,7 @@ namespace libhttppp {
     private:
         void                      _setEpollEvents(Connection *curcon,int events);
         int                       _epollFD;
-        ConLock                  *_ConLock;
+        Lock                      _ConLock;
         struct epoll_event       *_Events;
         ServerSocket             *_ServerSocket;
     };
