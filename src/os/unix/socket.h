@@ -46,7 +46,7 @@ namespace libhttppp {
     ~ClientSocket();
     void              setnonblocking();
     int               Socket;
-    void              Close();
+    void              close();
   private:
     SSL             *_SSL;
     struct sockaddr *_ClientAddr;

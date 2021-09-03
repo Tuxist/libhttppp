@@ -48,15 +48,15 @@ libhttppp::ClientSocket::ClientSocket(){
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-    Close();
+    this->close();
     if(_SSL)
         SSL_free(_SSL);
     delete _ClientAddr;
 }
 
-void libhttppp::ClientSocket::Close(){
+void libhttppp::ClientSocket::close(){
     HTTPException exp;
-    if(close(Socket)<0){
+    if(::close(Socket)>0){
 #ifdef __GLIBCXX__
         char errbuf[255];
         exp[HTTPException::Error] << "Can't close Socket: " << strerror_r(errno, errbuf, 255);
