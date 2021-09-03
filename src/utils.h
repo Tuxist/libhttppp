@@ -36,6 +36,7 @@ namespace libhttppp {
    void rscopy(const char* first, const char* last, char** des);
    void reverse(char s[]);
    void itoa(int n, char s[]);
+   void ultoa(unsigned long n, char s[]);
 };
 
 #endif

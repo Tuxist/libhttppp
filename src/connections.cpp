@@ -86,7 +86,11 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
         }
         written+=cursize;
     }
-    _SendDataSize+=written;
+#ifdef DEBUG
+    Console con;
+    con << "Written:" << written << " Datasize: " << datasize <<con.endl;
+#endif
+    _SendDataSize+=datasize;
     _EventApi->sendReady(this,true);
     return _SendDataLast;
 }
@@ -191,9 +195,9 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
             (*firstdata)->_DataSize-=size;
             *firstdata=(*firstdata);
         #ifdef DEBUG
-            HTTPException httpexception;
-            httpexception[HTTPException::Note]  << "Current Blocksize" <<size
-                                                << "Calculated Blocksize" << presize-delsize;
+            Console con;
+            con  << "Current Blocksize" <<size
+                 << "Calculated Blocksize" << presize-delsize;
             assert((presize-delsize)!=size);
         #endif
         }

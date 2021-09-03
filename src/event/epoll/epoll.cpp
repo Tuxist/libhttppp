@@ -144,6 +144,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
     struct epoll_event setevent { 0 };
     Connection* curct = new Connection(_ServerSocket,this);
+    if(!curct->ConnectionLock.trylock())
+        return;
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
@@ -169,7 +171,7 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         setevent.data.ptr=nullptr;
         throw e;
     }
-    
+    curct->ConnectionLock.unlock();
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
@@ -187,13 +189,13 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data.ptr);
     try {
-        if(!curct)
+        if(!curct || curct->getSendSize()==0)
             throw httpexception[HTTPException::Error] << "WriteEventHandler: no valid data !";
         ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
         curct->resizeSendQueue(sended);
-        if(curct->getSendSize()<=0)
+        if(curct->getSendSize()==0)
             _setEpollEvents(curct,EPOLLIN);
         ResponseEvent(curct);
     } catch(HTTPException &e) {

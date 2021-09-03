@@ -36,6 +36,7 @@ namespace libhttppp {
         static const char *endl;
         Console &operator<<(const char *out);
         Console &operator<<(int out);
+        Console &operator<<(unsigned long out);
         Console &operator<<(char out);
         Console &operator<<(Console &console);
     };

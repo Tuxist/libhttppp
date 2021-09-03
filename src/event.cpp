@@ -88,11 +88,12 @@ MAINWORKERLOOP:
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=((Event*)wrkevent);
+    int lstate=LockState::NOLOCK;
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
                 try{
-                    if(eventptr->LockConnection(i)!=ERRLOCK){
+                    if((lstate=eventptr->LockConnection(i))!=LockState::ERRLOCK){
                         switch(eventptr->StatusEventHandler(i)){
                             case EventApi::EventHandlerStatus::EVNOTREADY:
                                 eventptr->ConnectEventHandler(i);

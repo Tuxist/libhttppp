@@ -73,3 +73,13 @@ void libhttppp::itoa(int n, char s[]){
         s[i] = '\0';
         reverse(s);
 }
+
+void libhttppp::ultoa(unsigned long n, char s[]){
+        unsigned int i, sign;
+        i = 0;
+        do {       /* generate digits in reverse order */
+            s[i++] = n % 10 + '0';   /* get next digit */
+        } while ((n /= 10) > 0);     /* delete it */
+        s[i] = '\0';
+        reverse(s);
+}

@@ -49,6 +49,13 @@ libhttppp::Console &libhttppp::Console::operator<< (int out){
     return *this;
 }
 
+libhttppp::Console &libhttppp::Console::operator<< (unsigned long out){
+    char buf[255];
+    ultoa(out,buf);
+    write(STDOUT_FILENO,buf,getlen(buf));
+    return *this;
+}
+
 libhttppp::Console &libhttppp::Console::operator<< (char out){
     write(STDOUT_FILENO,&out,sizeof(char));
     return *this;
