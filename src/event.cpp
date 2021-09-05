@@ -114,7 +114,6 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                             case HTTPException::Critical:
                                 eventptr->UnlockConnection(i);
                                 throw e;
-                                break;
                             case HTTPException::Error:
                                 try{
                                     eventptr->CloseEventHandler(i);
