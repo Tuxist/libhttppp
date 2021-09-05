@@ -198,7 +198,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         #endif
             char buf[BLOCKSIZE];
             scopy((*firstdata)->_Data+rsize,(*firstdata)->_Data+BLOCKSIZE,buf);
-            scopy(buf,buf+BLOCKSIZE,(*firstdata)->_Data);
+            scopy(buf,buf+rsize,(*firstdata)->_Data);
             (*firstdata)->_DataSize-=rsize;
             *firstdata=(*firstdata);
         }

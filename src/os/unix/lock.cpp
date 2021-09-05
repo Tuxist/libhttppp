@@ -29,16 +29,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "lock.h"
 
 libhttppp::Lock::Lock(){
-    
-    pthread_mutex_init(&_MutexLock,nullptr);
+    HTTPException excep;
+    if(pthread_mutex_init(&_MutexLock,nullptr)<0)
+        throw excep[HTTPException::Critical] << "Init Failed";
 }
 
 libhttppp::Lock::~Lock(){
+    HTTPException excep;
     pthread_mutex_destroy(&_MutexLock);
 }
 
 void libhttppp::Lock::lock(){
-    pthread_mutex_lock(&_MutexLock);
+    HTTPException excep;
+    if(pthread_mutex_lock(&_MutexLock)<0)
+        throw excep[HTTPException::Critical] << "Lock Failed";
 }
 
 bool libhttppp::Lock::trylock(){
@@ -48,5 +52,7 @@ bool libhttppp::Lock::trylock(){
 }
 
 void libhttppp::Lock::unlock(){
-    pthread_mutex_unlock(&_MutexLock);
+    HTTPException excep;
+    if(pthread_mutex_unlock(&_MutexLock)<0)
+        throw excep[HTTPException::Critical] << "Unlock Failed";
 }

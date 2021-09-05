@@ -88,11 +88,10 @@ MAINWORKERLOOP:
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=((Event*)wrkevent);
-    int lstate=LockState::NOLOCK;
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-                if((lstate=eventptr->LockConnection(i))!=LockState::ERRLOCK){
+                if(eventptr->LockConnection(i)!=LockState::ERRLOCK){
                     try{
                         switch(eventptr->StatusEventHandler(i)){
                             case EventApi::EventHandlerStatus::EVNOTREADY:
@@ -110,21 +109,16 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         }
                         eventptr->UnlockConnection(i);
                     }catch(HTTPException &e){
-                        switch(e.getErrorType()){
-                            case HTTPException::Critical:
+                        try{
+                            eventptr->CloseEventHandler(i);
+                        }catch(HTTPException &e){
+                            if(e.getErrorType()==HTTPException::Critical){
                                 eventptr->UnlockConnection(i);
                                 throw e;
-                            case HTTPException::Error:
-                                try{
-                                    eventptr->CloseEventHandler(i);
-                                }catch(HTTPException &e){
-                                    if(e.getErrorType()==HTTPException::Critical){
-                                        eventptr->UnlockConnection(i);
-                                        throw e;
-                                    }
-                                }
-                                break;      
+                            }
                         }
+                        Console con;
+                        con << e.what() << con.endl;                        
                         eventptr->UnlockConnection(i);
                     }
                 }                        

@@ -48,7 +48,9 @@ libhttppp::ClientSocket::ClientSocket(){
 }
 
 libhttppp::ClientSocket::~ClientSocket(){
-    this->close();
+    try{
+        this->close();
+    }catch(...){};
     if(_SSL)
         SSL_free(_SSL);
     delete _ClientAddr;

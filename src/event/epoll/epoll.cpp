@@ -62,12 +62,9 @@ int libhttppp::EPOLL::LockConnection(int des) {
              _ConLock.unlock();
             return LockState::LOCKED;
         }
-    }else{
-        _ConLock.unlock();
-        return LockState::NOLOCK;
     }
     _ConLock.unlock();
-    return LockState::ERRLOCK;
+    return LockState::NOLOCK;
 }
 
 void libhttppp::EPOLL::UnlockConnection(int des){
@@ -171,7 +168,6 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         setevent.data.ptr=nullptr;
         throw e;
     }
-    curct->ConnectionLock.unlock();
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
@@ -268,6 +264,7 @@ void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
         strerror_r(errno, errbuf, 255);
         httpexception.Error("ConnectEventHandler: ",errbuf);
         #endif
+        _ConLock.unlock();
         throw httpexception;
     }
 }
