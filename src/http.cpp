@@ -120,9 +120,9 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, size_t value,
-								  libhttppp::HttpHeader::HeaderData *pos){
+                                   libhttppp::HttpHeader::HeaderData *pos){
   char buf[255];
-  itoa(value,buf);
+  ultoa(value,buf);
   return setData(key,buf,pos);
 }
 

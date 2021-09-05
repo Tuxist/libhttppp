@@ -69,7 +69,7 @@ void libhttppp::CtrlHandler::SIGPIPEEvent() {
 
 void libhttppp::Event::runEventloop(){
         CpuInfo cpuinfo;
-        size_t thrs = cpuinfo.getCores();
+        size_t thrs = 1; //cpuinfo.getCores();
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;

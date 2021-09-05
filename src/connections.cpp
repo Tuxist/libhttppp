@@ -163,7 +163,7 @@ libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){
 size_t libhttppp::Connection::getRecvSize(){
   return _ReadDataSize;
 }
-
+#define DEBUG
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
     if(size==0 || !qsize){
@@ -171,17 +171,16 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
         throw httpexception;
     }
-    size_t rsize=size;
     #ifdef DEBUG
     size_t delsize=0,presize=*qsize;
     #endif
     NEXTBLOCKRESIZE:
     if(*firstdata){
-        if((*firstdata)->getDataSize()<=rsize){
+        if(size>=(*firstdata)->getDataSize()){
             #ifdef DEBUG
             delsize+=(*firstdata)->getDataSize();;
             #endif
-            rsize-=(*firstdata)->getDataSize();
+            size-=(*firstdata)->getDataSize();
             ConnectionData *newdat=(*firstdata)->_nextConnectionData;
             (*firstdata)->_nextConnectionData=NULL;
             delete (*firstdata);
@@ -191,21 +190,26 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
             if(*firstdata){
                 goto NEXTBLOCKRESIZE;
             }
-        }
-        if(rsize>0){
+        }else if(size<0){
         #ifdef DEBUG
-            delsize+=rsize;
+            delsize+=size;
+            Console con;
+            con  << "Blocksize: "           << BLOCKSIZE 
+                 << " Resize: "             << size
+                 << " Calculated Size: "    << (BLOCKSIZE-size) 
+                 << " ConnectionDataSize: " << (*firstdata)->_DataSize
+                 << con.endl;
         #endif
-            char buf[BLOCKSIZE];
-            scopy((*firstdata)->_Data+rsize,(*firstdata)->_Data+BLOCKSIZE,buf);
-            scopy(buf,buf+rsize,(*firstdata)->_Data);
-            (*firstdata)->_DataSize-=rsize;
+            for(size_t i=0; i<(BLOCKSIZE-size); ++i){
+                (*firstdata)->_Data[i]=(*firstdata)->_Data[size+i];
+            }
+            (*firstdata)->_DataSize-=size;
             *firstdata=(*firstdata);
         }
-        (*qsize)-=rsize;
+        (*qsize)-=size;
         #ifdef DEBUG
             Console con;
-            con  << "Current Blocksize: "    << rsize
+            con  << "Current Blocksize: "    << size
                  << " delsize: "                << delsize
                  << " Calculated Blocksize: " << (presize-delsize) << con.endl;
            // assert((presize-delsize)!=rsize);
