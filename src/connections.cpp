@@ -166,7 +166,7 @@ size_t libhttppp::Connection::getRecvSize(){
 #define DEBUG
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
-    if(size==0 || !qsize){
+    if(size<=0 || !qsize){
         HTTPException httpexception;
         httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
         throw httpexception;
@@ -194,13 +194,13 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         #ifdef DEBUG
             delsize+=size;
             Console con;
-            con  << "Blocksize: "           << BLOCKSIZE 
+            con  << "Blocksize: "           << (*firstdata)->getDataSize() 
                  << " Resize: "             << size
-                 << " Calculated Size: "    << (BLOCKSIZE-size) 
+                 << " Calculated Size: "    << ((*firstdata)->getDataSize()-size) 
                  << " ConnectionDataSize: " << (*firstdata)->_DataSize
                  << con.endl;
         #endif
-            for(size_t i=0; i<(BLOCKSIZE-size); ++i){
+            for(size_t i=0; i<((*firstdata)->getDataSize()-size); ++i){
                 (*firstdata)->_Data[i]=(*firstdata)->_Data[size+i];
             }
             (*firstdata)->_DataSize-=size;
@@ -209,10 +209,10 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         (*qsize)-=size;
         #ifdef DEBUG
             Console con;
-            con  << "Current Blocksize: "    << size
-                 << " delsize: "                << delsize
+            con  << "Resize Blocksize: "      << size
+                 << " delsize: "              << delsize
                  << " Calculated Blocksize: " << (presize-delsize) << con.endl;
-           // assert((presize-delsize)!=rsize);
+            assert((presize-delsize)!=*qsize);
         #endif
     }
     return *firstdata;
@@ -290,6 +290,7 @@ libhttppp::Connection::Connection(ServerSocket *servsock,EventApi *event){
   _SendDataLast=nullptr;
   _SendDataSize=0;
   _EventApi=event;
+  ConnectionPtr=nullptr;
 }
 
 libhttppp::Connection::~Connection(){

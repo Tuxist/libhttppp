@@ -30,7 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 libhttppp::Lock::Lock(){
     HTTPException excep;
-    if(pthread_mutex_init(&_MutexLock,nullptr)<0)
+    if(pthread_mutex_init(&_MutexLock,nullptr)!=0)
         throw excep[HTTPException::Critical] << "Init Failed";
 }
 
@@ -41,7 +41,7 @@ libhttppp::Lock::~Lock(){
 
 void libhttppp::Lock::lock(){
     HTTPException excep;
-    if(pthread_mutex_lock(&_MutexLock)<0)
+    if(pthread_mutex_lock(&_MutexLock)!=0)
         throw excep[HTTPException::Critical] << "Lock Failed";
 }
 
@@ -53,6 +53,6 @@ bool libhttppp::Lock::trylock(){
 
 void libhttppp::Lock::unlock(){
     HTTPException excep;
-    if(pthread_mutex_unlock(&_MutexLock)<0)
+    if(pthread_mutex_unlock(&_MutexLock)!=0)
         throw excep[HTTPException::Critical] << "Unlock Failed";
 }

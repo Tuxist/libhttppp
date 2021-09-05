@@ -81,6 +81,7 @@ namespace libhttppp {
         size_t          getRecvSize();
         
         Lock            ConnectionLock;
+        void           *ConnectionPtr;
     protected:
         /*Incomming Data*/
         size_t          _ReadDataSize;

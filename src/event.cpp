@@ -69,7 +69,7 @@ void libhttppp::CtrlHandler::SIGPIPEEvent() {
 
 void libhttppp::Event::runEventloop(){
         CpuInfo cpuinfo;
-        size_t thrs = 1; //cpuinfo.getCores();
+        size_t thrs = cpuinfo.getCores();
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;
@@ -91,16 +91,18 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-                if(eventptr->LockConnection(i)!=LockState::ERRLOCK){
+                int state=eventptr->StatusEventHandler(i);
+
+                if(state==EventHandlerStatus::EVNOTREADY)
+                    eventptr->ConnectEventHandler(i);
+
+                if(eventptr->LockConnection(i)==LockState::LOCKED){
                     try{
-                        switch(eventptr->StatusEventHandler(i)){
-                            case EventApi::EventHandlerStatus::EVNOTREADY:
-                                eventptr->ConnectEventHandler(i);
-                                break;
-                            case EventApi::EventHandlerStatus::EVIN:
+                        switch(state){
+                            case EventHandlerStatus::EVIN:
                                 eventptr->ReadEventHandler(i);
                                 break;
-                            case EventApi::EventHandlerStatus::EVOUT:
+                            case EventHandlerStatus::EVOUT:
                                 eventptr->WriteEventHandler(i);
                                 break;
                             default:
