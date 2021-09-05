@@ -72,7 +72,10 @@ libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
   */
 
 libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,size_t datasize){
+    HTTPException excep;
     size_t written=0;
+    if(datasize==0)
+        return nullptr;
     for(size_t cursize=datasize; cursize>0; cursize=datasize-written){
         if(cursize>BLOCKSIZE){
             cursize=BLOCKSIZE;
@@ -90,6 +93,8 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
     Console con;
     con << "Written:" << written << " Datasize: " << datasize <<con.endl;
 #endif
+    if(datasize!=written)
+        throw excep[HTTPException::Critical] << "something goes wrong in addsendque !";
     _SendDataSize+=datasize;
     _EventApi->sendReady(this,true);
     return _SendDataLast;
@@ -158,7 +163,7 @@ libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){
 size_t libhttppp::Connection::getRecvSize(){
   return _ReadDataSize;
 }
-#define DEBUG
+
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
     if(size==0 || !qsize){
@@ -166,17 +171,17 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
         throw httpexception;
     }
+    size_t rsize=size;
     #ifdef DEBUG
     size_t delsize=0,presize=*qsize;
     #endif
-    *qsize-=size;
     NEXTBLOCKRESIZE:
     if(*firstdata){
-        if(size>=(*firstdata)->getDataSize()){
-            size-=(*firstdata)->getDataSize();
+        if((*firstdata)->getDataSize()<=rsize){
             #ifdef DEBUG
-            delsize+=size;
+            delsize+=(*firstdata)->getDataSize();;
             #endif
+            rsize-=(*firstdata)->getDataSize();
             ConnectionData *newdat=(*firstdata)->_nextConnectionData;
             (*firstdata)->_nextConnectionData=NULL;
             delete (*firstdata);
@@ -187,20 +192,24 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
                 goto NEXTBLOCKRESIZE;
             }
         }
-        if(size!=0){
+        if(rsize>0){
         #ifdef DEBUG
-            delsize+=size;
+            delsize+=rsize;
         #endif
-            scopy((*firstdata)->_Data+size,(*firstdata)->_Data+BLOCKSIZE,(*firstdata)->_Data);
-            (*firstdata)->_DataSize-=size;
+            char buf[BLOCKSIZE];
+            scopy((*firstdata)->_Data+rsize,(*firstdata)->_Data+BLOCKSIZE,buf);
+            scopy(buf,buf+BLOCKSIZE,(*firstdata)->_Data);
+            (*firstdata)->_DataSize-=rsize;
             *firstdata=(*firstdata);
+        }
+        (*qsize)-=rsize;
         #ifdef DEBUG
             Console con;
-            con  << "Current Blocksize" <<size
-                 << "Calculated Blocksize" << presize-delsize;
-            assert((presize-delsize)!=size);
+            con  << "Current Blocksize: "    << rsize
+                 << " delsize: "                << delsize
+                 << " Calculated Blocksize: " << (presize-delsize) << con.endl;
+           // assert((presize-delsize)!=rsize);
         #endif
-        }
     }
     return *firstdata;
 }

@@ -92,8 +92,8 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-                try{
-                    if((lstate=eventptr->LockConnection(i))!=LockState::ERRLOCK){
+                if((lstate=eventptr->LockConnection(i))!=LockState::ERRLOCK){
+                    try{
                         switch(eventptr->StatusEventHandler(i)){
                             case EventApi::EventHandlerStatus::EVNOTREADY:
                                 eventptr->ConnectEventHandler(i);
@@ -109,26 +109,31 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                 break;
                         }
                         eventptr->UnlockConnection(i);
-                    }                        
-                }catch(HTTPException &e){
-                    switch(e.getErrorType()){
-                        case HTTPException::Critical:
-                            throw e;
-                            break;
-                        case HTTPException::Error:
-                                eventptr->CloseEventHandler(i);
-                                eventptr->UnlockConnection(i);
-                            break;            
-                    }                 
-                    eventptr->UnlockConnection(i);
-                }
+                    }catch(HTTPException &e){
+                        switch(e.getErrorType()){
+                            case HTTPException::Critical:
+                                throw e;
+                                break;
+                            case HTTPException::Error:
+                                try{
+                                    eventptr->CloseEventHandler(i);
+                                }catch(HTTPException &e){
+                                    eventptr->UnlockConnection(i);
+                                    throw e;
+                                }
+                                break;      
+                        }
+                    }
+                }                        
             }
         }catch(HTTPException &e){
             switch(e.getErrorType()){
-                case HTTPException::Warning:
+                case HTTPException::Critical:
+                    throw e;
                     break;
                 default:
-                    throw e;
+                    Console con;
+                    con << e.what() << con.endl;
             }
         }
     }
