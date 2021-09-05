@@ -116,7 +116,6 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         }catch(HTTPException &e){
                             if(e.getErrorType()==HTTPException::Critical){
                                 eventptr->UnlockConnection(i);
-                                throw e;
                             }
                         }
                         Console con;

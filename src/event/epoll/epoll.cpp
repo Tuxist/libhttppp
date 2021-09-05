@@ -169,7 +169,6 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         delete curct;
         throw e;
     }
-    curct->ConnectionLock.unlock();
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
