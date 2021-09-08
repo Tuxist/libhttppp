@@ -140,8 +140,7 @@ int libhttppp::EPOLL::StatusEventHandler(int des){
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
     Connection* curct = new Connection(_ServerSocket,this);
-    if(!curct->ConnectionLock.trylock())
-        return;
+    curct->ConnectionLock.lock();
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
@@ -169,6 +168,7 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         delete curct;
         throw e;
     }
+    curct->ConnectionLock.unlock();
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
