@@ -32,12 +32,12 @@ https://github.com/Tuxist/libhttppp
 
 
 ## Building Library
-cd <libpath>
-mkdir build
-cd build
-cmake ../
-make
-make install
-
-Note to build examples you need libhtml:
+cd <libpath> <br/>
+mkdir build <br/>
+cd build <br/>
+cmake ../ <br/>
+make <br/>
+make install <br/>
+<br/>
+Note to build examples you need libhtml: <br/>
 https://github.com/Tuxist/libhtmlpp
