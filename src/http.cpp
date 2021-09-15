@@ -57,9 +57,14 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
   char buf[255];
-  ultoa(value,buf);
-  *this<<buf;
-  return *this;
+  ultoa(value,buf);  
+  return *this<<buf;
+}
+
+libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(int value){
+  char buf[255];
+  itoa(value,buf);  
+  return *this<<buf;
 }
 
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
@@ -284,9 +289,11 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 }
 
 
-void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, ssize_t datalen){
-  if(datalen!=-1)
-    *setData("content-length",_ContentLength)<<datalen;
+void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, int datalen){
+  if(datalen!=-1){
+    HttpHeader::HeaderData *dat=setData("content-length",_ContentLength);
+    *dat<<datalen;
+  }
   char *header;
   size_t headersize = printHeader(&header);
   curconnection->addSendQueue(header,headersize);
@@ -356,7 +363,8 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                                 size_t vstart=delimeter+2;
                                 scopy(header+vstart,header+(vstart+valuelen),value);
                                 value[valuelen]='\0';
-                                *setData(key)<<value;
+                                HttpHeader::HeaderData *dat=setData(key);
+                                *dat<<value;
                                 delete[] value;
                             }
                             delete[] key;
@@ -373,7 +381,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             curconnection->resizeRecvQueue(headersize);
             
             if(_RequestType==POSTREQUEST){
-                size_t csize=getDataSizet("Content-Length");
+                size_t csize=getDataSizet("content-length");
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 if(csize<=rsize){
                     size_t dlocksize=curconnection->getRecvSize();

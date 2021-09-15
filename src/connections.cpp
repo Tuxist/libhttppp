@@ -174,9 +174,9 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
     #ifdef DEBUG
     size_t delsize=0,presize=*qsize;
     #endif
-    (*qsize)-=size;
     
     while(size>0 && size>=(*firstdata)->getDataSize()){
+        (*qsize)-=size;
         #ifdef DEBUG
         delsize+=(*firstdata)->getDataSize();;
         #endif
