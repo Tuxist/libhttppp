@@ -163,60 +163,51 @@ libhttppp::ConnectionData *libhttppp::Connection::getRecvData(){
 size_t libhttppp::Connection::getRecvSize(){
   return _ReadDataSize;
 }
+
 #define DEBUG
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
-    if(size<=0 || !qsize){
-        HTTPException httpexception;
-        httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
-        throw httpexception;
+    HTTPException httpexception;
+    if(size<=0 || !qsize || *qsize<=0){
+        throw httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
     }
     #ifdef DEBUG
     size_t delsize=0,presize=*qsize;
     #endif
-    NEXTBLOCKRESIZE:
-    if(*firstdata){
-        if(size>=(*firstdata)->getDataSize()){
-            #ifdef DEBUG
-            delsize+=(*firstdata)->getDataSize();;
-            #endif
-            size-=(*firstdata)->getDataSize();
-            ConnectionData *newdat=(*firstdata)->_nextConnectionData;
-            (*firstdata)->_nextConnectionData=NULL;
-            delete (*firstdata);
-            *firstdata=newdat;
-            if(*firstdata==*lastdata)
-                (*lastdata)=nullptr; 
-            if(*firstdata){
-                goto NEXTBLOCKRESIZE;
-            }
-        }else if(size<0){
+    (*qsize)-=size;
+    
+    while(size>0 && size>=(*firstdata)->getDataSize()){
         #ifdef DEBUG
-            delsize+=size;
-            Console con;
-            con  << "Blocksize: "           << (*firstdata)->getDataSize() 
-                 << " Resize: "             << size
-                 << " Calculated Size: "    << ((*firstdata)->getDataSize()-size) 
-                 << " ConnectionDataSize: " << (*firstdata)->_DataSize
-                 << con.endl;
+        delsize+=(*firstdata)->getDataSize();;
         #endif
-            for(size_t i=0; i<((*firstdata)->getDataSize()-size); ++i){
-                (*firstdata)->_Data[i]=(*firstdata)->_Data[size+i];
-            }
-            (*firstdata)->_DataSize-=size;
-            *firstdata=(*firstdata);
-        }
-        (*qsize)-=size;
-        #ifdef DEBUG
-            Console con;
-            con  << "Resize Blocksize: "      << size
-                 << " delsize: "              << delsize
-                 << " Calculated Blocksize: " << (presize-delsize) << con.endl;
-            assert((presize-delsize)!=*qsize);
-        #endif
+        size-=(*firstdata)->getDataSize();
+        ConnectionData *newdat=(*firstdata)->_nextConnectionData;
+        (*firstdata)->_nextConnectionData=NULL;
+        if(*firstdata==*lastdata)
+            (*lastdata)=nullptr; 
+        delete (*firstdata);
+        *firstdata=newdat;
     }
+    if(size<0){
+        #ifdef DEBUG
+        delsize+=size;
+        Console con;
+        #endif
+        for(size_t i=0; i<((*firstdata)->getDataSize()-size); ++i){
+            (*firstdata)->_Data[i]=(*firstdata)->_Data[size+i];
+        }
+        (*firstdata)->_DataSize-=size;
+        *firstdata=(*firstdata);
+    }
+    #ifdef DEBUG
+    Console con;
+    con  << " delsize: "              << delsize
+    << " Calculated Blocksize: " << (presize-delsize) << con.endl;
+    if((presize-delsize)!=*qsize)
+        throw httpexception[HTTPException::Critical] << "_resizeQueue: Calculated wrong size";
+    #endif
     return *firstdata;
-}
+                                                               }
                                                                
 int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos, 
                           ConnectionData* endblock, int endpos, char** buffer){

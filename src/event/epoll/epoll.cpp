@@ -166,6 +166,7 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         ConnectEvent(curct);
     }catch (HTTPException& e) {
         delete curct;
+         _Events[des].data.ptr=nullptr;
         throw e;
     }
     curct->ConnectionLock.unlock();

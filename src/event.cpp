@@ -75,10 +75,14 @@ MAINWORKERLOOP:
         ThreadPool thpool;
         for (size_t i = 0; i < thrs; i++) {
             Thread *cthread=thpool.addThread();
-            cthread->Create(WorkerThread, (void*)this);
-        }
-        for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
-            curth->Join();
+            try{
+                cthread->Create(WorkerThread, (void*)this);
+            }catch(HTTPException &e){
+                throw e;
+            }
+            for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
+                curth->Join();
+            }
         }
         if(libhttppp::Event::_Restart){
             libhttppp::Event::_Restart=false;
@@ -88,6 +92,7 @@ MAINWORKERLOOP:
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
     Event *eventptr=((Event*)wrkevent);
+    HTTPException excep;
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
@@ -106,17 +111,15 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                 eventptr->WriteEventHandler(i);
                                 break;
                             default:
-                                eventptr->CloseEventHandler(i);
+                                throw excep[HTTPException::Error] << "no action try to close";
                                 break;
                         }
                         eventptr->UnlockConnection(i);
                     }catch(HTTPException &e){
-                        try{
-                            eventptr->CloseEventHandler(i);
-                        }catch(HTTPException &e){
-                            if(e.getErrorType()==HTTPException::Critical){
-                                eventptr->UnlockConnection(i);
-                            }
+                        eventptr->CloseEventHandler(i);
+                        if(e.getErrorType()==HTTPException::Critical){
+                            eventptr->UnlockConnection(i);
+                            throw e;
                         }
                         Console con;
                         con << e.what() << con.endl;                        
