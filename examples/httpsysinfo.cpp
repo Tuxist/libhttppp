@@ -50,7 +50,7 @@ public:
     }
     
     ~HtmlTable(){
-        
+        delete _firstRow;
     }
     
     class Row {
@@ -124,7 +124,6 @@ class HtmlContent{
 class IndexPage{
 public:
     IndexPage(){
-        _Buffer=nullptr;
         _Index << "<!DOCTYPE html><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
         << "<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">"
         << "<div id=\"headerimage\"><img src=\"images/header.png\"/></div>"
@@ -132,7 +131,7 @@ public:
         KernelInfo();
         CPUInfo();
         SysInfo();
-        FsInfo();
+//         FsInfo();
         _Index << "</div></div></body></html>";
     }
     
@@ -187,8 +186,6 @@ public:
     }
     
 private:
-    char                  *_Buffer;
-    char                  *_BufferSize; 
     libhtmlpp::HtmlString  _Index;
 };
 
