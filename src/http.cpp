@@ -45,7 +45,8 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
     size_t nsize=_Valuelen+getlen(value);
     char *buf=new char [nsize+1];
     size_t i=0;
-    scopy(_Value,_Value+_Valuelen,buf);
+    if(_Value)
+        scopy(_Value,_Value+_Valuelen,buf);
     scopy(value,value+getlen(value),buf+_Valuelen);
     _Valuelen=nsize;
     delete[] _Value;
@@ -57,7 +58,8 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
   char buf[255];
   ultoa(value,buf);
-  return *this<<buf;
+  *this<<buf;
+  return *this;
 }
 
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
