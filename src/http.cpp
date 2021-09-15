@@ -390,7 +390,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                     for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
                         dlocksize-=dblock->getDataSize();
                         cdlocksize+=dblock->getDataSize();
-                        if(csize<cdlocksize){
+                        if(csize>=cdlocksize){
                             break;
                         }
                     }
