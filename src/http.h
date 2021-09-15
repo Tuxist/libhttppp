@@ -40,8 +40,11 @@ namespace libhttppp {
   class HttpHeader {
   public:
     class HeaderData {
+    public:
+      HeaderData& operator<<(const char *value);  
     private:
-      HeaderData(const char *key,const char*value);
+      HeaderData(const char *key);
+      HeaderData(const char *key,const char *value);
       ~HeaderData();
       char         *_Key;
       size_t        _Keylen;

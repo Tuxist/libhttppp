@@ -29,14 +29,29 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "base64.h"
 #include "utils.h"
 
-#include <cstring>
-#include <sstream>
+#include <stdio.h>
+
 #include <openssl/rand.h>
+
 
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=NULL;
   _lastHeaderData=NULL;
 }
+
+libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<( const char* value ){
+    size_t nsize=_Valuelen+getlen(value);
+    char *buf=new char [nsize+1];
+    size_t i=0;
+    scopy(_Value,_Value+_Valuelen,buf);
+    scopy(value,value+getlen(value),buf+_Valuelen);
+    _Valuelen=nsize;
+    delete[] _Value;
+    buf[nsize]='\0';
+    _Value=buf;   
+    return *this;
+}
+
 
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
   return _firstHeaderData;
@@ -173,8 +188,7 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 }
 
 
-
-libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
+libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
   if(!key){
     _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
     throw _httpexception;
@@ -183,13 +197,18 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
   _Keylen=getlen(key);
   _Key=new char[_Keylen+1];
   scopy(key,key+(_Keylen+1),_Key);
-  if(value){
-    _Valuelen=getlen(value);
-    _Value=new char[_Valuelen+1];
-    scopy(value,value+(_Valuelen+1),_Value);
-  }else{
-    _Value=NULL;  
-  }
+}
+
+libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
+    if(!key){
+        _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
+        throw _httpexception;
+    }
+    _nextHeaderData=NULL;
+    _Keylen=getlen(key);
+    _Key=new char[_Keylen+1];
+    scopy(key,key+(_Keylen+1),_Key);
+    *this << value;
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
@@ -256,19 +275,20 @@ void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
 }
 
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
-  std::stringstream hstream;
-  hstream << _Version << " " << _State <<"\r\n";
+  *buffer=new char[1]{'\0'};
+  append(buffer,_Version);
+  append(buffer," ");
+  append(buffer,_State);
+  append(buffer,"\r\n");
   for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-          hstream << getKey(curdat) << ": ";
+          append(buffer,getKey(curdat));
+          append(buffer,": ");
           if(getValue(curdat))
-            hstream << getValue(curdat);
-          hstream <<"\r\n";
+             append(buffer,getValue(curdat));
+          append(buffer,"\r\n");
   } 
-  hstream << "\r\n";
-  std::string buf=hstream.str();
-  *buffer=new char[buf.size()];
-  scopy(buf.c_str(),buf.c_str()+buf.size(),*buffer);
-  return buf.size();
+  append(buffer,"\r\n");
+  return getlen(*buffer);
 }
 
 
@@ -1044,26 +1064,27 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
                                       const char *comment,const char *domain,  
                                       int maxage, const char* path,
                                       bool secure,const char *version){
-  if(!key || !value){
-    _httpexception[HTTPException::Note] << "no key or value set in cookie!";
-    return;
-  }
-  std::stringstream cookiestream;
-  cookiestream   << key << "=" << value;
-  if(comment)
-    cookiestream << "; Comment=" << comment;
-  if(domain)
-    cookiestream << "; Domain=" << domain;
-  if(maxage>=0)
-    cookiestream << "; Max-Age=" << maxage;
-  if(path)
-    cookiestream << "; Path=" << path;
-  if(secure)
-    cookiestream << "; Secure";
-  if(version)
-    cookiestream << "; Version=" << version;
-  std::string buf=cookiestream.str();
-  curresp->setData("Set-Cookie",buf.c_str());
+    if(!key || !value){
+        _httpexception[HTTPException::Note] << "no key or value set in cookie!";
+        return;
+    }
+    HttpHeader::HeaderData *dat=curresp->setData("Set-Cookie",nullptr);
+    *dat   << key << "=" << value;
+    if(comment)
+        *dat << "; Comment=" << comment;
+    if(domain)
+        *dat << "; Domain=" << domain;
+    if(maxage>=0){
+        char buf[255];
+        itoa(maxage,buf);
+        *dat << "; Max-Age=" << buf;
+    }
+    if(path)
+        *dat << "; Path=" << path;
+    if(secure)
+        *dat << "; Secure";
+    if(version)
+        *dat << "; Version=" << version;
 }
 
 
@@ -1182,22 +1203,19 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
 }
 
 void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
+  HttpHeader::HeaderData *dat=curresp->setData("WWW-Authenticate",nullptr);
   switch(_Authtype){
     case BASICAUTH:{
       if(_Realm){
-        std::stringstream curauthstrs;
-        curauthstrs << "Basic realm=\"" << _Realm << "\"";
-        std::string curauthstr =curauthstrs.str();
-        curresp->setData("WWW-Authenticate",curauthstr.c_str());
+        *dat << "Basic realm=\"" << _Realm << "\"";
       }else{
-        curresp->setData("WWW-Authenticate","Basic");
+        *dat << "Basic";
       }
     };
     case DIGESTAUTH:{
-      std::stringstream curauthstrs;
-      curauthstrs << "Digest";
+      *dat << "Digest";
       if(_Realm){
-        curauthstrs << " realm=\"" << _Realm <<"\"";
+        *dat << " realm=\"" << _Realm <<"\"";
       }  
       char nonce[16]={'0'};
       for(size_t noncepos=0; noncepos<=16; noncepos++){
@@ -1206,9 +1224,7 @@ void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
            nonce[noncepos]=random[rdpos];
         }
       }
-      curauthstrs << "nonce=\"" << nonce << "\"";
-      std::string curauthstr =curauthstrs.str();
-      curresp->setData("WWW-Authenticate",curauthstr.c_str());
+      *dat << "nonce=\"" << nonce << "\"";
     };
   }
 }

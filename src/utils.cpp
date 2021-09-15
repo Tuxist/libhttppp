@@ -34,7 +34,7 @@ const  char *libhttppp::scopy(const char* first, const char* last, char* des){
     return des;
 }
 
-unsigned int libhttppp::getlen(const char *str) {
+unsigned long libhttppp::getlen(const char *str) {
     unsigned int len = 0;
     while ((*str++) != '\0') {
         ++len;
@@ -82,4 +82,17 @@ void libhttppp::ultoa(unsigned long n, char s[]){
         } while ((n /= 10) > 0);     /* delete it */
         s[i] = '\0';
         reverse(s);
+}
+
+unsigned long libhttppp::append(char** src, const char* append){
+    unsigned long srcsize=getlen(*src);
+    unsigned long nsize=srcsize+getlen(append);
+    char *buf=new char [nsize+1];
+    unsigned long i=0;
+    scopy((*src),(*src)+srcsize,buf);
+    scopy((*src),(*src)+getlen(append),buf+srcsize);
+    delete[] (*src);
+    buf[nsize]='\0';
+    (*src)=buf;
+    return nsize;
 }

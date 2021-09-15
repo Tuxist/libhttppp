@@ -32,11 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace libhttppp {
    const char *scopy(const char* first, const char* last, char* des);
-   unsigned int getlen(const char *str);
+   unsigned long getlen(const char *str);
    void rscopy(const char* first, const char* last, char** des);
    void reverse(char s[]);
    void itoa(int n, char s[]);
    void ultoa(unsigned long n, char s[]);
+   unsigned long append(char** src, const char* append);
 };
 
 #endif
