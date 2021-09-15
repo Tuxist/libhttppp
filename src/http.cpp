@@ -35,8 +35,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 libhttppp::HttpHeader::HttpHeader(){
-  _firstHeaderData=NULL;
-  _lastHeaderData=NULL;
+  _firstHeaderData=nullptr;
+  _lastHeaderData=nullptr;
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(const char* value){
@@ -44,8 +44,7 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
         return *this;
     size_t nsize=_Valuelen+getlen(value);
     char *buf=new char [nsize+1];
-    size_t i=0;
-    if(_Value)
+    if(_Valuelen<0)
         scopy(_Value,_Value+_Valuelen,buf);
     scopy(value,value+getlen(value),buf+_Valuelen);
     _Valuelen=nsize;
@@ -57,14 +56,16 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
   char buf[255];
-  ultoa(value,buf);  
-  return *this<<buf;
+  ultoa(value,buf);
+  *this<<(buf);
+  return *this;
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(int value){
   char buf[255];
-  itoa(value,buf);  
-  return *this<<buf;
+  itoa(value,buf);
+  *this<<(buf);
+  return *this;
 }
 
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
@@ -152,7 +153,7 @@ void libhttppp::HttpHeader::deldata(const char* key){
 }
 
 void libhttppp::HttpHeader::deldata(libhttppp::HttpHeader::HeaderData* pos){
-  HeaderData *prevdat=NULL;
+  HeaderData *prevdat=nullptr;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(curdat==pos){
       if(prevdat){
@@ -164,7 +165,7 @@ void libhttppp::HttpHeader::deldata(libhttppp::HttpHeader::HeaderData* pos){
         if(_lastHeaderData==curdat)
           _lastHeaderData=_firstHeaderData;
       }
-      curdat->_nextHeaderData=NULL;
+      curdat->_nextHeaderData=nullptr;
       delete curdat;
       return;
     }
@@ -291,8 +292,7 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 
 void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, int datalen){
   if(datalen!=-1){
-    HttpHeader::HeaderData *dat=setData("content-length",_ContentLength);
-    *dat<<datalen;
+        setContentLength(datalen);
   }
   char *header;
   size_t headersize = printHeader(&header);
@@ -365,6 +365,8 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                                 value[valuelen]='\0';
                                 HttpHeader::HeaderData *dat=setData(key);
                                 *dat<<value;
+                                Console con;
+                                con << getData(key);
                                 delete[] value;
                             }
                             delete[] key;
@@ -1069,9 +1071,11 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         return;
     }
     HttpHeader::HeaderData *dat=curresp->setData("Set-Cookie");
-    *dat  << key << "=" << value;
-    if(comment)
-        *dat << "; Comment=" << comment;
+    *dat << key << "=" << value;
+    if(comment){
+        *dat << "; Comment="; 
+        *dat << comment;
+    }
     if(domain)
         *dat << "; Domain=" << domain;
     if(maxage>=0)
@@ -1082,6 +1086,7 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         *dat << "; Secure";
     if(version)
         *dat << "; Version=" << version;
+    
 }
 
 

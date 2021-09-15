@@ -41,9 +41,9 @@ namespace libhttppp {
   public:
     class HeaderData {
     public:
-      HeaderData& operator<<(const char *value);
-      HeaderData& operator<<(size_t value);
-      HeaderData& operator<<(int value);
+      HeaderData &operator<<(const char *value);
+      HeaderData &operator<<(size_t value);
+      HeaderData &operator<<(int value);
     protected:
       HeaderData(const char *key);
       ~HeaderData();
