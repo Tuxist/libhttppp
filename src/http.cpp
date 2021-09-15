@@ -39,7 +39,9 @@ libhttppp::HttpHeader::HttpHeader(){
   _lastHeaderData=NULL;
 }
 
-libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<( const char* value ){
+libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(const char* value){
+    if(!value)
+        return *this;
     size_t nsize=_Valuelen+getlen(value);
     char *buf=new char [nsize+1];
     size_t i=0;
@@ -48,10 +50,15 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
     _Valuelen=nsize;
     delete[] _Value;
     buf[nsize]='\0';
-    _Value=buf;   
+    _Value=buf;
     return *this;
 }
 
+libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
+  char buf[255];
+  ultoa(value,buf);
+  return *this<<buf;
+}
 
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
   return _firstHeaderData;
@@ -100,19 +107,18 @@ int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **p
   return 0;
 }
 
-libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value){
+libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key){
   if(!_firstHeaderData){
-    _firstHeaderData=new HeaderData(key,value);
+    _firstHeaderData=new HeaderData(key);
     _lastHeaderData=_firstHeaderData;
   }else{
-    _lastHeaderData->_nextHeaderData=new HeaderData(key,value);
+    _lastHeaderData->_nextHeaderData=new HeaderData(key);
     _lastHeaderData=_lastHeaderData->_nextHeaderData;
   }
   return _lastHeaderData;
 }
 
-libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, const char* value,
-								  libhttppp::HttpHeader::HeaderData *pos){
+libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key,libhttppp::HttpHeader::HeaderData *pos){
   if(!key){
     _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
     throw _httpexception;
@@ -123,22 +129,10 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     pos->_Keylen=getlen(key);
     pos->_Key=new char[pos->_Keylen+1];
     scopy(key,key+(pos->_Keylen+1),pos->_Key);
-    if(value){
-      pos->_Valuelen=getlen(value);
-      pos->_Value=new char[pos->_Valuelen+1];
-      scopy(value,value+(pos->_Valuelen+1),pos->_Value);
-    }
     return pos;
   }else{
-    return setData(key,value);
+    return setData(key);
   }
-}
-
-libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key, size_t value,
-                                   libhttppp::HttpHeader::HeaderData *pos){
-  char buf[255];
-  ultoa(value,buf);
-  return setData(key,buf,pos);
 }
 
 void libhttppp::HttpHeader::deldata(const char* key){
@@ -197,18 +191,8 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
   _Keylen=getlen(key);
   _Key=new char[_Keylen+1];
   scopy(key,key+(_Keylen+1),_Key);
-}
-
-libhttppp::HttpHeader::HeaderData::HeaderData(const char *key,const char*value){
-    if(!key){
-        _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
-        throw _httpexception;
-    }
-    _nextHeaderData=NULL;
-    _Keylen=getlen(key);
-    _Key=new char[_Keylen+1];
-    scopy(key,key+(_Keylen+1),_Key);
-    *this << value;
+  _Valuelen=0;
+  _Value=nullptr;
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
@@ -226,7 +210,8 @@ libhttppp::HttpResponse::HttpResponse(){
   setVersion(HTTPVERSION("1.1"));
   _ContentType=NULL;
   _ContentLength=NULL;
-  _Connection=setData("Connection","keep-alive");
+  _Connection=setData("Connection");
+  *_Connection<<"keep-alive";
 }
 
 void libhttppp::HttpResponse::setState(const char* httpstate){
@@ -245,15 +230,18 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
-  _ContentLength=setData("content-length",len,_ContentLength);
+  _ContentLength=setData("content-length",_ContentLength);
+  *_ContentLength<<len;
 }
 
 void libhttppp::HttpResponse::setContentType(const char* type){
-  _ContentType=setData("content-type",type,_ContentType);
+  _ContentType=setData("content-type",_ContentType);
+  *_ContentType<<type;
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  _ContentLength=setData("connection",type,_ContentType);
+  _ContentLength=setData("connection",_ContentType);
+  *_ContentLength<<type;
 }
 
 void libhttppp::HttpResponse::setVersion(const char* version){
@@ -275,26 +263,27 @@ void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
 }
 
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
-  *buffer=new char[1]{'\0'};
-  append(buffer,_Version);
-  append(buffer," ");
-  append(buffer,_State);
-  append(buffer,"\r\n");
-  for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-          append(buffer,getKey(curdat));
-          append(buffer,": ");
-          if(getValue(curdat))
-             append(buffer,getValue(curdat));
-          append(buffer,"\r\n");
-  } 
-  append(buffer,"\r\n");
-  return getlen(*buffer);
+    *buffer=new char[getlen(_Version)+1];
+    scopy(_Version,_Version+(getlen(_Version)+1),*buffer);
+    append(buffer,_Version);
+    append(buffer," ");
+    append(buffer,_State);
+    append(buffer,"\r\n");
+    for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
+        append(buffer,getKey(curdat));
+        append(buffer,": ");
+        if(getValue(curdat))
+            append(buffer,getValue(curdat));
+        append(buffer,"\r\n");
+    } 
+    append(buffer,"\r\n");
+    return getlen((*buffer));
 }
 
 
 void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, ssize_t datalen){
   if(datalen!=-1)
-    setData("content-length",datalen,_ContentLength);
+    *setData("content-length",_ContentLength)<<datalen;
   char *header;
   size_t headersize = printHeader(&header);
   curconnection->addSendQueue(header,headersize);
@@ -364,7 +353,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                                 size_t vstart=delimeter+2;
                                 scopy(header+vstart,header+(vstart+valuelen),value);
                                 value[valuelen]='\0';
-                                setData(key,value);
+                                *setData(key)<<value;
                                 delete[] value;
                             }
                             delete[] key;
@@ -1068,8 +1057,8 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         _httpexception[HTTPException::Note] << "no key or value set in cookie!";
         return;
     }
-    HttpHeader::HeaderData *dat=curresp->setData("Set-Cookie",nullptr);
-    *dat   << key << "=" << value;
+    HttpHeader::HeaderData *dat=curresp->setData("Set-Cookie");
+    *dat  << key << "=" << value;
     if(comment)
         *dat << "; Comment=" << comment;
     if(domain)

@@ -41,11 +41,12 @@ namespace libhttppp {
   public:
     class HeaderData {
     public:
-      HeaderData& operator<<(const char *value);  
-    private:
+      HeaderData& operator<<(const char *value);
+      HeaderData& operator<<(size_t value);
+    protected:
       HeaderData(const char *key);
-      HeaderData(const char *key,const char *value);
       ~HeaderData();
+    private:
       char         *_Key;
       size_t        _Keylen;
       char         *_Value;
@@ -61,9 +62,8 @@ namespace libhttppp {
     const char *getKey(HeaderData *pos);
     const char *getValue(HeaderData *pos);
     
-    HeaderData *setData(const char *key,const char *value);
-    HeaderData *setData(const char *key,const char *value,HeaderData *pos);
-    HeaderData *setData(const char* key, size_t value,HeaderData *pos=NULL);
+    HeaderData *setData(const char *key);
+    HeaderData *setData(const char* key,HeaderData *pos);
     
     const char *getData(const char *key,HeaderData **pos=NULL);
     size_t      getDataSizet(const char *key,HeaderData **pos=NULL);
