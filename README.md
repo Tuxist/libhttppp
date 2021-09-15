@@ -11,18 +11,33 @@
 - Multithreading
 - epoll (linux support)
 
+
 ## On Work
-- iocp (Windows support)
-- kqueue (Mac OS BSD support)
-- select (other os)
+- Move sys to seperate libsystempp
+- Remove Glibc and std dependecy
+- Httpclientsupport
 
 ## Todo:
+- kqueue (Mac OS BSD support)
+- select (other os)
+- iocp (Windows support)
 - Httpdigestauth
 - Httpntlmauth
 - Httpcompression (gzip)
-- Httpclientsupport
+
 
 
 ## Download:
 https://github.com/Tuxist/libhttppp
 
+
+## Building Library
+cd <libpath>
+mkdir build
+cd build
+cmake ../
+make
+make install
+
+Note to build examples you need libhtml:
+https://github.com/Tuxist/libhtmlpp
