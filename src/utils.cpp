@@ -85,13 +85,15 @@ void libhttppp::ultoa(unsigned long n, char s[]){
 }
 
 unsigned long libhttppp::append(char** src, const char* append){
+    char *srcptr=*src;
     unsigned long srcsize=getlen((*src));
-    unsigned long nsize=srcsize+getlen(append);
+    unsigned long asize=getlen(append);
+    unsigned long nsize=srcsize+asize;    
     char *buf=new char [nsize+1];
-    scopy((*src),(*src)+srcsize,buf);
-    scopy((*src),(*src)+getlen(append),buf+srcsize);
-    delete[] (*src);
+    scopy(srcptr,srcptr+srcsize,buf);
+    scopy(append,append+asize,buf+srcsize);
+    delete[] srcptr;
     buf[nsize]='\0';
-    (*src)=buf;
+    *src=buf;
     return nsize;
 }

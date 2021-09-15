@@ -129,6 +129,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     pos->_Keylen=getlen(key);
     pos->_Key=new char[pos->_Keylen+1];
     scopy(key,key+(pos->_Keylen+1),pos->_Key);
+    pos->_Value=nullptr;
     return pos;
   }else{
     return setData(key);
@@ -1063,11 +1064,8 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         *dat << "; Comment=" << comment;
     if(domain)
         *dat << "; Domain=" << domain;
-    if(maxage>=0){
-        char buf[255];
-        itoa(maxage,buf);
-        *dat << "; Max-Age=" << buf;
-    }
+    if(maxage>=0)
+        *dat << "; Max-Age=" << maxage;
     if(path)
         *dat << "; Path=" << path;
     if(secure)
