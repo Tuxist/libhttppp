@@ -290,7 +290,7 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 }
 
 
-void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, int datalen){
+void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, unsigned long datalen){
   if(datalen!=-1){
         setContentLength(datalen);
   }
