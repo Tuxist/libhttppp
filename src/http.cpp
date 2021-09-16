@@ -217,7 +217,7 @@ libhttppp::HttpHeader::~HttpHeader(){
 
 libhttppp::HttpResponse::HttpResponse(){
   setState(HTTP200);
-  setVersion(HTTPVERSION("1.1"));
+  setVersion(HTTPVERSION("2.0"));
   _ContentType=NULL;
   _ContentLength=NULL;
   _Connection=setData("Connection");
@@ -275,7 +275,6 @@ void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
     *buffer=new char[getlen(_Version)+1];
     scopy(_Version,_Version+(getlen(_Version)+1),*buffer);
-    append(buffer,_Version);
     append(buffer," ");
     append(buffer,_State);
     append(buffer,"\r\n");
