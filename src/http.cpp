@@ -42,7 +42,7 @@ libhttppp::HttpHeader::HttpHeader(){
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(const char* value){
     if(!value)
         return *this;
-    size_t nsize=_Valuelen+getlen(value);
+    size_t nsize=getlen(value)+_Valuelen;
     char *buf=new char [nsize+1];
     if(_Valuelen>0)
         scopy(_Value,_Value+_Valuelen,buf);
@@ -57,14 +57,14 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
   char buf[255];
   ultoa(value,buf);
-  *this<<(buf);
+  *this<<buf;
   return *this;
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(int value){
   char buf[255];
   itoa(value,buf);
-  *this<<(buf);
+  *this<<buf;
   return *this;
 }
 
@@ -138,6 +138,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     pos->_Key=new char[pos->_Keylen+1];
     scopy(key,key+(pos->_Keylen+1),pos->_Key);
     pos->_Value=nullptr;
+    pos->_Valuelen=0;
     return pos;
   }else{
     return setData(key);
@@ -291,7 +292,7 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 
 
 void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, unsigned long datalen){
-  if(datalen!=-1){
+  if(datalen>=0){
         setContentLength(datalen);
   }
   char *header;
