@@ -52,7 +52,7 @@ void Multiform(libhttppp::HttpRequest *curreq,libhtmlpp::HtmlString &condat){
           condat << "ContentType: " << curformdat->getContentType() << "<br>\r\n";
         condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
         for(size_t datapos=0; datapos<curformdat->getDataSize(); datapos++){
-         condat << curformdat->getData()[datapos];
+         condat.push_back(curformdat->getData()[datapos]);
          if(curformdat->getData()[datapos]=='\n')
            condat << "<br>";
         }

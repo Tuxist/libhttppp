@@ -44,7 +44,7 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
         return *this;
     size_t nsize=_Valuelen+getlen(value);
     char *buf=new char [nsize+1];
-    if(_Valuelen<0)
+    if(_Valuelen>0)
         scopy(_Value,_Value+_Valuelen,buf);
     scopy(value,value+getlen(value),buf+_Valuelen);
     _Valuelen=nsize;
@@ -363,10 +363,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                                 size_t vstart=delimeter+2;
                                 scopy(header+vstart,header+(vstart+valuelen),value);
                                 value[valuelen]='\0';
-                                HttpHeader::HeaderData *dat=setData(key);
-                                *dat<<value;
-                                Console con;
-                                con << getData(key);
+                                *setData(key)<<value;
                                 delete[] value;
                             }
                             delete[] key;
