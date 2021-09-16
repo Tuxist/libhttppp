@@ -202,7 +202,7 @@ public:
             const char *cururl=curreq.getRequestURL();
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
-            curres.setVersion(HTTPVERSION(1.1));
+            curres.setVersion(HTTPVERSION(2.0));
             if(strncmp(cururl,"/", libhttppp::getlen(cururl))==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
