@@ -191,7 +191,7 @@ private:
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
         
     };
     
@@ -203,15 +203,15 @@ public:
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
-            if(strncmp(cururl,"/", libhttppp::getlen(cururl))==0){
+            if(libhttppp::ncompare(cururl, libhttppp::getlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(strncmp(cururl,"/images/header.png", libhttppp::getlen(cururl))==0){
+            }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(strncmp(cururl,"/favicon.ico ",libhttppp::getlen(cururl))==0){
+            }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);

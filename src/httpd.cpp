@@ -27,6 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstring>
 #include <cstdlib>
 
+#include <systempp/socket.h>
+
 #include "os/os.h"
 #include "utils.h"
 #include "httpd.h"
@@ -306,25 +308,25 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     try {
         #ifndef Windows
         if (portset == true)
-            _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
+            _ServerSocket = new libsystempp::ServerSocket(httpaddr, port, maxconnections,-1,-1);
         else
-            _ServerSocket = new ServerSocket(httpaddr, maxconnections);
+            _ServerSocket = new libsystempp::ServerSocket(httpaddr, maxconnections,-1,-1);
         #else
         _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
         #endif
         
         
         if (sslcertpath && sslkeypath) {
-            _ServerSocket->createContext();
-            _ServerSocket->loadCertfile(sslcertpath);
-            _ServerSocket->loadKeyfile(sslkeypath);
+//             _ServerSocket->createContext();
+//             _ServerSocket->loadCertfile(sslcertpath);
+//             _ServerSocket->loadKeyfile(sslkeypath);
         }
     }catch (HTTPException &e) {
         throw e;
     }
 }
 
-libhttppp::ServerSocket *libhttppp::HttpD::getServerSocket(){
+libsystempp::ServerSocket *libhttppp::HttpD::getServerSocket(){
   return _ServerSocket;
 }
 

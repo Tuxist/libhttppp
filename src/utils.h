@@ -38,6 +38,7 @@ namespace libhttppp {
    void itoa(int n, char s[]);
    void ultoa(unsigned long n, char s[]);
    unsigned long append(char** src, const char* append);
+   bool ncompare(const char *src,size_t ssize,const char *comp,size_t csize);
 };
 
 #endif

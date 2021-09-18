@@ -25,10 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <systempp/socket.h>
 
+#include "os/os.h"
 #include "config.h"
 #include "exception.h"
-#include "os/os.h"
 
 #ifndef CONNECTIONS_H
 #define CONNECTIONS_H
@@ -52,11 +53,11 @@ namespace libhttppp {
     
     class Connection {
     public:
-        Connection(ServerSocket *servsock,EventApi *event);
+        Connection(libsystempp::ServerSocket *servsock,EventApi *event);
         ~Connection();
         
         /*get client Socket from Connection*/
-        ClientSocket   *getClientSocket();
+        libsystempp::ClientSocket   *getClientSocket();
         
         /*Cache helper functions*/
         
@@ -90,8 +91,8 @@ namespace libhttppp {
     private:
         ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
                                      size_t *qsize,size_t size);
-        ClientSocket      *_ClientSocket;
-        ServerSocket      *_ServerSocket;
+        libsystempp::ClientSocket      *_ClientSocket;
+        libsystempp::ServerSocket      *_ServerSocket;
         
         /*Incomming Data*/
         ConnectionData *_ReadDataFirst;

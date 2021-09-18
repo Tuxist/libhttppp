@@ -78,14 +78,14 @@ namespace libhttppp {
     public:
         HttpD(int argc, char** argv);
         ~HttpD();
-        ServerSocket       *getServerSocket();
+        libsystempp::ServerSocket *getServerSocket();
     protected:
-        void                FileServer();
-        HTTPDCmdController *CmdController;
+        void                       FileServer();
+        HTTPDCmdController        *CmdController;
     private:
-        bool               _fileServer;
-        ServerSocket      *_ServerSocket;
-        HTTPException      _httpexception;
+        bool                       _fileServer;
+        libsystempp::ServerSocket *_ServerSocket;
+        HTTPException              _httpexception;
     };
 };
 

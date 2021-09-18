@@ -35,7 +35,7 @@
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
         
     };
     
@@ -46,7 +46,7 @@ public:
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
-            if(strncmp(cururl,"/",libhttppp::getlen(cururl))==0){
+            if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/",1)==0){
                 libhttppp::HttpResponse curres;
                 curres.setState(HTTP200);
                 curres.setVersion(HTTPVERSION(1.1));
@@ -65,8 +65,8 @@ public:
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
                 curres.send(curcon,condat.c_str(),condat.size());
-            }else if(strncmp(cururl,"/httpbasicauth",libhttppp::getlen(cururl))==0 ||
-                strncmp(cururl,"/httpdigestauth",libhttppp::getlen(cururl))==0){
+            }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpbasicauth",13)==0 ||
+                libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpdigestauth",14)==0){
                 libhttppp::HttpAuth httpauth;
                 httpauth.parse(&curreq);
                 const char *username=httpauth.getUsername();
@@ -83,9 +83,9 @@ public:
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(NULL);
-                    if(strncmp(cururl,"/httpbasicauth",libhttppp::getlen(cururl))==0){
+                    if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(strncmp(cururl,"/httpdigestauth",libhttppp::getlen(cururl))==0){
+                    }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");

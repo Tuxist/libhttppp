@@ -99,3 +99,13 @@ unsigned long libhttppp::append(char** src, const char* append){
     *src=buf;
     return nsize;
 }
+
+bool libhttppp::ncompare(const char *src,size_t ssize,const char *comp,size_t csize){
+        if(ssize<csize)
+            return false;
+        for(int i=0; i<csize; ++i){
+            if(src[i]!=comp[i])
+                return false;
+        }
+        return true;
+}

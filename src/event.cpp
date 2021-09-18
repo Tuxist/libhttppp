@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 bool libhttppp::Event::_Run=true;
 bool libhttppp::Event::_Restart=false;
 
-libhttppp::Event::Event(libhttppp::ServerSocket* serversocket) : EVENT(serversocket){
+libhttppp::Event::Event(libsystempp::ServerSocket* serversocket) : EVENT(serversocket){
     libhttppp::CtrlHandler::initCtrlHandler();
 }
 

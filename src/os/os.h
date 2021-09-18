@@ -11,7 +11,6 @@
   #include "windows/ctrlhandler.h"
   #include "windows/console.h"
 #else
-  #include "unix/socket.h"
   #include "unix/lock.h"
   #include "unix/thread.h"
   #include "unix/sysinfo.h"

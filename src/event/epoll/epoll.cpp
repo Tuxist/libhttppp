@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "epoll.h"
 #include "threadpool.h"
 
-libhttppp::EPOLL::EPOLL(libhttppp::ServerSocket* serversocket) {
+libhttppp::EPOLL::EPOLL(libsystempp::ServerSocket* serversocket) {
     HTTPException httpexception;
     _ServerSocket=serversocket;
 }
@@ -151,7 +151,7 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         setevent->events = EPOLLIN;
         setevent->data.ptr = curct;
         curct->ConnectionPtr = setevent; 
-        if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->Socket, setevent) == -1) {
+        if (epoll_ctl(_epollFD, EPOLL_CTL_ADD, curct->getClientSocket()->getSocket(), setevent) == -1) {
 #ifdef __GLIBCXX__
             char errbuf[255];
             httpexception[HTTPException::Error] << "ConnectEventHandler: " << strerror_r(errno, errbuf, 255);
@@ -210,7 +210,7 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
             throw httpexception;
         }
         struct epoll_event *setevent=(struct epoll_event*)curct->ConnectionPtr;
-        int ect=epoll_ctl(_epollFD, EPOLL_CTL_DEL, curct->getClientSocket()->Socket, setevent);
+        int ect=epoll_ctl(_epollFD, EPOLL_CTL_DEL, curct->getClientSocket()->getSocket(), setevent);
         if(ect==-1) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;
@@ -257,7 +257,7 @@ void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
     HTTPException httpexception;
     struct epoll_event *setevent=(struct epoll_event *)curcon->ConnectionPtr;
     setevent->events = events;
-    if (epoll_ctl(_epollFD, EPOLL_CTL_MOD, curcon->getClientSocket()->Socket, setevent) == -1) {
+    if (epoll_ctl(_epollFD, EPOLL_CTL_MOD, curcon->getClientSocket()->getSocket(), setevent) == -1) {
         #ifdef __GLIBCXX__
         char errbuf[255];
         httpexception[HTTPException::Error] << "ConnectEventHandler: " << strerror_r(errno, errbuf, 255);

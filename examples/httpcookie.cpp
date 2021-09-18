@@ -66,7 +66,7 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(strncmp(key,cururlform->getKey(),libhttppp::getlen(key))==0)
+                if(libhttppp::ncompare(key,libhttppp::getlen(key),cururlform->getKey(),libhttppp::getlen(key))==0)
                     return cururlform->getValue();
                 }
         }
@@ -79,7 +79,8 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(strncmp(key,cururlform->getKey(),libhttppp::getlen(key))==0)
+                if(libhttppp::ncompare(key,libhttppp::getlen(key),cururlform->getKey(),
+                    libhttppp::getlen(cururlform->getKey()))==0)
                     return atoi(cururlform->getValue());
                 }
         }
@@ -125,7 +126,7 @@ private:
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
         
     };
     void RequestEvent(libhttppp::Connection *curcon){

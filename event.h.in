@@ -32,6 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef EVENT_H
 #define EVENT_H
 
+namespace libsystempp {
+    class ServerSocket;
+};
+
 namespace libhttppp {
     class Connection;
 #ifdef MSVC
@@ -40,7 +44,7 @@ namespace libhttppp {
 	class __attribute__((visibility("default"))) Event : public ${EVENT} {
 #endif
     public:
-        Event(ServerSocket *serversocket);
+        Event(libsystempp::ServerSocket *serversocket);
         void runEventloop();
         static void *WorkerThread(void *wrkevent);
         virtual ~Event();

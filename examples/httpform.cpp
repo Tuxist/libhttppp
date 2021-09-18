@@ -151,7 +151,7 @@ void sendResponse(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq) 
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libhttppp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
         
     };
     void RequestEvent(libhttppp::Connection *curcon){

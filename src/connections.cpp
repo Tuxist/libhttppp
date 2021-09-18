@@ -57,7 +57,7 @@ libhttppp::ConnectionData::~ConnectionData() {
     delete _nextConnectionData;
 }
 
-libhttppp::ClientSocket *libhttppp::Connection::getClientSocket(){
+libsystempp::ClientSocket *libhttppp::Connection::getClientSocket(){
   return _ClientSocket;
 }
 
@@ -271,8 +271,8 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
     return -1;
 }
 
-libhttppp::Connection::Connection(ServerSocket *servsock,EventApi *event){
-  _ClientSocket=new ClientSocket();
+libhttppp::Connection::Connection(libsystempp::ServerSocket *servsock,EventApi *event){
+  _ClientSocket=new libsystempp::ClientSocket();
   _ServerSocket = servsock;
   _ReadDataFirst=nullptr;
   _ReadDataLast=nullptr;

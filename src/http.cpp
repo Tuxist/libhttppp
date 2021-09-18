@@ -86,7 +86,8 @@ const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
 
 const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(strncmp(key,curdat->_Key,curdat->_Keylen)==0){
+    if(libhttppp::ncompare(key,libhttppp::getlen(key),
+                            curdat->_Key,curdat->_Keylen)==0){
       if(pos!=NULL)
         *pos=curdat;
       return curdat->_Value;
@@ -147,7 +148,8 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 
 void libhttppp::HttpHeader::deldata(const char* key){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(strncmp(curdat->_Key,key,curdat->_Keylen)==0){
+    if(libhttppp::ncompare(curdat->_Key,curdat->_Keylen,key,
+        libhttppp::getlen(key))==0){
       deldata(curdat);  
     }
   }
@@ -461,7 +463,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
     }
     case POSTREQUEST:{
       if(request->getData("Content-Type") && 
-         strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
+         libhttppp::ncompare(request->getData("Content-Type"),12,"multipart/form-data",18)==0){
          _parseMulitpart(request);
       }else{
          _parseUrlDecode(request);
@@ -808,7 +810,8 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
   if(!key)
     return NULL;
   for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
-    if(strncmp(curcontent->getKey(),key,getlen(key))==0){
+    if(libhttppp::ncompare(curcontent->getKey(),
+        libhttppp::getlen(curcontent->getKey()),key,getlen(key))==0){
       return curcontent->getValue();
     }
   }
@@ -1160,9 +1163,9 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
   const char *authstr=curreq->getData("Authorization");
   if(!authstr)
     return;
-  if(strncmp(authstr,"Basic",5)==0)
+  if(libhttppp::ncompare(authstr,libhttppp::getlen(authstr),"Basic",5)==0)
     _Authtype=BASICAUTH;
-  else if(strncmp(authstr,"Digest",6)==0)
+  else if(libhttppp::ncompare(authstr,libhttppp::getlen(authstr),"Digest",6)==0)
     _Authtype=DIGESTAUTH;
   switch(_Authtype){
     case BASICAUTH:{

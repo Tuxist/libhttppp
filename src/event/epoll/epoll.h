@@ -38,7 +38,7 @@ namespace libhttppp {
    
     class EPOLL : public EventApi{
     public:
-        EPOLL(ServerSocket* serversocket);
+        EPOLL(libsystempp::ServerSocket* serversocket);
         ~EPOLL();
         
         /*Lock mechanism*/
@@ -67,11 +67,11 @@ namespace libhttppp {
         void sendReady(Connection *curcon,bool ready);
         
     private:
-        void                      _setEpollEvents(Connection *curcon,int events);
-        int                       _epollFD;
-        Lock                      _ConLock;
-        struct epoll_event       *_Events;
-        ServerSocket             *_ServerSocket;
+        void                       _setEpollEvents(Connection *curcon,int events);
+        int                        _epollFD;
+        Lock                       _ConLock;
+        struct epoll_event        *_Events;
+        libsystempp::ServerSocket *_ServerSocket;
     };
 };
 
