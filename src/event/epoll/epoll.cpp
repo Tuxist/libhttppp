@@ -30,9 +30,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fcntl.h>
 #include <sys/sysinfo.h>
 #include <config.h>
-#include <errno.h>
 #include <cstring>
-#include <signal.h>
+#include <unistd.h>
 
 #include "os/os.h"
 #include "../../exception.h"
@@ -45,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "epoll.h"
 #include "threadpool.h"
+
 
 libhttppp::EPOLL::EPOLL(libsystempp::ServerSocket* serversocket) {
     HTTPException httpexception;
@@ -114,7 +114,7 @@ void libhttppp::EPOLL::initEventHandler(){
 }
 
 int libhttppp::EPOLL::waitEventHandler(){
-    int n = epoll_wait(_epollFD,_Events,_ServerSocket->getMaxconnections(), -1);
+    int n = syscall(232,_epollFD,_Events,_ServerSocket->getMaxconnections(), -1);
     if(n<0) {
         HTTPException httpexception;
         if(errno== EINTR) {

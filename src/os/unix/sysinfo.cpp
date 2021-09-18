@@ -53,7 +53,8 @@ int libhttppp::CpuInfo::getActualThread(){
 
 
 int libhttppp::CpuInfo::getPid(){
-    return getpid();
+//     return getpid();
+    return 0;
 }
 
 libhttppp::SysInfo::SysInfo(){

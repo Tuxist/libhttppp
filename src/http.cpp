@@ -29,8 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "base64.h"
 #include "utils.h"
 
-#include <stdio.h>
-
 #include <openssl/rand.h>
 
 
@@ -97,23 +95,21 @@ const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderDat
 }
 
 size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
-  size_t len = 0;
-  const char *buf=getData(key,pos);
-  if(buf){
-    if (1 == sscanf(buf, "%zu", &len))
-      return len;
-  }
-  return 0;
+  const char *val=getData(key,pos);
+  if(getlen(val)<255)
+      return 0;
+  char buf[255];
+  scopy(val,val+getlen(val),buf);
+  return atoi(buf);
 }
 
 int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
-  int len = 0;
-  const char *buf=getData(key,pos);
-  if(buf){
-    if (1 == sscanf(buf, "%d", &len))
-      return len;
-  }
-  return 0;
+  const char *val=getData(key,pos);
+  if(getlen(val)<255)
+      return 0;
+  char buf[255];
+  scopy(val,val+getlen(val),buf);
+  return atoi(buf);
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key){
@@ -340,7 +336,35 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             
             char *header;
             size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&header);
-            if(sscanf(header,"%*s %s[255] %s[255]",_RequestURL,_Version)==-1){
+            
+            bool found=false;
+            int pos;
+
+            for(pos=0; pos<headersize; ++pos){
+                if(header[pos]==' '){
+                    ++pos;
+                    break;
+                }
+            }
+
+            for(; pos<headersize; ++pos){
+                if(header[pos]==' ' && (headersize-pos)<255){
+                    scopy(header,header+pos,_RequestURL);
+                    ++pos;
+                    break;
+                }
+            }
+
+            for(; pos<headersize; ++pos){
+                if(header[pos]==' ' && (headersize-pos)<255){
+                    scopy(header,header+pos,_Version);
+                    ++pos;
+                    found=true;
+                    break;
+                }
+            }
+
+            if(!found){
                 _httpexception[HTTPException::Error] << "can't parse http head";
                 throw _httpexception;
             }
@@ -484,24 +508,24 @@ inline int libhttppp::HttpForm::_ishex(int x){
 }
 
 ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,char **urlout){
-  char *o;
-  char *dec = new char[urlinsize+1];
-  *urlout=dec;
-  const char *end = urlin + urlinsize;
-  int c;
-  for (o = dec; urlin <= end; o++) {
-    c = *urlin++;
-    if (c == '+'){
-      c = ' ';
-    }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	||
-             !sscanf(urlin - 2, "%2x", &c))){
-      return -1;
+    char *o;
+    char *dec = new char[urlinsize+1];
+    *urlout=dec;
+    const char *end = urlin + urlinsize;
+    int c;
+    for (o = dec; urlin <= end; o++) {
+        c = *urlin++;
+        if (c == '+'){
+            c = ' ';
+        }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	/*||*/
+            /*!sscanf(urlin - 2, "%2x", &c)*/)){
+            return -1;
+            }
+            if (dec){
+                *o = c;
+            }
     }
-    if (dec){
-      *o = c;
-    }
-  }
-  return o - dec;
+    return o - dec;
 }
 
 const char *libhttppp::HttpForm::getBoundary(){
@@ -550,7 +574,9 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
   _parseBoundary(request->getData("Content-Type"));
   char *realboundary = new char[_BoundarySize+3];
-  snprintf(realboundary,_BoundarySize+3,"--%s",_Boundary);
+  scopy(realboundary+2,realboundary+(_BoundarySize+1),_Boundary);
+  realboundary[0]='-';
+  realboundary[1]='-';
   size_t realboundarylen=_BoundarySize+2;
   const char *req=request->getRequest();
   size_t reqsize=request->getRequestSize();

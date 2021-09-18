@@ -36,6 +36,7 @@ namespace libhttppp {
    void rscopy(const char* first, const char* last, char** des);
    void reverse(char s[]);
    void itoa(int n, char s[]);
+   int  atoi(char* str);
    void ultoa(unsigned long n, char s[]);
    unsigned long append(char** src, const char* append);
    bool ncompare(const char *src,size_t ssize,const char *comp,size_t csize);

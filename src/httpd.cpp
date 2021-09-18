@@ -24,8 +24,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
-#include <cstring>
-#include <cstdlib>
 
 #include <systempp/socket.h>
 
@@ -101,7 +99,7 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
     }
     /*if key exist overwriting options*/
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd=curhttpdcmd->nextHTTPDCmd()) {
-        if (strncmp(curhttpdcmd->getKey(), key, getlen(curhttpdcmd->getKey())) == 0) {
+        if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
             /*set new shortkey*/
             curhttpdcmd->_SKey = skey;
             /*set reqirement flag*/
@@ -193,7 +191,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
         
         for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
             if (keytype == KTKEY) {
-                if (strncmp(curhttpdcmd->getKey(), key, getlen(curhttpdcmd->getKey())) == 0) {
+                if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
                     curhttpdcmd->_Found = true;
                     int valuesize = (getlen(argv[args]) - (kendpos+1));
                     if (valuesize > 0) {
@@ -241,7 +239,7 @@ void libhttppp::HTTPDCmdController::printHelp() {
 
 libhttppp::HTTPDCmd *libhttppp::HTTPDCmdController::getHTTPDCmdbyKey(const char *key) {
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        if (strncmp(curhttpdcmd->getKey(), key, getlen(curhttpdcmd->getKey())) == 0) {
+        if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
             return curhttpdcmd;
         }
     }

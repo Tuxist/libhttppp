@@ -12,7 +12,7 @@ find_package(systempp REQUIRED)
 if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
   SET(CMAKE_CXX_FLAGS "-D_SCL_SECURE_NO_WARNINGS  /EHsc")
 else()
-  SET(CMAKE_CXX_FLAGS "-nolibc") #goal -nostdlib
+  SET(CMAKE_CXX_FLAGS "") #goal -nolibc
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)
