@@ -35,6 +35,8 @@ const  char *libhttppp::scopy(const char* first, const char* last, char* des){
 }
 
 unsigned long libhttppp::getlen(const char *str) {
+    if(!str)
+        return 0;
     unsigned int len = 0;
     while ((*str++) != '\0') {
         ++len;

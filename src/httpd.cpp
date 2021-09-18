@@ -243,24 +243,24 @@ libhttppp::HTTPDCmd *libhttppp::HTTPDCmdController::getHTTPDCmdbyKey(const char 
             return curhttpdcmd;
         }
     }
-    return NULL;
+    return nullptr;
 }
 
 libhttppp::HTTPDCmdController::~HTTPDCmdController() {
     delete _firstHTTPDCmd;
-    _lastHTTPDCmd = NULL;
+    _lastHTTPDCmd = nullptr;
 }
 
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
     CmdController= new HTTPDCmdController;
     /*Register Parameters*/
-    CmdController->registerCmd("help", 'h', false, (const char*) NULL, "Helpmenu");
-    CmdController->registerCmd("httpaddr",'a', true,(const char*) NULL,"Address to listen");
+    CmdController->registerCmd("help", 'h', false, (const char*) nullptr, "Helpmenu");
+    CmdController->registerCmd("httpaddr",'a', true,(const char*) nullptr,"Address to listen");
     CmdController->registerCmd("httpport", 'p', false, 8080, "Port to listen");
     CmdController->registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
-    CmdController->registerCmd("httpscert", 'c',false,(const char*) NULL, "HTTPS Certfile");
-    CmdController->registerCmd("httpskey", 'k',false, (const char*) NULL, "HTTPS Keyfile");
+    CmdController->registerCmd("httpscert", 'c',false,(const char*) nullptr, "HTTPS Certfile");
+    CmdController->registerCmd("httpskey", 'k',false, (const char*) nullptr, "HTTPS Keyfile");
     /*Parse Parameters*/
     CmdController->parseCmd(argc,argv);
 
@@ -284,7 +284,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     }
     
     /*get httpaddress from console paramter*/
-    const char *httpaddr = NULL;
+    const char *httpaddr = nullptr;
     if (CmdController->getHTTPDCmdbyKey("httpaddr"))
         httpaddr = CmdController->getHTTPDCmdbyKey("httpaddr")->getValue();
     
@@ -294,12 +294,12 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
         maxconnections = CmdController->getHTTPDCmdbyKey("maxconnections")->getValueInt();
     
     /*get httpaddress from console paramter*/
-    const char *sslcertpath = NULL;
+    const char *sslcertpath = nullptr;
     if (CmdController->getHTTPDCmdbyKey("httpscert"))
         sslcertpath = CmdController->getHTTPDCmdbyKey("httpscert")->getValue();
     
     /*get httpaddress from console paramter*/
-    const char *sslkeypath = NULL;
+    const char *sslkeypath = nullptr;
     if (CmdController->getHTTPDCmdbyKey("httpskey"))
         sslkeypath = CmdController->getHTTPDCmdbyKey("httpskey")->getValue();
     
