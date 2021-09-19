@@ -125,9 +125,9 @@ int libhttppp::atoi(char* str){
             || (base == 255 / 10
             && str[i] - '0' > 7)){
             if (sign == 1)
-                return 255;
+                return +2147483647;
             else
-                return 255;
+                return -2147483648;
         }
         base = 10 * base + (str[i++] - '0');
     }
