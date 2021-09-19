@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <stdlib.h>
+#include <systempp/console.h>
 
 #include "htmlpp/html.h"
 
@@ -80,8 +80,13 @@ public:
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
                 if(libhttppp::ncompare(key,libhttppp::getlen(key),cururlform->getKey(),
-                    libhttppp::getlen(cururlform->getKey()))==0)
-                    return atoi(cururlform->getValue());
+                    libhttppp::getlen(cururlform->getKey()))==0){
+                        char ktmp[255];
+                        libhttppp::scopy(cururlform->getValue(),cururlform->getValue()+
+                                         libhttppp::getlen(cururlform->getValue()),
+                                         ktmp);
+                        return libhttppp::atoi(ktmp);
+                    }
                 }
         }
         return 0;
@@ -130,15 +135,18 @@ public:
         
     };
     void RequestEvent(libhttppp::Connection *curcon){
-        libhttppp::Console con;
+
         try{
-            con << "Parse Request" << con.endl;
+            libsystempp::Console[SYSOUT] << "Parse Request" 
+                << libsystempp::Console[SYSOUT].endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            con << "Send answer" << con.endl;
+            libsystempp::Console[SYSOUT] << "Send answer" 
+                << libsystempp::Console[SYSOUT].endl;
             CookieTest(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            con << e.what() << con.endl;
+            libsystempp::Console[SYSOUT] << e.what() 
+                << libsystempp::Console[SYSOUT].endl;
             throw e;
         }
     }
@@ -151,13 +159,13 @@ private:
 class HttpConD : public libhttppp::HttpD {
 public:
     HttpConD(int argc, char** argv) : HttpD(argc,argv){
-        libhttppp::Console con;
         libhttppp::HTTPException httpexception;
         try {
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            con << e.what() << con.endl;
+            libsystempp::Console[SYSOUT] << e.what() 
+                << libsystempp::Console[SYSOUT].endl;
         }
     };
 private:

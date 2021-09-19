@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include <systempp/socket.h>
+#include <systempp/console.h>
 
 #include "os/os.h"
 #include "utils.h"
@@ -230,10 +231,10 @@ bool libhttppp::HTTPDCmdController::checkRequired() {
 
 void libhttppp::HTTPDCmdController::printHelp() {
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        Console con;
-        con << "--" << curhttpdcmd->getKey() 
-            << " -" << curhttpdcmd->getShortkey()
-            << " "  << curhttpdcmd->getHelp() << Console::endl;
+        libsystempp::Console[SYSOUT] << "--" << curhttpdcmd->getKey() 
+                                     << " -" << curhttpdcmd->getShortkey()
+                                     << " "  << curhttpdcmd->getHelp() 
+                                     << libsystempp::Console[SYSOUT].endl;
     }
 }
 

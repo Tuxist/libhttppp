@@ -23,13 +23,11 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/windows/thread.cpp")
   list(APPEND libhttpSrcs "os/windows/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/windows/ctrlhandler.cpp")
-  list(APPEND libhttpSrcs "os/windows/console.cpp")
 ELSE()
   list(APPEND libhttpSrcs "os/unix/lock.cpp")
   list(APPEND libhttpSrcs "os/unix/thread.cpp")
   list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/unix/ctrlhandler.cpp")
-  list(APPEND libhttpSrcs "os/unix/console.cpp")
 ENDIF()
 
 IF(${EVENT} MATCHES "SELECT")
@@ -105,9 +103,9 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 install(FILES os/windows/socket.h
               os/windows/lock.h
               os/windows/thread.h
-			  os/windows/sysinfo.h
-			  os/windows/ctrlhandler.h
-			  event/iocp/iocp.h
+              os/windows/sysinfo.h
+              os/windows/ctrlhandler.h
+              event/iocp/iocp.h
         DESTINATION include/httppp/os/windows
         COMPONENT Devel
 )
@@ -117,7 +115,6 @@ install(FILES os/unix/socket.h
               os/unix/thread.h
               os/unix/sysinfo.h
               os/unix/ctrlhandler.h
-              os/unix/console.h
         DESTINATION include/httppp/os/unix
         COMPONENT Devel
 )

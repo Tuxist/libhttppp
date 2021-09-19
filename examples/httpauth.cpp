@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <systempp/console.h>
+
 #include "htmlpp/html.h"
 
 #include "../src/exception.h"
@@ -40,9 +42,8 @@ public:
     };
     
     void RequestEvent(libhttppp::Connection *curcon){
-        libhttppp::Console con;
         try{
-            con << "Parse Request\n";
+            libsystempp::Console[SYSOUT] << "Parse Request\n";
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
@@ -101,7 +102,7 @@ public:
                 curres.send(curcon,NULL,0);
             }                
         }catch(libhttppp::HTTPException &e){
-            con << e.what() << "\n";
+            libsystempp::Console[SYSOUT] << e.what() << "\n";
             throw e;
         }
     }
@@ -114,13 +115,13 @@ private:
 class HttpConD : public libhttppp::HttpD {
 public:
     HttpConD(int argc, char** argv) : HttpD(argc,argv){
-        libhttppp::Console con;
         libhttppp::HTTPException httpexception;
         try {
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            con << e.what() << con.endl;
+            libsystempp::Console[SYSOUT] << e.what() 
+                                         << libsystempp::Console[SYSOUT].endl;
         }
     };
 private:

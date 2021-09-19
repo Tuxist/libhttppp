@@ -31,6 +31,8 @@
 #include <os/os.h>
 #include <utils.h>
 
+#include <systempp/console.h>
+
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"
 
@@ -228,8 +230,8 @@ public:
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
-            libhttppp::Console con;
-            con << e.what() << con.endl;
+            libsystempp::Console[SYSOUT] << e.what() 
+                << libsystempp::Console[SYSOUT].endl;
             throw e;
         }
     }
@@ -252,8 +254,8 @@ int main(int argc, char** argv){
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
-        libhttppp::Console con;
-        con << e.what() << con.endl;
+        libsystempp::Console[SYSOUT] << e.what() 
+            << libsystempp::Console[SYSOUT].endl;
         if(e.getErrorType()==libhttppp::HTTPException::Note 
             || libhttppp::HTTPException::Warning)
             return 0;

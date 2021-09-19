@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <systempp/console.h>
+
 #include "htmlpp/html.h"
 
 #include "../src/exception.h"
@@ -155,15 +157,17 @@ public:
         
     };
     void RequestEvent(libhttppp::Connection *curcon){
-        libhttppp::Console con;
         try{
-            con << "Parse Request" << con.endl;
+            libsystempp::Console[SYSOUT] << "Parse Request" 
+                << libsystempp::Console[SYSOUT].endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            con << "Send answer" << con.endl;
+            libsystempp::Console[SYSOUT] << "Send answer" 
+                << libsystempp::Console[SYSOUT].endl;
             sendResponse(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            con << e.what() << con.endl;
+            libsystempp::Console[SYSOUT] << e.what() 
+                << libsystempp::Console[SYSOUT].endl;
             throw e;
         }
     }
@@ -176,12 +180,12 @@ class HttpConD : public libhttppp::HttpD {
 public:
   HttpConD(int argc, char** argv) : HttpD(argc,argv){
     libhttppp::HTTPException httpexception;
-    libhttppp::Console con;
     try {
       Controller controller(getServerSocket());
       controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
-      con << e.what() << con.endl;
+      libsystempp::Console[SYSOUT] << e.what() 
+        << libsystempp::Console[SYSOUT].endl;
     }
   };
 private:

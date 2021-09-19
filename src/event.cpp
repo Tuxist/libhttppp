@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <iostream>
+#include <systempp/console.h>
 
 #include <config.h>
 
@@ -121,8 +121,8 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                             eventptr->UnlockConnection(i);
                             throw e;
                         }
-                        Console con;
-                        con << e.what() << con.endl;                        
+                        libsystempp::Console[SYSOUT] << e.what() 
+                            << libsystempp::Console[SYSOUT].endl;                        
                         eventptr->UnlockConnection(i);
                     }
                 }                        
@@ -133,8 +133,8 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                     throw e;
                     break;
                 default:
-                    Console con;
-                    con << e.what() << con.endl;
+                    libsystempp::Console[SYSOUT] << e.what() 
+                        << libsystempp::Console[SYSOUT].endl; 
             }
         }
     }
