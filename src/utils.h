@@ -39,7 +39,7 @@ namespace libhttppp {
    int  atoi(char* str);
    void ultoa(unsigned long n, char s[]);
    unsigned long append(char** src, const char* append);
-   bool ncompare(const char *src,size_t ssize,const char *comp,size_t csize);
+   int ncompare(const char *src,size_t ssize,const char *comp,size_t csize);
 };
 
 #endif

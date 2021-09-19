@@ -35,13 +35,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define KTSKEY 1
 
 libhttppp::HTTPDCmd::HTTPDCmd() {
-    _Key = NULL;
+    _Key = nullptr;
     _SKey = '\0';
-    _Value = NULL;
-    _Help = NULL;
+    _Value = nullptr;
+    _Help = nullptr;
     _Found = false;
     _Required = false;
-    _nextHTTPDCmd = NULL;
+    _nextHTTPDCmd = nullptr;
 }
 
 const char *libhttppp::HTTPDCmd::getKey() {
@@ -100,6 +100,7 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
     /*if key exist overwriting options*/
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd=curhttpdcmd->nextHTTPDCmd()) {
         if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
+            Console con;
             /*set new shortkey*/
             curhttpdcmd->_SKey = skey;
             /*set reqirement flag*/
