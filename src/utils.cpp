@@ -103,8 +103,8 @@ unsigned long libhttppp::append(char** src, const char* append){
 }
 
 int libhttppp::ncompare(const char *src,size_t ssize,const char *comp,size_t csize){
-        int maxsize=(ssize<csize ? ssize : csize);
-        int minsize=(ssize>csize ? ssize : csize);
+        int maxsize=(ssize>csize ? ssize : csize);
+        int minsize=(ssize<csize ? ssize : csize);
         int missmatch =0;
         for(int i=0; i<minsize; ++i){
             if(src[i]!=comp[i])
