@@ -103,13 +103,16 @@ unsigned long libhttppp::append(char** src, const char* append){
 }
 
 int libhttppp::ncompare(const char *src,size_t ssize,const char *comp,size_t csize){
-        if(ssize>csize)
-            return -1;
-        for(int i=0; i<csize; ++i){
+        int maxsize=(ssize<csize ? ssize : csize);
+        int minsize=(ssize>csize ? ssize : csize);
+        int missmatch =0;
+        for(int i=0; i<minsize; ++i){
             if(src[i]!=comp[i])
-                return i;
+                missmatch=i;
         }
-        return 0;
+        if(minsize!=maxsize)
+            missmatch+=(maxsize-minsize);
+        return missmatch;
 }
 
 int libhttppp::atoi(char* str){
@@ -121,8 +124,8 @@ int libhttppp::atoi(char* str){
         sign = 1 - 2 * (str[i++] == '-');
     }
     while (str[i] >= '0' && str[i] <= '9'){
-        if (base > 255 / 10
-            || (base == 255 / 10
+        if (base > +2147483647 / 10
+            || (base == +2147483647 / 10
             && str[i] - '0' > 7)){
             if (sign == 1)
                 return +2147483647;

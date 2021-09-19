@@ -99,8 +99,7 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
     }
     /*if key exist overwriting options*/
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd=curhttpdcmd->nextHTTPDCmd()) {
-        if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
-            Console con;
+        if (ncompare(key,getlen(key),curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey())) == 0) {
             /*set new shortkey*/
             curhttpdcmd->_SKey = skey;
             /*set reqirement flag*/
@@ -192,7 +191,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
         
         for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
             if (keytype == KTKEY) {
-                if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
+                if (ncompare(key,getlen(key),curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey())) == 0) {
                     curhttpdcmd->_Found = true;
                     int valuesize = (getlen(argv[args]) - (kendpos+1));
                     if (valuesize > 0) {
@@ -240,7 +239,7 @@ void libhttppp::HTTPDCmdController::printHelp() {
 
 libhttppp::HTTPDCmd *libhttppp::HTTPDCmdController::getHTTPDCmdbyKey(const char *key) {
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        if (ncompare(curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey()),key,getlen(key)) == 0) {
+        if (ncompare(key,getlen(key),curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey())) == 0) {
             return curhttpdcmd;
         }
     }
