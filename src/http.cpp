@@ -966,11 +966,12 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
             char *key=new char[(keyendpos-fdatstpos)+1];
             size_t vlstpos=keyendpos+1;
-            char *value=new char[(fdatpos-vlstpos)+1];
+            char *value=nullptr;
             char *urldecdValue=nullptr;
             char *urldecdKey=nullptr;
             scopy(formdat+fdatstpos,formdat+keyendpos,key);
             if(formdat+vlstpos){
+                value=new char[(fdatpos-vlstpos)+1];
                 scopy(formdat+vlstpos,formdat+fdatpos,value);
                 key[(keyendpos-fdatstpos)]='\0';
                 value[(fdatpos-vlstpos)]='\0';
