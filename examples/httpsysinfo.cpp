@@ -133,7 +133,6 @@ public:
         KernelInfo();
         CPUInfo();
         SysInfo();
-//         FsInfo();
         _Index << "</div></div></body></html>";
     }
     
@@ -167,16 +166,6 @@ public:
         cputable.createRow() << "<td>Free Ram</td><td>" << sysinfo.getFreeRam()<<"</td>";
         cputable.createRow() << "<td>Buffered Ram</td><td>" <<sysinfo.getBufferRam()<<"</td>";
         _Index << cputable.getTable();   
-    }
-    
-    void FsInfo(){
-        libhttppp::FsInfo fsinfo;
-        _Index << "<h2>FsInfo:</h2>";
-        HtmlTable fstable;
-        for(libhttppp::MountPoint *curm=fsinfo.getFirstDevice(); curm; curm=curm->nextMountPoint()){
-            fstable.createRow() << "<td>Device</td><td>" << curm->getDevice() <<"</td>";
-        }
-        _Index << fstable.getTable();
     }
     
     const char *getIndexPage(){

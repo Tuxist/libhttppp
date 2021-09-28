@@ -71,17 +71,6 @@ namespace libhttppp {
         MountPoint *_nextMountPoint;
         friend class FsInfo;
     };
-
-    class FsInfo {
-    public:
-        FsInfo();
-        ~FsInfo();
-        MountPoint *addMountpoint();
-        MountPoint *getFirstDevice();
-    private:
-        MountPoint *_firstMountPoint;
-        MountPoint *_lastMountPoint;
-    };
 };
 
 #endif

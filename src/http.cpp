@@ -191,16 +191,17 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 
 
 libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
-  if(!key){
-    _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
-    throw _httpexception;
-  }
-  _nextHeaderData=NULL;
-  _Keylen=getlen(key);
-  _Key=new char[_Keylen+1];
-  scopy(key,key+(_Keylen+1),_Key);
-  _Valuelen=0;
-  _Value=nullptr;
+    HTTPException excep;
+    if(!key){
+        excep[HTTPException::Error] << "no headerdata key set can't do this";
+        throw excep;
+    }
+    _nextHeaderData=NULL;
+    _Keylen=getlen(key);
+    _Key=new char[_Keylen+1];
+    scopy(key,key+(_Keylen+1),_Key);
+    _Valuelen=0;
+    _Value=nullptr;
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
@@ -253,11 +254,12 @@ void libhttppp::HttpResponse::setConnection(const char* type){
 }
 
 void libhttppp::HttpResponse::setVersion(const char* version){
+  HTTPException excep;  
   if(version==NULL)
-    throw "http version not set don't do that !!!";
+    throw excep[HTTPException::Error] << "http version not set don't do that !!!";
   size_t vlen=getlen(version);
   if(vlen>254)
-    throw "http version with over 255 signs sorry your are drunk !";
+    throw excep[HTTPException::Error] << "http version with over 255 signs sorry your are drunk !";
   _VersionLen=vlen;
   scopy(version,version+vlen,_Version);
   _Version[vlen]='\0';
@@ -310,6 +312,7 @@ libhttppp::HttpRequest::HttpRequest(){
 }
 
 void libhttppp::HttpRequest::parse(Connection* curconnection){
+    HTTPException excep;
     try{
         ConnectionData *curdat=curconnection->getRecvData();
         if(curdat){
@@ -321,15 +324,15 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             }else if((startpos=curconnection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
                 _RequestType=POSTREQUEST;
             }else{
-                _httpexception[HTTPException::Warning] << "Requesttype not known cleanup";
+                excep[HTTPException::Warning] << "Requesttype not known cleanup";
                 curconnection->cleanRecvData();
-                throw _httpexception;
+                throw excep;
             }
             ConnectionData *endblock;
             ssize_t endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
             if(endpos==-1){
-                _httpexception[HTTPException::Error] << "can't find newline headerend";
-                throw _httpexception;
+                excep[HTTPException::Error] << "can't find newline headerend";
+                throw excep;
             }
             endpos+=4;  
             
@@ -365,8 +368,8 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             }
 
             if(!found){
-                _httpexception[HTTPException::Error] << "can't parse http head";
-                throw _httpexception;
+                excep[HTTPException::Error] << "can't parse http head";
+                throw excep;
             }
             
             /*parse the http header fields*/
@@ -423,13 +426,13 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                     curconnection->resizeRecvQueue(rcsize);
                     _RequestSize=rcsize;
                 }else{
-                    _httpexception[HTTPException::Note] << "Request incomplete";
-                    throw _httpexception;
+                    excep[HTTPException::Note] << "Request incomplete";
+                    throw excep;
                 }
             }
         }else{
-            _httpexception[HTTPException::Note] << "No Incoming data in queue";
-            throw _httpexception;
+            excep[HTTPException::Note] << "No Incoming data in queue";
+            throw excep;
         }
     }catch(HTTPException &e){
         curconnection->cleanRecvData();
