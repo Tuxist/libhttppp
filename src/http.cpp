@@ -930,7 +930,7 @@ void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(con
 }
 
 void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
-  char *formdat=NULL;
+  char *formdat=nullptr;
   if(request->getRequestType()==POSTREQUEST){
       size_t rsize=request->getRequestSize();
       formdat = new char[rsize+1];
@@ -966,17 +966,18 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
             char *key=new char[(keyendpos-fdatstpos)+1];
             size_t vlstpos=keyendpos+1;
-            char *value=new char[(fdatpos-vlstpos)+1];
+            char *value=nullptr;
+            char *urldecdValue=nullptr;
+            char *urldecdKey=nullptr;
             scopy(formdat+fdatstpos,formdat+keyendpos,key);
-            scopy(formdat+vlstpos,formdat+fdatpos,value);
-            key[(keyendpos-fdatstpos)]='\0';
-            value[(fdatpos-vlstpos)]='\0';
-
-            char *urldecdValue;
-            char *urldecdKey;
-            urlDecode(value,getlen(value),&urldecdValue);
+            if(formdat+vlstpos){
+                value=new char[(fdatpos-vlstpos)+1];
+                scopy(formdat+vlstpos,formdat+fdatpos,value);
+                key[(keyendpos-fdatstpos)]='\0';
+                value[(fdatpos-vlstpos)]='\0';
+                urlDecode(value,getlen(value),&urldecdValue);
+            }            
             urlDecode(key,getlen(key),&urldecdKey);
-
             UrlcodedFormData *newenrty;
             newenrty=addUrlcodedFormData();
             newenrty->setKey(urldecdKey);
@@ -1007,6 +1008,10 @@ void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
 void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
   if(_Value)
     delete[] _Value;
+  if(!value){
+      _Value=nullptr;
+      return;
+  }
   _Value=new char [getlen(value)+1];
   scopy(value,value+getlen(value),_Value);
   _Value[getlen(value)]='\0'; 

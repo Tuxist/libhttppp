@@ -106,7 +106,7 @@ install(FILES os/windows/socket.h
         COMPONENT Devel
 )
 ELSE()
-install(FILES os/unix/socket.h
+install(FILES
               os/unix/lock.h
               os/unix/thread.h
               os/unix/sysinfo.h
