@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <systempp/console.h>
+#include <systempp/sysconsole.h>
 #include "connections.h"
 
 #define SENDDATA "6a3a08f0-f84f-11eb-b83a-97319b38c7ae"

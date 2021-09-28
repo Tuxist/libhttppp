@@ -31,7 +31,7 @@
 #include <os/os.h>
 #include <utils.h>
 
-#include <systempp/console.h>
+#include <systempp/sysconsole.h>
 
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"

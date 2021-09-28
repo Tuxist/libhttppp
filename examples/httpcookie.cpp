@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/console.h>
+#include <systempp/sysconsole.h>
 
 #include "htmlpp/html.h"
 

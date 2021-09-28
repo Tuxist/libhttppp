@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/socket.h>
+#include <systempp/syssocket.h>
 
 #include "os/os.h"
 #include "config.h"
