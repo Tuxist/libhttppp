@@ -26,16 +26,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "../../eventapi.h"
-#include "../../os/os.h"
-#include <sys/epoll.h>
+#include "threadpool.h"
+#include <linux/eventpoll.h>
 
 #define EVENT_EPOLL
 
 #ifndef EPOLL_H
 #define EPOLL_H
 
+extern "C" {
+    struct epoll_event;
+};
+
 namespace libhttppp {
-   
     class EPOLL : public EventApi{
     public:
         EPOLL(libsystempp::ServerSocket* serversocket);

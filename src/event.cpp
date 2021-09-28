@@ -74,13 +74,13 @@ void libhttppp::Event::runEventloop(){
 MAINWORKERLOOP:
         ThreadPool thpool;
         for (size_t i = 0; i < thrs; i++) {
-            Thread *cthread=thpool.addThread();
+            libsystempp::Thread *cthread=thpool.addThread();
             try{
                 cthread->Create(WorkerThread, (void*)this);
             }catch(HTTPException &e){
                 throw e;
             }
-            for (Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread()) {
+            for (libsystempp::Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread) {
                 curth->Join();
             }
         }

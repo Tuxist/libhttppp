@@ -11,7 +11,6 @@
   #include "windows/ctrlhandler.h"
 #else
   #include "unix/lock.h"
-  #include "unix/thread.h"
   #include "unix/sysinfo.h"
   #include "unix/ctrlhandler.h"
 #endif

@@ -38,48 +38,48 @@ libhttppp::ThreadPool::~ThreadPool(){
     _lastThread=NULL;
 }
 
-libhttppp::Thread *libhttppp::ThreadPool::addThread(){
+libsystempp::Thread *libhttppp::ThreadPool::addThread(){
     ++_Amount;
     if(!_firstThread){
-        _firstThread= new Thread;
+        _firstThread= new libsystempp::Thread;
         _lastThread=_firstThread;
     }else{
-        _lastThread->_nextThread=new Thread;
-        _lastThread=_lastThread->_nextThread;
+        _lastThread->nextThread=new libsystempp::Thread;
+        _lastThread=_lastThread->nextThread;
     }
     return _lastThread;  
 }
 
-libhttppp::Thread *libhttppp::ThreadPool::delThread(libhttppp::Thread *delthread){
-    Thread *prevthr=NULL;
-    for(Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread()){
+libsystempp::Thread *libhttppp::ThreadPool::delThread(libsystempp::Thread *delthread){
+    libsystempp::Thread *prevthr=NULL;
+    for(libsystempp::Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread){
         if(curthr==delthread){
             if(prevthr){
-                prevthr->_nextThread=curthr->_nextThread;
+                prevthr->nextThread=curthr->nextThread;
             }
             if(curthr==_firstThread){
-              _firstThread=curthr->nextThread();  
+              _firstThread=curthr->nextThread;  
             }
             if(curthr==_lastThread){
               _lastThread=prevthr;
             }
-            curthr->_nextThread=NULL;
+            curthr->nextThread=nullptr;
             --_Amount;
             delete curthr;
         }
         prevthr=curthr;
     }
     if(prevthr)
-        return prevthr->nextThread();
+        return prevthr->nextThread;
     else
         return _firstThread;
 }
 
-libhttppp::Thread * libhttppp::ThreadPool::getfirstThread(){
+libsystempp::Thread * libhttppp::ThreadPool::getfirstThread(){
     return _firstThread;
 }
 
-libhttppp::Thread * libhttppp::ThreadPool::getlastThread(){
+libsystempp::Thread * libhttppp::ThreadPool::getlastThread(){
     return _lastThread;
 }
 

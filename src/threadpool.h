@@ -26,8 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include <config.h>
-
-#include "os/os.h"
+#include <systempp/systhread.h>
 
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
@@ -37,16 +36,16 @@ namespace libhttppp {
    public:
      ThreadPool();
      ~ThreadPool();
-     Thread *addThread();
-     Thread *delThread(Thread *delthread);
+     libsystempp::Thread *addThread();
+     libsystempp::Thread *delThread(libsystempp::Thread *delthread);
      
-     Thread *getfirstThread();
-     Thread *getlastThread();
+     libsystempp::Thread *getfirstThread();
+     libsystempp::Thread *getlastThread();
      
      int     getAmount();
    private:
-     Thread *_firstThread;
-     Thread *_lastThread;
+     libsystempp::Thread *_firstThread;
+     libsystempp::Thread *_lastThread;
      int     _Amount;
    };
 };

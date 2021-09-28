@@ -1,5 +1,3 @@
-find_package(OpenSSL REQUIRED)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 
@@ -20,12 +18,10 @@ set(libhttpSrcs
 #os dependencies
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/windows/lock.cpp")
-  list(APPEND libhttpSrcs "os/windows/thread.cpp")
   list(APPEND libhttpSrcs "os/windows/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/windows/ctrlhandler.cpp")
 ELSE()
   list(APPEND libhttpSrcs "os/unix/lock.cpp")
-  list(APPEND libhttpSrcs "os/unix/thread.cpp")
   list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/unix/ctrlhandler.cpp")
 ENDIF()
