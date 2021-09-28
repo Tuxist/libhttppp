@@ -25,11 +25,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <sys/sysinfo.h>
-#include <config.h>
-#include <unistd.h>
 
-#include "os/os.h"
+#include <systempp/syscall.h>
+#include <systempp/sysbits.h>
+
+#include <config.h>
+
 #include "../../exception.h"
 #include "../../connections.h"
 
@@ -40,10 +41,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "epoll.h"
 #include "threadpool.h"
-
-#define epoll_create1 291
-#define epollctl 233
-
 
 libhttppp::EPOLL::EPOLL(libsystempp::ServerSocket* serversocket) {
     HTTPException httpexception;
@@ -93,7 +90,7 @@ void libhttppp::EPOLL::initEventHandler(){
         0
     };
  
-    _epollFD =syscall(epoll_create1,0);
+    _epollFD =syscall1(__NR_epoll_create1,0);
 
     if (_epollFD == -1) {
         httpexception[HTTPException::Critical]<<"initEventHandler:" << "can't create epoll";
@@ -102,7 +99,8 @@ void libhttppp::EPOLL::initEventHandler(){
 
     setevent.events = EPOLLIN;
 
-    if (syscall(epollctl,_epollFD,EPOLL_CTL_ADD,_ServerSocket->getSocket(),&setevent) < 0) {
+    if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
+        _ServerSocket->getSocket(),(unsigned long)&setevent) < 0) {
         httpexception[HTTPException::Critical] << "initEventHandler: can't create epoll";
         throw httpexception;
     }
@@ -113,7 +111,8 @@ void libhttppp::EPOLL::initEventHandler(){
 }
 
 int libhttppp::EPOLL::waitEventHandler(){
-    int n = syscall(232,_epollFD,_Events,_ServerSocket->getMaxconnections(), -1);
+    int n = syscall4(__NR_epoll_wait,_epollFD,
+                     (unsigned long)_Events,_ServerSocket->getMaxconnections(), -1);
     if(n<0) {
         HTTPException httpexception;
         httpexception[HTTPException::Critical] << "initEventHandler: epoll wait failure";
@@ -146,7 +145,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         setevent->events = EPOLLIN;
         setevent->data =(__u64) curct;
         curct->ConnectionPtr = setevent; 
-        if (syscall(epollctl,_epollFD,EPOLL_CTL_ADD,curct->getClientSocket()->getSocket(), setevent) == -1) {
+        if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
+            curct->getClientSocket()->getSocket(),(unsigned long) setevent) == -1) {
             httpexception[HTTPException::Error] << "ConnectEventHandler: can't add socket to epoll";
             throw httpexception;
         }
@@ -197,7 +197,8 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
             throw httpexception;
         }
         struct epoll_event *setevent=(struct epoll_event*)curct->ConnectionPtr;
-        int ect=syscall(epollctl,_epollFD,EPOLL_CTL_DEL,_epollFD,curct->getClientSocket()->getSocket(), setevent);
+        int ect=syscall5(__NR_epoll_ctl,_epollFD,EPOLL_CTL_DEL,_epollFD,
+                         curct->getClientSocket()->getSocket(), (unsigned long)setevent);
         if(ect==-1) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;
@@ -244,7 +245,8 @@ void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
     HTTPException httpexception;
     struct epoll_event *setevent=(struct epoll_event *)curcon->ConnectionPtr;
     setevent->events = events;
-    if (syscall(epollctl,_epollFD,EPOLL_CTL_MOD, curcon->getClientSocket()->getSocket(), setevent) == -1) {
+    if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_MOD, 
+        curcon->getClientSocket()->getSocket(), (unsigned long)setevent) == -1) {
         httpexception[HTTPException::Error] << "_setEpollEvents: can change socket!";
         _ConLock.unlock();
         throw httpexception;
