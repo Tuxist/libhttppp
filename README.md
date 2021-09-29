@@ -7,7 +7,6 @@
 - HttpMultiform
 - Httpcookie
 - Httpbasicauth
-- Https
 - Multithreading
 - epoll (linux support)
 
@@ -16,6 +15,7 @@
 - Move sys to seperate libsystempp
 - Remove Glibc and std dependecy
 - Httpclientsupport
+- Https seperate own lib
 
 ## Todo:
 - kqueue (Mac OS BSD support)
@@ -30,6 +30,15 @@
 ## Download:
 https://github.com/Tuxist/libhttppp
 
+## Requirements
+- libsystempp
+- kernel 4.19 (lowest that i have testing)
+- gcc/clang
+- cmake
+
+# Optional
+- libhtmlpp (for examples)
+- doxygen (for docu not much at the moment)
 
 ## Building Library
 cd <libpath> <br/>
@@ -39,5 +48,5 @@ cmake ../ <br/>
 make <br/>
 make install <br/>
 <br/>
-Note to build examples you need libhtml: <br/>
+Note to build examples you need libhtmlpp: <br/>
 https://github.com/Tuxist/libhtmlpp
