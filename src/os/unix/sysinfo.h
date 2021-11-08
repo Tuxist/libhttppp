@@ -36,15 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define SYSINFO_H
 
 namespace libhttppp {
-	class CpuInfo {
-	public:
-		CpuInfo();
-		~CpuInfo();
-		int getCores();
-        int getThreads();
-        int getActualThread();
-        int getPid();
-	};
     
     class SysInfo {
     public:

@@ -26,6 +26,7 @@
  *******************************************************************************/
 
 #include <systempp/syssocket.h>
+#include <systempp/syslock.h>
 
 #include "os/os.h"
 #include "config.h"
@@ -81,7 +82,7 @@ namespace libhttppp {
         ConnectionData *getRecvData();
         size_t          getRecvSize();
         
-        Lock            ConnectionLock;
+        libsystempp::Lock ConnectionLock;
         void           *ConnectionPtr;
     protected:
         /*Incomming Data*/

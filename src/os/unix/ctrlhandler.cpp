@@ -32,9 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 void libhttppp::CtrlHandler::initCtrlHandler(){
 //     signal(SIGINT, CtrlHandler::CtrlEventHandler);
-    signal(SIGQUIT, CtrlHandler::CtrlEventHandler);
-    signal(SIGTERM, CtrlHandler::CtrlEventHandler);
-    signal(SIGPIPE, CtrlHandler::CtrlEventHandler);
+//     signal(SIGQUIT, CtrlHandler::CtrlEventHandler);
+//     signal(SIGTERM, CtrlHandler::CtrlEventHandler);
+//     signal(SIGPIPE, CtrlHandler::CtrlEventHandler);
 }
 
 void libhttppp::CtrlHandler::CtrlEventHandler(int sig) {

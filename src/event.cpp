@@ -25,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <systempp/sysinfo.h>
 #include <systempp/sysconsole.h>
 
 #include <config.h>
@@ -68,7 +69,7 @@ void libhttppp::CtrlHandler::SIGPIPEEvent() {
 }
 
 void libhttppp::Event::runEventloop(){
-        CpuInfo cpuinfo;
+        libsystempp::CpuInfo cpuinfo;
         size_t thrs = cpuinfo.getCores();
         initEventHandler();
 MAINWORKERLOOP:

@@ -32,31 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <utils.h>
 #include <cstring>
 
-libhttppp::CpuInfo::CpuInfo(){
-}
-
-libhttppp::CpuInfo::~CpuInfo(){
-}
-
-
-int libhttppp::CpuInfo::getCores(){
-    return sysconf(_SC_NPROCESSORS_ONLN);
-}
-
-int libhttppp::CpuInfo::getThreads(){
-    return 0;
-}
-
-int libhttppp::CpuInfo::getActualThread(){
-    return 0;
-}
-
-
-int libhttppp::CpuInfo::getPid(){
-//     return getpid();
-    return 0;
-}
-
 libhttppp::SysInfo::SysInfo(){
     sysinfo(&_Sysinfo);
 }

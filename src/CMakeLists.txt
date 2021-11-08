@@ -21,7 +21,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   list(APPEND libhttpSrcs "os/windows/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/windows/ctrlhandler.cpp")
 ELSE()
-  list(APPEND libhttpSrcs "os/unix/lock.cpp")
   list(APPEND libhttpSrcs "os/unix/sysinfo.cpp")
   list(APPEND libhttpSrcs "os/unix/ctrlhandler.cpp")
 ENDIF()
@@ -107,8 +106,6 @@ install(FILES os/windows/socket.h
 )
 ELSE()
 install(FILES
-              os/unix/lock.h
-              os/unix/thread.h
               os/unix/sysinfo.h
               os/unix/ctrlhandler.h
         DESTINATION include/httppp/os/unix

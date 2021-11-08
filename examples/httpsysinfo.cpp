@@ -28,10 +28,10 @@
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
-#include <os/os.h>
 #include <utils.h>
 
 #include <systempp/sysconsole.h>
+#include <systempp/sysinfo.h>
 
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"
@@ -137,19 +137,19 @@ public:
     }
     
     void KernelInfo(){
-        #ifndef Windows
-        struct utsname usysinfo;
-        uname(&usysinfo);
-        HtmlTable htmltable;
-        htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
-        htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
-        htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
-        _Index << "<h2>KernelInfo:</h2>" << htmltable.getTable();
-        #endif
+//         #ifndef Windows
+//         struct utsname usysinfo;
+//         uname(&usysinfo);
+//         HtmlTable htmltable;
+//         htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
+//         htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
+//         htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
+//         _Index << "<h2>KernelInfo:</h2>" << htmltable.getTable();
+//         #endif
     }
     
     void CPUInfo(){
-        libhttppp::CpuInfo cpuinfo;
+        libsystempp::CpuInfo cpuinfo;
         _Index << "<h2>CPUInfo:</h2>";
         HtmlTable cputable;
         cputable.createRow() << "<td>Cores</td><td>" << cpuinfo.getCores()<<"</td>";
@@ -159,13 +159,13 @@ public:
     }
     
     void SysInfo(){
-        libhttppp::SysInfo sysinfo;
-        _Index << "<h2>SysInfo:</h2>";
-        HtmlTable cputable;
-        cputable.createRow() << "<td>Total Ram</td><td>" << sysinfo.getTotalRam()<<"</td>";
-        cputable.createRow() << "<td>Free Ram</td><td>" << sysinfo.getFreeRam()<<"</td>";
-        cputable.createRow() << "<td>Buffered Ram</td><td>" <<sysinfo.getBufferRam()<<"</td>";
-        _Index << cputable.getTable();   
+//         libhttppp::SysInfo sysinfo;
+//         _Index << "<h2>SysInfo:</h2>";
+//         HtmlTable cputable;
+//         cputable.createRow() << "<td>Total Ram</td><td>" << sysinfo.getTotalRam()<<"</td>";
+//         cputable.createRow() << "<td>Free Ram</td><td>" << sysinfo.getFreeRam()<<"</td>";
+//         cputable.createRow() << "<td>Buffered Ram</td><td>" <<sysinfo.getBufferRam()<<"</td>";
+//         _Index << cputable.getTable();   
     }
     
     const char *getIndexPage(){

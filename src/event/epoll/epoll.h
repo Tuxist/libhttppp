@@ -72,7 +72,7 @@ namespace libhttppp {
     private:
         void                       _setEpollEvents(Connection *curcon,int events);
         int                        _epollFD;
-        Lock                       _ConLock;
+        libsystempp::Lock          _ConLock;
         struct epoll_event        *_Events;
         libsystempp::ServerSocket *_ServerSocket;
     };
