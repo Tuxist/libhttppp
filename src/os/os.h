@@ -10,7 +10,6 @@
   #include "windows/sysinfo.h"
   #include "windows/ctrlhandler.h"
 #else
-  #include "unix/sysinfo.h"
   #include "unix/ctrlhandler.h"
 #endif
 
