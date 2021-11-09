@@ -5,7 +5,8 @@ option(BUILD_EXAMPLES "Create and install the HTML examples (requires Doxygen)" 
 if(BUILD_EXAMPLES AND ${htmlpp_FOUND})
     include_directories(
         ${CMAKE_SOURCE_DIR}/src
-        ${htmlpp_INCLUDE_DIRs}
+        ${systempp_INCLUDE_DIRS}
+        ${htmlpp_INCLUDE_DIRS}
     )
     add_executable (httpcon httpcon.cpp)
     target_link_libraries(httpcon httppp-static htmlpp-static systempp)

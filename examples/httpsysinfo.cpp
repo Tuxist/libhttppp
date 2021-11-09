@@ -39,9 +39,9 @@
 #include "header_png.h"
 #include "favicon_ico.h"
 
-#ifndef Windows
-#include <sys/utsname.h>
-#endif // !Windows
+// #ifndef Windows
+// #include <sys/utsname.h>
+// #endif // !Windows
 
 class HtmlTable{
 public:
