@@ -41,7 +41,7 @@ bool libhttppp::Event::_Run=true;
 bool libhttppp::Event::_Restart=false;
 
 libhttppp::Event::Event(libsystempp::ServerSocket* serversocket) : EVENT(serversocket){
-    libhttppp::CtrlHandler::initCtrlHandler();
+//     libhttppp::CtrlHandler::initCtrlHandler();
 }
 
 libhttppp::Event::~Event(){
