@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <systempp/syscall.h>
 #include <systempp/sysbits.h>
+#include <systempp/sysconsole.h>
 
 #include <config.h>
 
@@ -105,7 +106,7 @@ void libhttppp::EPOLL::initEventHandler(){
         throw httpexception;
     }
     
-    _Events = new epoll_event[(_ServerSocket->getMaxconnections())];
+    _Events = new epoll_event[_ServerSocket->getMaxconnections()];
     for(int i=0; i<_ServerSocket->getMaxconnections(); ++i)
         _Events[i].data = (__u64)nullptr;
 }
