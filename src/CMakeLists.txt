@@ -9,7 +9,7 @@ set(libhttpSrcs
   connections.cpp
   http.cpp
   httpd.cpp
-  https.cpp
+#  https.cpp
   base64.cpp
   utils.cpp
   event.cpp

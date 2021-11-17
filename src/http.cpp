@@ -29,9 +29,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "base64.h"
 #include "utils.h"
 
-#include <openssl/rand.h>
-
-
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
   _lastHeaderData=nullptr;
