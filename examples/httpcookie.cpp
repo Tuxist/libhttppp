@@ -26,6 +26,7 @@
  *******************************************************************************/
 
 #include <systempp/sysconsole.h>
+#include <systempp/sysutils.h>
 
 #include "htmlpp/html.h"
 
@@ -33,7 +34,6 @@
 
 #include "http.h"
 #include "httpd.h"
-#include "utils.h"
 
 
 class CookieTest {
@@ -66,7 +66,7 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(libhttppp::ncompare(key,libhttppp::getlen(key),cururlform->getKey(),libhttppp::getlen(key))==0)
+                if(libsystempp::ncompare(key,libsystempp::getlen(key),cururlform->getKey(),libsystempp::getlen(key))==0)
                     return cururlform->getValue();
                 }
         }
@@ -79,13 +79,13 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(libhttppp::ncompare(key,libhttppp::getlen(key),cururlform->getKey(),
-                    libhttppp::getlen(cururlform->getKey()))==0){
+                if(libsystempp::ncompare(key,libsystempp::getlen(key),cururlform->getKey(),
+                    libsystempp::getlen(cururlform->getKey()))==0){
                         char ktmp[255];
-                        libhttppp::scopy(cururlform->getValue(),cururlform->getValue()+
-                                         libhttppp::getlen(cururlform->getValue()),
+                        libsystempp::scopy(cururlform->getValue(),cururlform->getValue()+
+                                         libsystempp::getlen(cururlform->getValue()),
                                          ktmp);
-                        return libhttppp::atoi(ktmp);
+                        return libsystempp::atoi(ktmp);
                     }
                 }
         }

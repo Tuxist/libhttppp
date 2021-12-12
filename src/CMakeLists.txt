@@ -11,7 +11,6 @@ set(libhttpSrcs
   httpd.cpp
 #  https.cpp
   base64.cpp
-  utils.cpp
   event.cpp
 )
 
@@ -70,7 +69,6 @@ install(FILES connections.h
               eventapi.h
               https.h
               mimetypes.h
-              utils.h
               "${CMAKE_BINARY_DIR}/config.h"
               "${CMAKE_BINARY_DIR}/event.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"

@@ -27,10 +27,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
 
+#include <systempp/sysutils.h>
+
 #include <config.h>
 
 #include "connections.h"
-#include "utils.h"
 #include "eventapi.h"
 
 const char* libhttppp::ConnectionData::getData(){
@@ -47,7 +48,7 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
 
 libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
   _Data = new char[BLOCKSIZE];
-  scopy(data,data+datasize,_Data);
+  libsystempp::scopy(data,data+datasize,_Data);
   _DataSize=datasize;
   _nextConnectionData=nullptr;
 }
@@ -224,15 +225,15 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
   buf = new char[(copysize+1)]; //one more for termination
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
     if(curdat==startblock && curdat==endblock){
-      scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
+      libsystempp::scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
     }else if(curdat==startblock){
-      scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
+      libsystempp::scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
       copypos+=curdat->getDataSize()-startpos;
     }else if(curdat==endblock){
-      scopy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
+      libsystempp::scopy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
       copypos+=endpos;
     }else{
-      scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
+      libsystempp::scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
       copypos+=curdat->getDataSize();
     }
     if(curdat==endblock)
@@ -245,7 +246,7 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
 
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
                                        const char* keyword){
-    return searchValue(startblock, findblock, keyword,getlen(keyword));
+    return searchValue(startblock, findblock, keyword,libsystempp::getlen(keyword));
 }
                                        
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 

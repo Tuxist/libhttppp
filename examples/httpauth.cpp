@@ -26,6 +26,7 @@
  *******************************************************************************/
 
 #include <systempp/sysconsole.h>
+#include <systempp/sysutils.h>
 
 #include "htmlpp/html.h"
 
@@ -33,7 +34,6 @@
 
 #include "http.h"
 #include "httpd.h"
-#include "utils.h"
 
 class Controller : public libhttppp::Event {
 public:
@@ -47,7 +47,7 @@ public:
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
-            if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/",1)==0){
+            if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/",1)==0){
                 libhttppp::HttpResponse curres;
                 curres.setState(HTTP200);
                 curres.setVersion(HTTPVERSION(1.1));
@@ -66,8 +66,8 @@ public:
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
                 curres.send(curcon,condat.c_str(),condat.size());
-            }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpbasicauth",13)==0 ||
-                libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpdigestauth",14)==0){
+            }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpbasicauth",13)==0 ||
+                libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpdigestauth",14)==0){
                 libhttppp::HttpAuth httpauth;
                 httpauth.parse(&curreq);
                 const char *username=httpauth.getUsername();
@@ -84,9 +84,9 @@ public:
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(NULL);
-                    if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpbasicauth",13)==0){
+                    if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/httpdigestauth",14)==0){
+                    }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");

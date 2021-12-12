@@ -27,9 +27,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <systempp/syssocket.h>
 #include <systempp/sysconsole.h>
+#include <systempp/sysutils.h>
 
 #include "os/os.h"
-#include "utils.h"
 #include "httpd.h"
 
 #define KTKEY 0
@@ -58,11 +58,11 @@ const char *libhttppp::HTTPDCmd::getValue() {
 }
 
 size_t libhttppp::HTTPDCmd::getValueSize_t() {
-    return atoi(_Value);
+    return libsystempp::atoi(_Value);
 }
 
 int libhttppp::HTTPDCmd::getValueInt() {
-    return atoi(_Value);
+    return libsystempp::atoi(_Value);
 }
 
 const char *libhttppp::HTTPDCmd::getHelp() {
@@ -100,21 +100,22 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
     }
     /*if key exist overwriting options*/
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd=curhttpdcmd->nextHTTPDCmd()) {
-        if (ncompare(key,getlen(key),curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey())) == 0) {
+        if (libsystempp::ncompare(key,libsystempp::getlen(key),curhttpdcmd->getKey(),
+            libsystempp::getlen(curhttpdcmd->getKey())) == 0) {
             /*set new shortkey*/
             curhttpdcmd->_SKey = skey;
             /*set reqirement flag*/
             curhttpdcmd->_Required = required;
             /*set new value*/
             delete[] curhttpdcmd->_Value;
-            curhttpdcmd->_Value = new char[getlen(defaultvalue)+1];
-            scopy(defaultvalue, defaultvalue+getlen(defaultvalue),curhttpdcmd->_Value);
-            curhttpdcmd->_Value[getlen(defaultvalue)] = '\0';
+            curhttpdcmd->_Value = new char[libsystempp::getlen(defaultvalue)+1];
+            libsystempp::scopy(defaultvalue, defaultvalue+libsystempp::getlen(defaultvalue),curhttpdcmd->_Value);
+            curhttpdcmd->_Value[libsystempp::getlen(defaultvalue)] = '\0';
             /*set new help*/
             delete[] curhttpdcmd->_Help;
-            curhttpdcmd->_Help = new char[getlen(help) + 1];
-            scopy(help, help + getlen(help), curhttpdcmd->_Help);
-            curhttpdcmd->_Help[getlen(help)] = '\0';
+            curhttpdcmd->_Help = new char[libsystempp::getlen(help) + 1];
+            libsystempp::scopy(help, help + libsystempp::getlen(help), curhttpdcmd->_Help);
+            curhttpdcmd->_Help[libsystempp::getlen(help)] = '\0';
             return;
         }
     }
@@ -128,35 +129,36 @@ void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey
         _lastHTTPDCmd = _lastHTTPDCmd->_nextHTTPDCmd;
     }
     /*set new key*/
-    _lastHTTPDCmd->_Key = new char[getlen(key) + 1];
-    scopy(key,key+getlen(key),_lastHTTPDCmd->_Key);
-    _lastHTTPDCmd->_Key[getlen(key)] = '\0';
+    _lastHTTPDCmd->_Key = new char[libsystempp::getlen(key) + 1];
+    libsystempp::scopy(key,key+libsystempp::getlen(key),_lastHTTPDCmd->_Key);
+    _lastHTTPDCmd->_Key[libsystempp::getlen(key)] = '\0';
     /*set new shortkey*/
     _lastHTTPDCmd->_SKey = skey;
     /*set reqirement flag*/
     _lastHTTPDCmd->_Required = required;
     /*set new value*/
     if (defaultvalue) {
-        _lastHTTPDCmd->_Value = new char[getlen(defaultvalue) + 1];
-        scopy(defaultvalue, defaultvalue + getlen(defaultvalue), _lastHTTPDCmd->_Value);
-        _lastHTTPDCmd->_Value[getlen(defaultvalue)] = '\0';
+        _lastHTTPDCmd->_Value = new char[libsystempp::getlen(defaultvalue) + 1];
+        libsystempp::scopy(defaultvalue, defaultvalue + libsystempp::getlen(defaultvalue),
+                           _lastHTTPDCmd->_Value);
+        _lastHTTPDCmd->_Value[libsystempp::getlen(defaultvalue)] = '\0';
     }
     /*set new help*/
-    _lastHTTPDCmd->_Help = new char[getlen(help) + 1];
-    scopy(help, help + getlen(help), _lastHTTPDCmd->_Help);
-    _lastHTTPDCmd->_Help[getlen(help)] = '\0';
+    _lastHTTPDCmd->_Help = new char[libsystempp::getlen(help) + 1];
+    libsystempp::scopy(help, help + libsystempp::getlen(help), _lastHTTPDCmd->_Help);
+    _lastHTTPDCmd->_Help[libsystempp::getlen(help)] = '\0';
     
 }
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, size_t defaultvalue, const char *help) {
     char buf[255];
-    itoa(defaultvalue,buf);
+    libsystempp::itoa(defaultvalue,buf);
     registerCmd(key,skey,required,buf,help);
 }
 
 void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, int defaultvalue, const char *help) {
     char buf[255];
-    itoa(defaultvalue,buf);
+    libsystempp::itoa(defaultvalue,buf);
     registerCmd(key, skey, required, buf, help);
 }
 
@@ -171,8 +173,8 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
             break;
         }
         
-        size_t kendpos = getlen(argv[args]);
-        for (size_t cmdpos = 0; cmdpos < getlen(argv[args])+1; cmdpos++) {	
+        size_t kendpos = libsystempp::getlen(argv[args]);
+        for (size_t cmdpos = 0; cmdpos < libsystempp::getlen(argv[args])+1; cmdpos++) {	
             switch (argv[args][cmdpos]) {
                 case '=': {
                     kendpos = cmdpos;
@@ -184,7 +186,7 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
         char skey = '0';
         if (keytype == KTKEY) {
             key = new char[kendpos-1];
-            scopy(argv[args] +2, argv[args] +kendpos, key);
+            libsystempp::scopy(argv[args] +2, argv[args] +kendpos, key);
             key[kendpos - 2] = '\0';
         } else if (keytype == KTSKEY){
             skey = argv[args][1];
@@ -192,13 +194,15 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
         
         for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
             if (keytype == KTKEY) {
-                if (ncompare(key,getlen(key),curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey())) == 0) {
+                if (libsystempp::ncompare(key,libsystempp::getlen(key),curhttpdcmd->getKey(),
+                    libsystempp::getlen(curhttpdcmd->getKey())) == 0) {
                     curhttpdcmd->_Found = true;
-                    int valuesize = (getlen(argv[args]) - (kendpos+1));
+                    int valuesize = (libsystempp::getlen(argv[args]) - (kendpos+1));
                     if (valuesize > 0) {
                         delete[] curhttpdcmd->_Value;
                         curhttpdcmd->_Value = new char[valuesize+1];
-                        scopy(argv[args]+(kendpos+1), argv[args] + getlen(argv[args]),curhttpdcmd->_Value);
+                        libsystempp::scopy(argv[args]+(kendpos+1), argv[args] + libsystempp::getlen(argv[args]),
+                                           curhttpdcmd->_Value);
                         curhttpdcmd->_Value[valuesize] = '\0';
                     }
                 }
@@ -206,10 +210,11 @@ void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
                 if (curhttpdcmd->getShortkey()== skey) {
                     curhttpdcmd->_Found = true;
                     if (++args<argc) {
-                        int valuesize = getlen(argv[args]);
+                        int valuesize = libsystempp::getlen(argv[args]);
                         delete[] curhttpdcmd->_Value;
                         curhttpdcmd->_Value = new char[valuesize + 1];
-                        scopy(argv[args], argv[args] + getlen(argv[args]), curhttpdcmd->_Value);
+                        libsystempp::scopy(argv[args], argv[args] + libsystempp::getlen(argv[args]), 
+                                           curhttpdcmd->_Value);
                         curhttpdcmd->_Value[valuesize] = '\0';
                     }
                 }
@@ -240,7 +245,7 @@ void libhttppp::HTTPDCmdController::printHelp() {
 
 libhttppp::HTTPDCmd *libhttppp::HTTPDCmdController::getHTTPDCmdbyKey(const char *key) {
     for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        if (ncompare(key,getlen(key),curhttpdcmd->getKey(),getlen(curhttpdcmd->getKey())) == 0) {
+        if (libsystempp::ncompare(key,libsystempp::getlen(key),curhttpdcmd->getKey(),libsystempp::getlen(curhttpdcmd->getKey())) == 0) {
             return curhttpdcmd;
         }
     }

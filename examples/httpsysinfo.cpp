@@ -28,10 +28,10 @@
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
-#include <utils.h>
 
 #include <systempp/sysconsole.h>
 #include <systempp/sysinfo.h>
+#include <systempp/sysutils.h>
 
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"
@@ -64,7 +64,7 @@ public:
         
         Row &operator<<(int value){
             char buf[255];
-            libhttppp::itoa(value,buf);
+            libsystempp::itoa(value,buf);
             return *this << buf;
         };
         
@@ -194,15 +194,17 @@ public:
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
-            if(libhttppp::ncompare(cururl, libhttppp::getlen(cururl),"/",1)==0){
+                 libsystempp::Console[SYSOUT] << cururl 
+            << libsystempp::Console[SYSOUT].endl;
+            if(libsystempp::ncompare(cururl, libsystempp::getlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/images/header.png",18)==0){
+            }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(libhttppp::ncompare(cururl,libhttppp::getlen(cururl),"/favicon.ico ",12)==0){
+            }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
