@@ -110,8 +110,6 @@ int libhttppp::ncompare(const char *src,size_t ssize,const char *comp,size_t csi
             if(src[i]!=comp[i])
                 missmatch=i;
         }
-        if(minsize!=maxsize)
-            missmatch+=(maxsize-minsize);
         return missmatch;
 }
 
