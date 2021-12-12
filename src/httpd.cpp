@@ -1,282 +1,55 @@
 /*******************************************************************************
-Copyright (c) 2014, Jan Koester jan.koester@gmx.net
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-    * Redistributions of source code must retain the above copyright
-      notice, this list of conditions and the following disclaimer.
-    * Redistributions in binary form must reproduce the above copyright
-      notice, this list of conditions and the following disclaimer in the
-      documentation and/or other materials provided with the distribution.
-    * Neither the name of the <organization> nor the
-      names of its contributors may be used to endorse or promote products
-      derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
-DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*******************************************************************************/
+ * Copyright (c) 2014, Jan Koester jan.koester@gmx.net
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright
+ *      notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright
+ *      notice, this list of conditions and the following disclaimer in the
+ *      documentation and/or other materials provided with the distribution.
+ * Neither the name of the <organization> nor the
+ *      names of its contributors may be used to endorse or promote products
+ *      derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
 
 #include <systempp/syssocket.h>
-#include <systempp/sysconsole.h>
-#include <systempp/sysutils.h>
+#include <libcmd/cmd.h>
 
-#include "os/os.h"
 #include "httpd.h"
-
-#define KTKEY 0
-#define KTSKEY 1
-
-libhttppp::HTTPDCmd::HTTPDCmd() {
-    _Key = nullptr;
-    _SKey = '\0';
-    _Value = nullptr;
-    _Help = nullptr;
-    _Found = false;
-    _Required = false;
-    _nextHTTPDCmd = nullptr;
-}
-
-const char *libhttppp::HTTPDCmd::getKey() {
-    return _Key;
-}
-
-const char libhttppp::HTTPDCmd::getShortkey() {
-    return _SKey;
-}
-
-const char *libhttppp::HTTPDCmd::getValue() {
-    return _Value;
-}
-
-size_t libhttppp::HTTPDCmd::getValueSize_t() {
-    return libsystempp::atoi(_Value);
-}
-
-int libhttppp::HTTPDCmd::getValueInt() {
-    return libsystempp::atoi(_Value);
-}
-
-const char *libhttppp::HTTPDCmd::getHelp() {
-    return _Help;
-}
-
-bool libhttppp::HTTPDCmd::getFound() {
-    return _Found;
-}
-
-bool libhttppp::HTTPDCmd::getRequired() {
-    return _Required;
-}
-
-libhttppp::HTTPDCmd *libhttppp::HTTPDCmd::nextHTTPDCmd() {
-    return _nextHTTPDCmd;
-}
-
-libhttppp::HTTPDCmd::~HTTPDCmd() {
-    delete[] _Key;
-    delete[] _Value;
-    delete[] _Help;
-    delete _nextHTTPDCmd;
-}
-
-libhttppp::HTTPDCmdController::HTTPDCmdController() {
-    _firstHTTPDCmd = NULL;
-    _lastHTTPDCmd = NULL;
-}
-
-void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey,bool required, const char *defaultvalue, const char *help) {
-    if (!key || !skey || !help) {
-        _httpexception[HTTPException::Critical] << "cmd parser key,skey or help not set!";
-        throw _httpexception;
-    }
-    /*if key exist overwriting options*/
-    for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd=curhttpdcmd->nextHTTPDCmd()) {
-        if (libsystempp::ncompare(key,libsystempp::getlen(key),curhttpdcmd->getKey(),
-            libsystempp::getlen(curhttpdcmd->getKey())) == 0) {
-            /*set new shortkey*/
-            curhttpdcmd->_SKey = skey;
-            /*set reqirement flag*/
-            curhttpdcmd->_Required = required;
-            /*set new value*/
-            delete[] curhttpdcmd->_Value;
-            curhttpdcmd->_Value = new char[libsystempp::getlen(defaultvalue)+1];
-            libsystempp::scopy(defaultvalue, defaultvalue+libsystempp::getlen(defaultvalue),curhttpdcmd->_Value);
-            curhttpdcmd->_Value[libsystempp::getlen(defaultvalue)] = '\0';
-            /*set new help*/
-            delete[] curhttpdcmd->_Help;
-            curhttpdcmd->_Help = new char[libsystempp::getlen(help) + 1];
-            libsystempp::scopy(help, help + libsystempp::getlen(help), curhttpdcmd->_Help);
-            curhttpdcmd->_Help[libsystempp::getlen(help)] = '\0';
-            return;
-        }
-    }
-    /*create new key value store*/
-    if (!_firstHTTPDCmd) {
-        _firstHTTPDCmd = new HTTPDCmd;
-        _lastHTTPDCmd = _firstHTTPDCmd;
-    }
-    else {
-        _lastHTTPDCmd->_nextHTTPDCmd = new HTTPDCmd;
-        _lastHTTPDCmd = _lastHTTPDCmd->_nextHTTPDCmd;
-    }
-    /*set new key*/
-    _lastHTTPDCmd->_Key = new char[libsystempp::getlen(key) + 1];
-    libsystempp::scopy(key,key+libsystempp::getlen(key),_lastHTTPDCmd->_Key);
-    _lastHTTPDCmd->_Key[libsystempp::getlen(key)] = '\0';
-    /*set new shortkey*/
-    _lastHTTPDCmd->_SKey = skey;
-    /*set reqirement flag*/
-    _lastHTTPDCmd->_Required = required;
-    /*set new value*/
-    if (defaultvalue) {
-        _lastHTTPDCmd->_Value = new char[libsystempp::getlen(defaultvalue) + 1];
-        libsystempp::scopy(defaultvalue, defaultvalue + libsystempp::getlen(defaultvalue),
-                           _lastHTTPDCmd->_Value);
-        _lastHTTPDCmd->_Value[libsystempp::getlen(defaultvalue)] = '\0';
-    }
-    /*set new help*/
-    _lastHTTPDCmd->_Help = new char[libsystempp::getlen(help) + 1];
-    libsystempp::scopy(help, help + libsystempp::getlen(help), _lastHTTPDCmd->_Help);
-    _lastHTTPDCmd->_Help[libsystempp::getlen(help)] = '\0';
-    
-}
-
-void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, size_t defaultvalue, const char *help) {
-    char buf[255];
-    libsystempp::itoa(defaultvalue,buf);
-    registerCmd(key,skey,required,buf,help);
-}
-
-void libhttppp::HTTPDCmdController::registerCmd(const char *key, const char skey, bool required, int defaultvalue, const char *help) {
-    char buf[255];
-    libsystempp::itoa(defaultvalue,buf);
-    registerCmd(key, skey, required, buf, help);
-}
-
-void libhttppp::HTTPDCmdController::parseCmd(int argc, char** argv){
-    for (int args = 1; args < argc; args++) {
-        int keytype = -1;
-        if (argv[args][0]=='-' && argv[args][1] == '-') {
-            keytype = KTKEY;
-        }else if (argv[args][0] == '-'){
-            keytype = KTSKEY;
-        }else {
-            break;
-        }
-        
-        size_t kendpos = libsystempp::getlen(argv[args]);
-        for (size_t cmdpos = 0; cmdpos < libsystempp::getlen(argv[args])+1; cmdpos++) {	
-            switch (argv[args][cmdpos]) {
-                case '=': {
-                    kendpos = cmdpos;
-                };
-            }
-        }
-        
-        char *key = NULL;
-        char skey = '0';
-        if (keytype == KTKEY) {
-            key = new char[kendpos-1];
-            libsystempp::scopy(argv[args] +2, argv[args] +kendpos, key);
-            key[kendpos - 2] = '\0';
-        } else if (keytype == KTSKEY){
-            skey = argv[args][1];
-        }
-        
-        for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-            if (keytype == KTKEY) {
-                if (libsystempp::ncompare(key,libsystempp::getlen(key),curhttpdcmd->getKey(),
-                    libsystempp::getlen(curhttpdcmd->getKey())) == 0) {
-                    curhttpdcmd->_Found = true;
-                    int valuesize = (libsystempp::getlen(argv[args]) - (kendpos+1));
-                    if (valuesize > 0) {
-                        delete[] curhttpdcmd->_Value;
-                        curhttpdcmd->_Value = new char[valuesize+1];
-                        libsystempp::scopy(argv[args]+(kendpos+1), argv[args] + libsystempp::getlen(argv[args]),
-                                           curhttpdcmd->_Value);
-                        curhttpdcmd->_Value[valuesize] = '\0';
-                    }
-                }
-            } else if (keytype == KTSKEY) {
-                if (curhttpdcmd->getShortkey()== skey) {
-                    curhttpdcmd->_Found = true;
-                    if (++args<argc) {
-                        int valuesize = libsystempp::getlen(argv[args]);
-                        delete[] curhttpdcmd->_Value;
-                        curhttpdcmd->_Value = new char[valuesize + 1];
-                        libsystempp::scopy(argv[args], argv[args] + libsystempp::getlen(argv[args]), 
-                                           curhttpdcmd->_Value);
-                        curhttpdcmd->_Value[valuesize] = '\0';
-                    }
-                }
-            }
-        }
-        
-        delete[] key;
-    }
-}
-
-bool libhttppp::HTTPDCmdController::checkRequired() {
-    for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        if (curhttpdcmd->getRequired() && !curhttpdcmd->_Found) {
-            return false;
-        }
-    }
-    return true;
-}
-
-void libhttppp::HTTPDCmdController::printHelp() {
-    for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        libsystempp::Console[SYSOUT] << "--" << curhttpdcmd->getKey() 
-                                     << " -" << curhttpdcmd->getShortkey()
-                                     << " "  << curhttpdcmd->getHelp() 
-                                     << libsystempp::Console[SYSOUT].endl;
-    }
-}
-
-libhttppp::HTTPDCmd *libhttppp::HTTPDCmdController::getHTTPDCmdbyKey(const char *key) {
-    for (HTTPDCmd *curhttpdcmd = _firstHTTPDCmd; curhttpdcmd; curhttpdcmd = curhttpdcmd->nextHTTPDCmd()) {
-        if (libsystempp::ncompare(key,libsystempp::getlen(key),curhttpdcmd->getKey(),libsystempp::getlen(curhttpdcmd->getKey())) == 0) {
-            return curhttpdcmd;
-        }
-    }
-    return nullptr;
-}
-
-libhttppp::HTTPDCmdController::~HTTPDCmdController() {
-    delete _firstHTTPDCmd;
-    _lastHTTPDCmd = nullptr;
-}
 
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
-    CmdController= new HTTPDCmdController;
+    HTTPDCmdController= &libsystempp::CmdController::getInstance();
     /*Register Parameters*/
-    CmdController->registerCmd("help", 'h', false, (const char*) nullptr, "Helpmenu");
-    CmdController->registerCmd("httpaddr",'a', true,(const char*) nullptr,"Address to listen");
-    CmdController->registerCmd("httpport", 'p', false, 8080, "Port to listen");
-    CmdController->registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
-    CmdController->registerCmd("httpscert", 'c',false,(const char*) nullptr, "HTTPS Certfile");
-    CmdController->registerCmd("httpskey", 'k',false, (const char*) nullptr, "HTTPS Keyfile");
+    HTTPDCmdController->registerCmd("help", 'h', false, (const char*) nullptr, "Helpmenu");
+    HTTPDCmdController->registerCmd("httpaddr",'a', true,(const char*) nullptr,"Address to listen");
+    HTTPDCmdController->registerCmd("httpport", 'p', false, 8080, "Port to listen");
+    HTTPDCmdController->registerCmd("maxconnections", 'm',false, MAXDEFAULTCONN, "Max connections that can connect");
+    HTTPDCmdController->registerCmd("httpscert", 'c',false,(const char*) nullptr, "HTTPS Certfile");
+    HTTPDCmdController->registerCmd("httpskey", 'k',false, (const char*) nullptr, "HTTPS Keyfile");
     /*Parse Parameters*/
-    CmdController->parseCmd(argc,argv);
+    HTTPDCmdController->parseCmd(argc,argv);
 
-    if (CmdController->getHTTPDCmdbyKey("help") && CmdController->getHTTPDCmdbyKey("help")->getFound()) {
-        CmdController->printHelp();
+    if (HTTPDCmdController->getCmdbyKey("help") && HTTPDCmdController->getCmdbyKey("help")->getFound()) {
+        HTTPDCmdController->printHelp();
         throw _httpexception[HTTPException::Note] << "Help Menu printed";
     }
 
-    if (!CmdController->checkRequired()) {
-        CmdController->printHelp();
+    if (!HTTPDCmdController->checkRequired()) {
+        HTTPDCmdController->printHelp();
         _httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";
         throw _httpexception;
     }
@@ -284,30 +57,30 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     /*get port from console paramter*/
     int port = 0;
     bool portset=false;
-    if(CmdController->getHTTPDCmdbyKey("httpport")){
-        port = CmdController->getHTTPDCmdbyKey("httpport")->getValueInt();
-        portset = CmdController->getHTTPDCmdbyKey("httpport")->getFound();
+    if(HTTPDCmdController->getCmdbyKey("httpport")){
+        port = HTTPDCmdController->getCmdbyKey("httpport")->getValueInt();
+        portset = HTTPDCmdController->getCmdbyKey("httpport")->getFound();
     }
     
     /*get httpaddress from console paramter*/
     const char *httpaddr = nullptr;
-    if (CmdController->getHTTPDCmdbyKey("httpaddr"))
-        httpaddr = CmdController->getHTTPDCmdbyKey("httpaddr")->getValue();
+    if (HTTPDCmdController->getCmdbyKey("httpaddr"))
+        httpaddr = HTTPDCmdController->getCmdbyKey("httpaddr")->getValue();
     
     /*get max connections from console paramter*/
     int maxconnections = 0;
-    if (CmdController->getHTTPDCmdbyKey("maxconnections"))
-        maxconnections = CmdController->getHTTPDCmdbyKey("maxconnections")->getValueInt();
+    if (HTTPDCmdController->getCmdbyKey("maxconnections"))
+        maxconnections = HTTPDCmdController->getCmdbyKey("maxconnections")->getValueInt();
     
     /*get httpaddress from console paramter*/
     const char *sslcertpath = nullptr;
-    if (CmdController->getHTTPDCmdbyKey("httpscert"))
-        sslcertpath = CmdController->getHTTPDCmdbyKey("httpscert")->getValue();
+    if (HTTPDCmdController->getCmdbyKey("httpscert"))
+        sslcertpath = HTTPDCmdController->getCmdbyKey("httpscert")->getValue();
     
     /*get httpaddress from console paramter*/
     const char *sslkeypath = nullptr;
-    if (CmdController->getHTTPDCmdbyKey("httpskey"))
-        sslkeypath = CmdController->getHTTPDCmdbyKey("httpskey")->getValue();
+    if (HTTPDCmdController->getCmdbyKey("httpskey"))
+        sslkeypath = HTTPDCmdController->getCmdbyKey("httpskey")->getValue();
     
     try {
         #ifndef Windows
@@ -336,5 +109,4 @@ libsystempp::ServerSocket *libhttppp::HttpD::getServerSocket(){
 
 libhttppp::HttpD::~HttpD(){
   delete _ServerSocket;
-  delete CmdController;
 }

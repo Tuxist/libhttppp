@@ -31,61 +31,24 @@
 #ifndef HTTPD_H
 #define HTTPD_H
 
-namespace libhttppp {
+namespace libsystempp {
     class ServerSocket;
-    class HTTPDCmd {
-    public:
-        const char *getKey();
-        const char  getShortkey();
-        const char *getValue();
-        size_t      getValueSize_t();
-        int         getValueInt();
-        const char *getHelp();
-        bool        getFound();
-        bool        getRequired();
-        HTTPDCmd   *nextHTTPDCmd();
-    private:
-        HTTPDCmd();
-        ~HTTPDCmd();
-        char         *_Key;
-        char          _SKey;
-        char         *_Value;
-        char         *_Help;
-        bool          _Found;
-        bool          _Required;
-        HTTPDCmd     *_nextHTTPDCmd;
-        friend class HTTPDCmdController;
-    };
-    
-    class HTTPDCmdController {
-    public:
-        HTTPDCmdController();
-        ~HTTPDCmdController();
-        void registerCmd(const char *key,char skey,bool required,const char *defaultvalue,const char *help);
-        void registerCmd(const char *key,char skey,bool required,size_t defaultvalue, const char *help);
-        void registerCmd(const char *key,char skey,bool required,int defaultvalue, const char *help);
-        void printHelp();
-        void parseCmd(int argc, char** argv);
-        bool checkRequired();
-        HTTPDCmd        *getHTTPDCmdbyKey(const char *key);
-    private:
-        HTTPDCmd        *_firstHTTPDCmd;
-        HTTPDCmd        *_lastHTTPDCmd;
-        HTTPException   _httpexception;
-    };
-    
+    class CmdController;    
+}
+
+namespace libhttppp {
     class HttpD {
     public:
         HttpD(int argc, char** argv);
         ~HttpD();
-        libsystempp::ServerSocket *getServerSocket();
+        libsystempp::ServerSocket  *getServerSocket();
     protected:
-        void                       FileServer();
-        HTTPDCmdController        *CmdController;
+        void                        FileServer();
+        libsystempp::CmdController *HTTPDCmdController;
     private:
-        bool                       _fileServer;
-        libsystempp::ServerSocket *_ServerSocket;
-        HTTPException              _httpexception;
+        bool                        _fileServer;
+        libsystempp::ServerSocket  *_ServerSocket;
+        HTTPException               _httpexception;
     };
 };
 
