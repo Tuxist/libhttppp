@@ -339,26 +339,28 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
             size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&header);
             
             bool found=false;
-            int pos;
+            int pos=0;
 
-            for(pos=0; pos<headersize; ++pos){
-                if(header[pos]==' '){
+            for(int cpos=pos; cpos<headersize; ++cpos){
+                if(header[cpos]==' '){
+                    pos=++cpos;
+                    break;
+                }
+            }
+
+            for(int cpos=pos; cpos<headersize; ++cpos){
+                if(header[cpos]==' ' && (cpos-pos)<255){
+                    libsystempp::scopy(header+pos,header+cpos,_RequestURL);
+                    _RequestURL[cpos-pos]='\0';
                     ++pos;
                     break;
                 }
             }
 
-            for(; pos<headersize; ++pos){
-                if(header[pos]==' ' && (headersize-pos)<255){
-                    libsystempp::scopy(header,header+pos,_RequestURL);
-                    ++pos;
-                    break;
-                }
-            }
-
-            for(; pos<headersize; ++pos){
-                if(header[pos]==' ' && (headersize-pos)<255){
-                    libsystempp::scopy(header,header+pos,_Version);
+            for(int cpos=pos; cpos<headersize; ++cpos){
+                if(header[cpos]==' ' && (cpos-pos)<255){
+                    libsystempp::scopy(header+pos,header+cpos,_Version);
+                    _Version[cpos-pos]='\0';
                     ++pos;
                     found=true;
                     break;
