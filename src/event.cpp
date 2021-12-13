@@ -50,24 +50,6 @@ libhttppp::Event::~Event(){
 libhttppp::EventApi::~EventApi(){
 }
 
-void libhttppp::CtrlHandler::CTRLCloseEvent() {
-    libhttppp::Event::_Run = false;
-}
-
-void libhttppp::CtrlHandler::CTRLBreakEvent() {
-    libhttppp::Event::_Restart = true;
-    libhttppp::Event::_Run=false;
-    libhttppp::Event::_Run=true;
-}
-
-void libhttppp::CtrlHandler::CTRLTermEvent() {
-    libhttppp::Event::_Run = false;
-}
-
-void libhttppp::CtrlHandler::SIGPIPEEvent() {
-    return;
-}
-
 void libhttppp::Event::runEventloop(){
         libsystempp::CpuInfo cpuinfo;
         size_t thrs = cpuinfo.getCores();

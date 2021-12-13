@@ -25,10 +25,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "exception.h"
-#include "config.h"
-#include "os/os.h"
-#include "connections.h"
+#include "httppp/exception.h"
+#include "httppp/config.h"
+#include "httppp/connections.h"
 
 #ifndef EVENTAPI_H
 #define EVENTAPI_H

@@ -76,13 +76,6 @@ install(FILES connections.h
         COMPONENT Devel
 )
 
-#os dependencies
-install(FILES os/os.h
-        DESTINATION include/httppp/os
-        COMPONENT Devel
-)
-
-
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     install(FILES event/epoll/epoll.h 
             DESTINATION include/httppp/event/epoll
