@@ -40,6 +40,4 @@ namespace libhttppp {
   private:
 
   };
-}
-
-#endif
+};
