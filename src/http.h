@@ -27,10 +27,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <config.h>
 
-#include "connections.h"
-#include "httpdefinitions.h"
-#include "exception.h"
-#include "eventapi.h"
+#include "httppp/connections.h"
+#include "httppp/httpdefinitions.h"
+#include "httppp/exception.h"
+#include "httppp/eventapi.h"
 
 #ifndef HTTP_H
 #define HTTP_H
