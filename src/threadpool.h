@@ -25,8 +25,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <config.h>
 #include <systempp/systhread.h>
+
+#include "config.h"
 
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
