@@ -26,7 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include "../../eventapi.h"
-#include "threadpool.h"
+#include "../../threadpool.h"
+
 #include <linux/eventpoll.h>
 
 #define EVENT_EPOLL
