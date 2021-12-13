@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <systempp/sysinfo.h>
 #include <systempp/sysconsole.h>
 
-#include <config.h>
+#include "config.h"
 
 #include "connections.h"
 #include "eventapi.h"
