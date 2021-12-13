@@ -27,8 +27,6 @@
 
 #include <stddef.h>
 
-#include "config.h"
-
 /*
  * Error Statas
  * Note: Notice only for Information

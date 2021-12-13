@@ -28,9 +28,8 @@
 #include <systempp/syssocket.h>
 #include <systempp/syslock.h>
 
-#include "os/os.h"
-#include "config.h"
-#include "exception.h"
+#include "httppp/config.h"
+#include "httppp/exception.h"
 
 #ifndef CONNECTIONS_H
 #define CONNECTIONS_H

@@ -28,14 +28,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "threadpool.h"
 
 libhttppp::ThreadPool::ThreadPool(){
-    _firstThread=NULL;
-    _lastThread=NULL;
+    _firstThread=nullptr;
+    _lastThread=nullptr;
     _Amount=0;
 }
 
 libhttppp::ThreadPool::~ThreadPool(){
     delete _firstThread;
-    _lastThread=NULL;
+    _lastThread=nullptr;
 }
 
 libsystempp::Thread *libhttppp::ThreadPool::addThread(){
@@ -51,7 +51,7 @@ libsystempp::Thread *libhttppp::ThreadPool::addThread(){
 }
 
 libsystempp::Thread *libhttppp::ThreadPool::delThread(libsystempp::Thread *delthread){
-    libsystempp::Thread *prevthr=NULL;
+    libsystempp::Thread *prevthr=nullptr;
     for(libsystempp::Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread){
         if(curthr==delthread){
             if(prevthr){
