@@ -29,8 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config.h"
 
-#ifndef THREADPOOL_H
-#define THREADPOOL_H
+#pragma once
 
 namespace libhttppp {
    class ThreadPool {
@@ -50,5 +49,3 @@ namespace libhttppp {
      int     _Amount;
    };
 };
-
-#endif

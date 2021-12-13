@@ -35,12 +35,7 @@
  * Critical: Some happend that will shutdown your Apllication
  */
 
-#ifndef EXCEPTION_H
-#define EXCEPTION_H
-
-#ifdef DEBUG
-
-#endif
+#pragma once
 
 namespace libhttppp {
     
@@ -80,5 +75,3 @@ namespace libhttppp {
         int      _curCType;
     };
 }
-#endif
-

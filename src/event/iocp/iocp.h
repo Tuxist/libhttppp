@@ -39,8 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_IOCP
 
-#ifndef IOCP_H
-#define IOCP_H
+#pragma once
 
 namespace libhttppp {
 	class ConnectionPtr {
@@ -97,5 +96,3 @@ namespace libhttppp {
 		ConnectionPtr			*_lastConnectionPtr;
 	};
 };
-
-#endif

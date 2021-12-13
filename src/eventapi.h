@@ -29,8 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "httppp/config.h"
 #include "httppp/connections.h"
 
-#ifndef EVENTAPI_H
-#define EVENTAPI_H
+#pragma once
 
 namespace libhttppp {
 class EventApi {
@@ -65,5 +64,3 @@ class EventApi {
         virtual void sendReady(Connection *curcon,bool ready)=0;
   };
 };
-
-#endif

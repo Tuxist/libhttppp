@@ -31,8 +31,7 @@
 #include "config.h"
 #include "exception.h"
 
-#ifndef CONNECTIONS_H
-#define CONNECTIONS_H
+#pragma once
 
 namespace libhttppp {
     class EventApi;
@@ -109,4 +108,3 @@ namespace libhttppp {
         
     };
 }
-#endif

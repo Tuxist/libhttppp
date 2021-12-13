@@ -25,8 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
  
-#ifndef HTTPDEFINITIONS_H
-#define HTTPDEFINITIONS_H
+#pragma once
 
 //define REQUEST TYPE
 #define GETREQUEST  1
@@ -101,5 +100,3 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define HTTP507 HTTPSTATECODE(507,Insufficient Storage)
 #define HTTP509 HTTPSTATECODE(509,Bandwidth Limit Exceeded)
 #define HTTP510 HTTPSTATECODE(510,Not Extended)
-
-#endif

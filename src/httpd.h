@@ -28,8 +28,7 @@
 #include "event.h"
 #include "exception.h"
 
-#ifndef HTTPD_H
-#define HTTPD_H
+#pragma once
 
 namespace libsystempp {
     class ServerSocket;
@@ -51,5 +50,3 @@ namespace libhttppp {
         HTTPException               _httpexception;
     };
 };
-
-#endif

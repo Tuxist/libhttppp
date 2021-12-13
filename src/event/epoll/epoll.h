@@ -32,8 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_EPOLL
 
-#ifndef EPOLL_H
-#define EPOLL_H
+#pragma once
 
 extern "C" {
     struct epoll_event;
@@ -78,5 +77,3 @@ namespace libhttppp {
         libsystempp::ServerSocket *_ServerSocket;
     };
 };
-
-#endif

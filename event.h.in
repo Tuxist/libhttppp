@@ -30,8 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "event/${EVENT_HEADER}"
 
-#ifndef EVENT_H
-#define EVENT_H
+#pragma once
 
 namespace libsystempp {
     class ServerSocket;
@@ -58,5 +57,3 @@ namespace libhttppp {
         };
     };
 };
-
-#endif

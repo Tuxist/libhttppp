@@ -32,8 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 #include "eventapi.h"
 
-#ifndef HTTP_H
-#define HTTP_H
+#pragma once
 
 namespace libhttppp {
 
@@ -308,5 +307,3 @@ namespace libhttppp {
     
   };
 };
-
-#endif

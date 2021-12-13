@@ -30,8 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define EVENT_SELECT
 
-#ifndef SELECT_H
-#define SELECT_H
+#pragma once
 
 namespace libhttppp {
 
@@ -84,5 +83,3 @@ namespace libhttppp {
         ServerSocket             *_ServerSocket;
     };
 };
-
-#endif

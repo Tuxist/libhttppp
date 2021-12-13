@@ -27,8 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 
-#ifndef BASE64_H
-#define BASE64_H
+#pragma once
 
 namespace libhttppp {
   class Base64 {
