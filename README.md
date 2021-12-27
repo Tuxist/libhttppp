@@ -9,18 +9,15 @@
 - Httpbasicauth
 - Multithreading
 - epoll (linux support)
-
-
-## On Work
 - Move sys to seperate libsystempp
 - Remove Glibc and std dependecy
+
+## On Work
 - Httpclientsupport
 - Https seperate own lib
 
 ## Todo:
-- kqueue (Mac OS BSD support)
-- select (other os)
-- iocp (Windows support)
+- create new class for ssl support
 - Httpdigestauth
 - Httpntlmauth
 - Httpcompression (gzip)
