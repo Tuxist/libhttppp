@@ -22,8 +22,6 @@
 - Httpntlmauth
 - Httpcompression (gzip)
 
-
-
 ## Download:
 https://github.com/Tuxist/libhttppp
 
