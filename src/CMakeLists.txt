@@ -25,7 +25,8 @@ ELSEIF(${EVENT} MATCHES "KQUEUE")
 ENDIF()
 
 include_directories(
-  ${OPENSSL_INCLUDE_DIR}
+    ${systempp_INCLUDE_DIR}
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 add_library(httppp        SHARED ${libhttpSrcs} )

@@ -6,14 +6,17 @@ set(LIBV "1.0.0")
 set(Upstream_VERSION 1.0.0)
 set (BLOCKSIZE 16384 CACHE STRING "Block size from Network Packages")
 
+include(CheckIncludeFileCXX)
+
 find_package(systempp REQUIRED)
 
+CHECK_INCLUDE_FILE_CXX("${systempp_INCLUDE_DIR}/config.h" GLIBSUPPORT)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-  SET(CMAKE_CXX_FLAGS "-D_SCL_SECURE_NO_WARNINGS  /EHsc")
-else()
-  SET(CMAKE_CXX_FLAGS "-nolibc -nostdlib") #goal -nolibc
+if(GLIBSUPPORT MATCHES False)
+    SET(CMAKE_CXX_FLAGS "-nolibc -nostdlib") #goal -nolibc
 endif()
+
+list(APPEND CMAKE_CXX_FLAGS "-fPIC")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)
 
