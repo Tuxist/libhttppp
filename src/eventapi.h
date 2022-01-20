@@ -49,6 +49,8 @@ class EventApi {
         virtual void CloseEventHandler(int des)=0;
         
         /*Multithreading options*/
+        virtual void LockEventPool()=0;
+        virtual void UnlockEventPool()=0;
         virtual int LockConnection(int des)=0;
         virtual void UnlockConnection(int des)=0;
         

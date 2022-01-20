@@ -45,8 +45,8 @@ namespace libhttppp {
         ~EPOLL();
         
         /*Lock mechanism*/
-        void initLockPool(ThreadPool *pool);
-        void destroyLockPool();
+        void LockEventPool();
+        void UnlockEventPool();
         int  LockConnection(int des);
         void UnlockConnection(int des);
                

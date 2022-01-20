@@ -79,11 +79,12 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
+                
                 int state=eventptr->StatusEventHandler(i);
 
                 if(state==EventHandlerStatus::EVNOTREADY)
                     eventptr->ConnectEventHandler(i);
-
+                
                 if(eventptr->LockConnection(i)==LockState::LOCKED){
                     try{
                         switch(state){
@@ -121,5 +122,5 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
             }
         }
     }
-    return NULL;
+    return nullptr;
 }

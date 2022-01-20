@@ -25,89 +25,34 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <stddef.h>
-
-#include <systempp/sysutils.h>
-
 #include "exception.h"
 
-libhttppp::HTTPException::Message::Message(){
-    _Buffer=nullptr;
-    _BufferSize=0;
-    _nextMessage=nullptr;
-}
 
-libhttppp::HTTPException::Message::~Message(){
-    delete[] _Buffer;
-    delete   _nextMessage;
-}
 
-libhttppp::HTTPException::HTTPException(){
-    _curCType=Note;
-    _firstMessage=nullptr;
-    _lastMessage=nullptr;
-    _printBuffer=nullptr;
+libhttppp::HTTPException::HTTPException() : libsystempp::SystemException(){
 };
 
-libhttppp::HTTPException::HTTPException(const HTTPException &exp){
-    _curCType=exp._curCType;
-    _firstMessage=nullptr;
-    _lastMessage=nullptr;
-    _printBuffer=nullptr;
-    for(Message *curmsg=exp._firstMessage; curmsg; curmsg=curmsg->_nextMessage){
-        *this << curmsg->_Buffer;
-    }
+libhttppp::HTTPException::HTTPException(const HTTPException &exp) : libsystempp::SystemException(){
 }
 
 libhttppp::HTTPException::~HTTPException(){
-    delete[] _printBuffer;
-    delete _firstMessage;
 }
 
 int libhttppp::HTTPException::getErrorType(){
-    return _curCType; 
+    return curCType; 
 }
 
 const char* libhttppp::HTTPException::what(){
-    size_t bufsize=0,written=0;
-    for(Message *curmsg=_firstMessage; curmsg; curmsg=curmsg->_nextMessage){
-        bufsize+=curmsg->_BufferSize;
-    }
-    delete[] _printBuffer;
-    _printBuffer = new char[bufsize+1];
-    for(Message *curmsg=_firstMessage; curmsg; curmsg=curmsg->_nextMessage){
-        libsystempp::scopy(curmsg->_Buffer,curmsg->_Buffer+curmsg->_BufferSize,_printBuffer+written);
-        written+=curmsg->_BufferSize;
-    }
-    _printBuffer[bufsize]='\0';
-    
-    return _printBuffer;
+    return libsystempp::SystemException::what();
 }
-
-const libhttppp::HTTPException & libhttppp::HTTPException::Exception() throw(){
-    return *this;
-}
-
 
 libhttppp::HTTPException& libhttppp::HTTPException::asign(const char *src){
-    if(!src)
-        return *this;
-    if(!_firstMessage){
-        _firstMessage=new Message();
-        _lastMessage=_firstMessage;
-    }else{
-        _lastMessage->_nextMessage=new Message();
-        _lastMessage=_lastMessage->_nextMessage;
-    }
-    _lastMessage->_CType=_curCType;
-    _lastMessage->_BufferSize= libsystempp::getlen(src);
-    _lastMessage->_Buffer=new char[_lastMessage->_BufferSize+1];
-     libsystempp::scopy(src,src+_lastMessage->_BufferSize+1,_lastMessage->_Buffer);
+    libsystempp::SystemException::asign(src);
     return *this;   
 }
 
 libhttppp::HTTPException& libhttppp::HTTPException::operator[](int errtype){
-    _curCType=errtype;
+    curCType=errtype;
     return *this;
 }
 
@@ -116,9 +61,7 @@ libhttppp::HTTPException& libhttppp::HTTPException::operator<<(const char *src){
 };
 
 libhttppp::HTTPException& libhttppp::HTTPException::operator<<(int src){
-    char *buf=new char[sizeof(int)+1];
-    libsystempp::itoa(src,buf);
-    asign(buf);
-    delete[] buf;
+    libsystempp::SystemException::operator<<(src);
     return *this;
 }
+

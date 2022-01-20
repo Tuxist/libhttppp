@@ -86,12 +86,12 @@ const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderDat
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(libsystempp::ncompare(key,libsystempp::getlen(key),
                             curdat->_Key,curdat->_Keylen)==0){
-      if(pos!=NULL)
+      if(pos!=nullptr)
         *pos=curdat;
       return curdat->_Value;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
@@ -196,7 +196,7 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
         excep[HTTPException::Error] << "no headerdata key set can't do this";
         throw excep;
     }
-    _nextHeaderData=NULL;
+    _nextHeaderData=nullptr;
     _Keylen=libsystempp::getlen(key);
     _Key=new char[_Keylen+1];
     libsystempp::scopy(key,key+(_Keylen+1),_Key);
@@ -217,14 +217,14 @@ libhttppp::HttpHeader::~HttpHeader(){
 libhttppp::HttpResponse::HttpResponse(){
   setState(HTTP200);
   setVersion(HTTPVERSION("2.0"));
-  _ContentType=NULL;
-  _ContentLength=NULL;
+  _ContentType=nullptr;
+  _ContentLength=nullptr;
   _Connection=setData("Connection");
   *_Connection<<"keep-alive";
 }
 
 void libhttppp::HttpResponse::setState(const char* httpstate){
-  if(httpstate==NULL){
+  if(httpstate==nullptr){
     _httpexception[HTTPException::Error] << "http state not set don't do that !!!";
     throw _httpexception;
   }
@@ -255,7 +255,7 @@ void libhttppp::HttpResponse::setConnection(const char* type){
 
 void libhttppp::HttpResponse::setVersion(const char* version){
   HTTPException excep;  
-  if(version==NULL)
+  if(version==nullptr)
     throw excep[HTTPException::Error] << "http version not set don't do that !!!";
   size_t vlen=libsystempp::getlen(version);
   if(vlen>254)
@@ -306,7 +306,7 @@ libhttppp::HttpResponse::~HttpResponse(){
 }
 
 libhttppp::HttpRequest::HttpRequest(){
-  _Request=NULL;
+  _Request=nullptr;
   _RequestType=0;
   _RequestSize=0;
 }
@@ -415,7 +415,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 if(csize<=rsize){
                     size_t dlocksize=curconnection->getRecvSize();
-                    ConnectionData *dblock=NULL;
+                    ConnectionData *dblock=nullptr;
                     size_t cdlocksize=0;
                     for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
                         dlocksize-=dblock->getDataSize();
@@ -467,18 +467,18 @@ libhttppp::HttpRequest::~HttpRequest(){
 }
 
 libhttppp::HttpForm::HttpForm(){
-  _Boundary=NULL;
+  _Boundary=nullptr;
   _Elements=0;
-  _firstUrlcodedFormData=NULL;
-  _lastUrlcodedFormData=NULL;
-  _firstMultipartFormData=NULL;
-  _lastMultipartFormData=NULL;
+  _firstUrlcodedFormData=nullptr;
+  _lastUrlcodedFormData=nullptr;
+  _firstMultipartFormData=nullptr;
+  _lastMultipartFormData=nullptr;
 }
 
 libhttppp::HttpForm::~HttpForm(){
   delete[] _Boundary;
   delete   _firstMultipartFormData;
-  _lastMultipartFormData=NULL;
+  _lastMultipartFormData=nullptr;
 }
 
 
@@ -595,7 +595,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
       //check if boundary completed
       if((realboundarypos+1)==realboundarylen){
 	//ceck if boundary before found set data end
-	if(datastart!=NULL){
+	if(datastart!=nullptr){
         //cut boundarylen
 	  datalength=(cr-oldpos)-realboundarylen;
 	  if(datalength>0)
@@ -720,17 +720,17 @@ libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::getMultipartFormDa
 
 libhttppp::HttpForm::MultipartFormData::MultipartFormData(){
   _ContentDisposition=new ContentDisposition;
-  _nextMultipartFormData=NULL;
-  _Data=NULL;
-  _firstContent=NULL;
-  _lastContent=NULL;
+  _nextMultipartFormData=nullptr;
+  _Data=nullptr;
+  _firstContent=nullptr;
+  _lastContent=nullptr;
 }
 
 libhttppp::HttpForm::MultipartFormData::~MultipartFormData(){
   delete _ContentDisposition;
   delete _nextMultipartFormData;
   delete _firstContent;
-  _lastContent=NULL;
+  _lastContent=nullptr;
 }
 
 const char *libhttppp::HttpForm::MultipartFormData::getData(){
@@ -839,14 +839,14 @@ void libhttppp::HttpForm::MultipartFormData::addContent(const char *key,const ch
 
 const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key){
   if(!key)
-    return NULL;
+    return nullptr;
   for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
     if(libsystempp::ncompare(curcontent->getKey(),
         libsystempp::getlen(curcontent->getKey()),key,libsystempp::getlen(key))==0){
       return curcontent->getValue();
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 const char  *libhttppp::HttpForm::MultipartFormData::getContentType(){
@@ -858,7 +858,7 @@ libhttppp::HttpForm::MultipartFormData *libhttppp::HttpForm::MultipartFormData::
 }
 
 libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const char *value){
-  _nextContent=NULL;
+  _nextContent=nullptr;
   if(!key || !value)
     return;
   
@@ -890,9 +890,9 @@ libhttppp::HttpForm::MultipartFormData::Content * libhttppp::HttpForm::Multipart
 }
 
 libhttppp::HttpForm::MultipartFormData::ContentDisposition::ContentDisposition(){
-  _Disposition=NULL;
-  _Name=NULL;
-  _Filename=NULL;
+  _Disposition=nullptr;
+  _Name=nullptr;
+  _Filename=nullptr;
 }
 
 libhttppp::HttpForm::MultipartFormData::ContentDisposition::~ContentDisposition(){
@@ -1035,9 +1035,9 @@ libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::UrlcodedFormData::n
 }
 
 libhttppp::HttpForm::UrlcodedFormData::UrlcodedFormData(){
-  _Key=NULL;
-  _Value=NULL;
-  _nextUrlcodedFormData=NULL;
+  _Key=nullptr;
+  _Value=nullptr;
+  _nextUrlcodedFormData=nullptr;
 }
 
 libhttppp::HttpForm::UrlcodedFormData::~UrlcodedFormData(){
@@ -1062,9 +1062,9 @@ libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::getUrlcodedFormData
 }
 
 libhttppp::HttpCookie::CookieData::CookieData(){
-  _Key=NULL;
-  _Value=NULL;
-  _nextCookieData=NULL;
+  _Key=nullptr;
+  _Value=nullptr;
+  _nextCookieData=nullptr;
 }
 
 libhttppp::HttpCookie::CookieData::~CookieData(){
@@ -1088,8 +1088,8 @@ const char * libhttppp::HttpCookie::CookieData::getValue(){
 
 
 libhttppp::HttpCookie::HttpCookie(){
-  _firstCookieData=NULL;
-  _lastCookieData=NULL;
+  _firstCookieData=nullptr;
+  _lastCookieData=nullptr;
 }
 
 libhttppp::HttpCookie::~HttpCookie(){
@@ -1183,9 +1183,9 @@ libhttppp::HttpCookie::CookieData  *libhttppp::HttpCookie::addCookieData(){
 
 libhttppp::HttpAuth::HttpAuth(){
   _Authtype=BASICAUTH;
-  _Username=NULL;
-  _Password=NULL;
-  _Realm=NULL;
+  _Username=nullptr;
+  _Password=nullptr;
+  _Realm=nullptr;
 }
 
 libhttppp::HttpAuth::~HttpAuth(){
@@ -1280,7 +1280,7 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
     libsystempp::scopy(realm,realm+realmsize,_Realm);
     _Realm[realmsize]='\0';
   }else{
-    _Realm=NULL;  
+    _Realm=nullptr;  
   }
 }
 

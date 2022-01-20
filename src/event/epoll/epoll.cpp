@@ -51,6 +51,14 @@ libhttppp::EPOLL::EPOLL(libsystempp::ServerSocket* serversocket) {
 libhttppp::EPOLL::~EPOLL(){
 }
 
+void libhttppp::EPOLL::LockEventPool(){
+    _ConLock.lock();
+}
+
+void libhttppp::EPOLL::UnlockEventPool(){
+    _ConLock.unlock();
+}
+        
 int libhttppp::EPOLL::LockConnection(int des) {
     _ConLock.lock();
     Connection *curct=(Connection*)_Events[des].data;
@@ -93,7 +101,7 @@ void libhttppp::EPOLL::initEventHandler(){
  
     _epollFD =syscall1(__NR_epoll_create1,0);
 
-    if (_epollFD == -1) {
+    if (_epollFD < 0) {
         httpexception[HTTPException::Critical]<<"initEventHandler:" << "can't create epoll";
         throw httpexception;
     }
@@ -147,7 +155,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         setevent->data =(__u64) curct;
         curct->ConnectionPtr = setevent; 
         if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
-            curct->getClientSocket()->getSocket(),(unsigned long) setevent) == -1) {
+            curct->getClientSocket()->getSocket(),(unsigned long) setevent) < 0) {
+            delete setevent;
             httpexception[HTTPException::Error] << "ConnectEventHandler: can't add socket to epoll";
             throw httpexception;
         }
@@ -164,8 +173,10 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data);
     char buf[BLOCKSIZE];
-    if(!curct)
-            throw httpexception[HTTPException::Error] << "ReadEventHandler: no valid data !";
+    if(!curct){
+        httpexception[HTTPException::Error] << "ReadEventHandler: no valid data !";
+        throw httpexception;
+    }
     int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
     curct->addRecvQueue(buf,rcvsize);
     RequestEvent(curct);
@@ -174,19 +185,17 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
 void libhttppp::EPOLL::WriteEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data);
-    try {
-        if(!curct || !curct->getSendData())
-            throw httpexception[HTTPException::Error] << "WriteEventHandler: no valid data !";
-        ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
+    if(!curct || !curct->getSendData()){
+         httpexception[HTTPException::Error] << "WriteEventHandler: no valid data !";
+         throw httpexception;
+    }
+    ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
-        curct->resizeSendQueue(sended);
-        if(!curct->getSendData())
-            _setEpollEvents(curct,EPOLLIN);
-        ResponseEvent(curct);
-    } catch(HTTPException &e) {
-            throw e;
-    }
+    curct->resizeSendQueue(sended);
+    if(!curct->getSendData())
+        _setEpollEvents(curct,EPOLLIN);
+    ResponseEvent(curct);
 }
 
 void libhttppp::EPOLL::CloseEventHandler(int des){
@@ -200,7 +209,7 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
         struct epoll_event *setevent=(struct epoll_event*)curct->ConnectionPtr;
         int ect=syscall5(__NR_epoll_ctl,_epollFD,EPOLL_CTL_DEL,_epollFD,
                          curct->getClientSocket()->getSocket(), (unsigned long)setevent);
-        if(ect==-1) {
+        if(ect<0) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;
         }
@@ -247,7 +256,7 @@ void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
     struct epoll_event *setevent=(struct epoll_event *)curcon->ConnectionPtr;
     setevent->events = events;
     if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_MOD, 
-        curcon->getClientSocket()->getSocket(), (unsigned long)setevent) == -1) {
+        curcon->getClientSocket()->getSocket(), (unsigned long)setevent) < 0) {
         httpexception[HTTPException::Error] << "_setEpollEvents: can change socket!";
         _ConLock.unlock();
         throw httpexception;

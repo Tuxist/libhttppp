@@ -65,9 +65,9 @@ namespace libhttppp {
     HeaderData *setData(const char *key);
     HeaderData *setData(const char* key,HeaderData *pos);
     
-    const char *getData(const char *key,HeaderData **pos=NULL);
-    size_t      getDataSizet(const char *key,HeaderData **pos=NULL);
-    int         getDataInt(const char *key,HeaderData **pos=NULL);
+    const char *getData(const char *key,HeaderData **pos=nullptr);
+    size_t      getDataSizet(const char *key,HeaderData **pos=nullptr);
+    int         getDataInt(const char *key,HeaderData **pos=nullptr);
     void        deldata(const char *key);
     void        deldata(HeaderData *pos);
     
@@ -265,8 +265,8 @@ namespace libhttppp {
     void parse(HttpRequest *curreq);
     void setcookie(HttpResponse *curresp,
                    const char *key,const char *value,
-                   const char *comment=NULL,const char *domain=NULL, 
-                   int maxage=-1,const char *path=NULL,
+                   const char *comment=nullptr,const char *domain=nullptr, 
+                   int maxage=-1,const char *path=nullptr,
                    bool secure=false,const char *version="1");
     CookieData    *getfirstCookieData();
     CookieData    *getlastCookieData();

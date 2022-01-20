@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <stddef.h>
+#include <systempp/sysexception.h>
 
 /*
  * Error Statas
@@ -39,39 +39,17 @@
 
 namespace libhttppp {
     
-    class HTTPException {
+    class HTTPException : libsystempp::SystemException{
     public:
-        
         HTTPException();
         HTTPException(const HTTPException &exp);
         virtual ~HTTPException();
-        
         int getErrorType();
-        
         const char* what();
-        
-        const HTTPException& Exception() throw();
-        
-        enum Type {Note,Warning,Error,Critical};
-        
         HTTPException& asign(const char *src);
         HTTPException& operator[](int errtype);
         HTTPException& operator<<(const char *src);
         HTTPException& operator<<(int src);
-    private:
-        struct Message {
-            Message();
-            ~Message();
-            char    *_Buffer;
-            size_t   _BufferSize;        
-            int      _CType;
-            Message *_nextMessage;
-        };
-        
-        Message *_firstMessage;
-        Message *_lastMessage;
-        
-        char    *_printBuffer;
-        int      _curCType;
+        enum Type {Note,Warning,Error,Critical};
     };
 }

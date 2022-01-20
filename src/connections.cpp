@@ -25,9 +25,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#define DEBUG
+
 #include <assert.h>
 
 #include <systempp/sysutils.h>
+
+#ifdef DEBUG
+#include <systempp/sysconsole.h>
+#endif
 
 #include <config.h>
 
@@ -91,8 +97,8 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
         written+=cursize;
     }
 #ifdef DEBUG
-    Console con;
-    con << "Written:" << written << " Datasize: " << datasize <<con.endl;
+    libsystempp::Console[SYSOUT] << "Written:" << written << " Datasize: " << datasize 
+                                 << libsystempp::Console[SYSOUT].endl;
 #endif
     if(datasize!=written)
         throw excep[HTTPException::Critical] << "something goes wrong in addsendque !";
@@ -165,12 +171,12 @@ size_t libhttppp::Connection::getRecvSize(){
   return _ReadDataSize;
 }
 
-//#define DEBUG
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
     HTTPException httpexception;
     if(!*firstdata){
-        throw httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
+        httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
+        throw httpexception;
     }
     #ifdef DEBUG
     size_t delsize=0,presize=*qsize;
@@ -192,7 +198,6 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
     if(size>0){
         #ifdef DEBUG
         delsize+=size;
-        Console con;
         #endif
         for(size_t i=0; i<((*firstdata)->getDataSize()-size); ++i){
             (*firstdata)->_Data[i]=(*firstdata)->_Data[size+i];
@@ -201,9 +206,9 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         *firstdata=(*firstdata);
     }
     #ifdef DEBUG
-    Console con;
-    con  << " delsize: "              << delsize
-    << " Calculated Blocksize: " << (presize-delsize) << con.endl;
+    libsystempp::Console[SYSOUT] << " delsize: "              << delsize
+                                 << " Calculated Blocksize: " << (presize-delsize) 
+                                 << libsystempp::Console[SYSOUT].endl;
     if((presize-delsize)!=*qsize)
         throw httpexception[HTTPException::Critical] << "_resizeQueue: Calculated wrong size";
     #endif
