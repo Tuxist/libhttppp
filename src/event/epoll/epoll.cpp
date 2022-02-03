@@ -63,7 +63,7 @@ int libhttppp::EPOLL::LockConnection(int des) {
     _ConLock.lock();
     Connection *curct=(Connection*)_Events[des].data;
     if(curct){
-        if(curct->ConnectionLock.trylock()){
+        if(curct->ConnectionLock.try_lock()){
              _ConLock.unlock();
             return LockState::LOCKED;
         }

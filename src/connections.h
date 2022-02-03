@@ -25,8 +25,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <mutex>
+
 #include <systempp/syssocket.h>
-#include <systempp/syslock.h>
 
 #include "config.h"
 #include "exception.h"
@@ -80,7 +81,7 @@ namespace libhttppp {
         ConnectionData *getRecvData();
         size_t          getRecvSize();
         
-        libsystempp::Lock ConnectionLock;
+        std::mutex      ConnectionLock;
         void           *ConnectionPtr;
     protected:
         /*Incomming Data*/
