@@ -10,9 +10,7 @@ include(CheckIncludeFileCXX)
 
 find_package(systempp REQUIRED)
 
-SET(CMAKE_CXX_FLAGS "-nolibc -nostdlib") #goal -nolibc
-
-list(APPEND CMAKE_CXX_FLAGS "-fPIC")
+SET(CMAKE_CXX_FLAGS "-nolibc -nostdlib -fPIC") #goal -nolibc
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)
 
