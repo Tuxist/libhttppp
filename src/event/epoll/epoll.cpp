@@ -207,8 +207,8 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
             throw httpexception;
         }
         struct epoll_event *setevent=(struct epoll_event*)curct->ConnectionPtr;
-        int ect=syscall5(__NR_epoll_ctl,_epollFD,EPOLL_CTL_DEL,_epollFD,
-                         curct->getClientSocket()->getSocket(), (unsigned long)setevent);
+        int ect=syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_DEL,curct->getClientSocket()->getSocket(), 
+                         (unsigned long)setevent);
         if(ect<0) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;

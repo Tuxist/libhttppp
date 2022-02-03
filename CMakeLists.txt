@@ -10,11 +10,7 @@ include(CheckIncludeFileCXX)
 
 find_package(systempp REQUIRED)
 
-CHECK_INCLUDE_FILE_CXX("${systempp_INCLUDE_DIR}/config.h" GLIBSUPPORT)
-
-if(GLIBSUPPORT MATCHES OFF)
-    SET(CMAKE_CXX_FLAGS "-nolibc -nostdlib") #goal -nolibc
-endif()
+SET(CMAKE_CXX_FLAGS "-nolibc -nostdlib") #goal -nolibc
 
 list(APPEND CMAKE_CXX_FLAGS "-fPIC")
 
