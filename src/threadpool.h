@@ -25,27 +25,22 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <systempp/systhread.h>
+#include <vector>
+#include <thread>
 
 #include "config.h"
 
 #pragma once
 
 namespace libhttppp {
-   class ThreadPool {
-   public:
-     ThreadPool();
-     ~ThreadPool();
-     libsystempp::Thread *addThread();
-     libsystempp::Thread *delThread(libsystempp::Thread *delthread);
-     
-     libsystempp::Thread *getfirstThread();
-     libsystempp::Thread *getlastThread();
-     
-     int     getAmount();
-   private:
-     libsystempp::Thread *_firstThread;
-     libsystempp::Thread *_lastThread;
-     int     _Amount;
-   };
+    class ThreadPool {
+    public:
+        ThreadPool();
+        ~ThreadPool();
+        void    addjob(void *func(void*),void *args);
+        int     getAmount();        
+        void    join();
+    private:
+        std::vector<std::thread*> _Threads;
+    };
 };

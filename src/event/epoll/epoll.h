@@ -43,7 +43,7 @@ extern "C" {
 namespace libhttppp {
     class EPOLL : public EventApi{
     public:
-        EPOLL(libsystempp::ServerSocket* serversocket);
+        EPOLL(sys::ServerSocket* serversocket);
         ~EPOLL();
         
         /*Lock mechanism*/
@@ -76,6 +76,6 @@ namespace libhttppp {
         int                        _epollFD;
         std::mutex                 _ConLock;
         struct epoll_event        *_Events;
-        libsystempp::ServerSocket *_ServerSocket;
+        sys::ServerSocket *_ServerSocket;
     };
 };

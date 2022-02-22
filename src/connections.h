@@ -53,11 +53,11 @@ namespace libhttppp {
     
     class Connection {
     public:
-        Connection(libsystempp::ServerSocket *servsock,EventApi *event);
+        Connection(sys::ServerSocket *servsock,EventApi *event);
         ~Connection();
         
         /*get client Socket from Connection*/
-        libsystempp::ClientSocket   *getClientSocket();
+        sys::ClientSocket   *getClientSocket();
         
         /*Cache helper functions*/
         
@@ -91,8 +91,8 @@ namespace libhttppp {
     private:
         ConnectionData *_resizeQueue(ConnectionData **firstdata, ConnectionData **lastdata,
                                      size_t *qsize,size_t size);
-        libsystempp::ClientSocket      *_ClientSocket;
-        libsystempp::ServerSocket      *_ServerSocket;
+        sys::ClientSocket      *_ClientSocket;
+        sys::ServerSocket      *_ServerSocket;
         
         /*Incomming Data*/
         ConnectionData *_ReadDataFirst;

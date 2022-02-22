@@ -32,7 +32,7 @@
 
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
-    HTTPDCmdController= &libsystempp::CmdController::getInstance();
+    HTTPDCmdController= &sys::CmdController::getInstance();
     /*Register Parameters*/
     HTTPDCmdController->registerCmd("help", 'h', false, (const char*) nullptr, "Helpmenu");
     HTTPDCmdController->registerCmd("httpaddr",'a', true,(const char*) nullptr,"Address to listen");
@@ -85,9 +85,9 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     try {
         #ifndef Windows
         if (portset == true)
-            _ServerSocket = new libsystempp::ServerSocket(httpaddr, port, maxconnections,-1,-1);
+            _ServerSocket = new sys::ServerSocket(httpaddr, port, maxconnections,-1,-1);
         else
-            _ServerSocket = new libsystempp::ServerSocket(httpaddr, maxconnections,-1,-1);
+            _ServerSocket = new sys::ServerSocket(httpaddr, maxconnections,-1,-1);
         #else
         _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
         #endif
@@ -103,7 +103,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     }
 }
 
-libsystempp::ServerSocket *libhttppp::HttpD::getServerSocket(){
+sys::ServerSocket *libhttppp::HttpD::getServerSocket(){
   return _ServerSocket;
 }
 

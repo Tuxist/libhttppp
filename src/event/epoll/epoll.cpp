@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <systempp/syscall.h>
 #include <systempp/sysbits.h>
-#include <systempp/sysconsole.h>
 
 #include <config.h>
 
@@ -43,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "epoll.h"
 #include "threadpool.h"
 
-libhttppp::EPOLL::EPOLL(libsystempp::ServerSocket* serversocket) {
+libhttppp::EPOLL::EPOLL(sys::ServerSocket* serversocket) {
     HTTPException httpexception;
     _ServerSocket=serversocket;
 }

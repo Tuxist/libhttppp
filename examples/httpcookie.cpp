@@ -25,7 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/sysconsole.h>
+#include <iostream>
+
 #include <systempp/sysutils.h>
 
 #include "htmlpp/html.h"
@@ -66,7 +67,7 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(libsystempp::ncompare(key,libsystempp::getlen(key),cururlform->getKey(),libsystempp::getlen(key))==0)
+                if(sys::ncompare(key,sys::getlen(key),cururlform->getKey(),sys::getlen(key))==0)
                     return cururlform->getValue();
                 }
         }
@@ -79,13 +80,13 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(libsystempp::ncompare(key,libsystempp::getlen(key),cururlform->getKey(),
-                    libsystempp::getlen(cururlform->getKey()))==0){
+                if(sys::ncompare(key,sys::getlen(key),cururlform->getKey(),
+                    sys::getlen(cururlform->getKey()))==0){
                         char ktmp[255];
-                        libsystempp::scopy(cururlform->getValue(),cururlform->getValue()+
-                                         libsystempp::getlen(cururlform->getValue()),
+                        sys::scopy(cururlform->getValue(),cururlform->getValue()+
+                                         sys::getlen(cururlform->getValue()),
                                          ktmp);
-                        return libsystempp::atoi(ktmp);
+                        return sys::atoi(ktmp);
                     }
                 }
         }
@@ -131,22 +132,19 @@ private:
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
         
     };
     void RequestEvent(libhttppp::Connection *curcon){
 
         try{
-            libsystempp::Console[SYSOUT] << "Parse Request" 
-                << libsystempp::Console[SYSOUT].endl;
+            std::cout << "Parse Request" << std::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            libsystempp::Console[SYSOUT] << "Send answer" 
-                << libsystempp::Console[SYSOUT].endl;
+            std::cout << "Send answer" << std::endl;
             CookieTest(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            libsystempp::Console[SYSOUT] << e.what() 
-                << libsystempp::Console[SYSOUT].endl;
+            std::cerr << e.what() << std::endl;
             throw e;
         }
     }
@@ -164,8 +162,7 @@ public:
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            libsystempp::Console[SYSOUT] << e.what() 
-                << libsystempp::Console[SYSOUT].endl;
+            std::cerr << e.what() << std::endl;
         }
     };
 private:

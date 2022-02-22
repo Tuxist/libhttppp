@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <systempp/sysutils.h>
 
 #ifdef DEBUG
-#include <systempp/sysconsole.h>
+#include <iostream>
 #endif
 
 #include <config.h>
@@ -54,7 +54,7 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
 
 libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
   _Data = new char[BLOCKSIZE];
-  libsystempp::scopy(data,data+datasize,_Data);
+  sys::scopy(data,data+datasize,_Data);
   _DataSize=datasize;
   _nextConnectionData=nullptr;
 }
@@ -64,7 +64,7 @@ libhttppp::ConnectionData::~ConnectionData() {
     delete _nextConnectionData;
 }
 
-libsystempp::ClientSocket *libhttppp::Connection::getClientSocket(){
+sys::ClientSocket *libhttppp::Connection::getClientSocket(){
   return _ClientSocket;
 }
 
@@ -97,8 +97,7 @@ libhttppp::ConnectionData *libhttppp::Connection::addSendQueue(const char*data,s
         written+=cursize;
     }
 #ifdef DEBUG
-    libsystempp::Console[SYSOUT] << "Written:" << written << " Datasize: " << datasize 
-                                 << libsystempp::Console[SYSOUT].endl;
+    std::cout << "Written:" << written << " Datasize: " << datasize  << std::endl;
 #endif
     if(datasize!=written)
         throw excep[HTTPException::Critical] << "something goes wrong in addsendque !";
@@ -206,14 +205,15 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         *firstdata=(*firstdata);
     }
     #ifdef DEBUG
-    libsystempp::Console[SYSOUT] << " delsize: "              << delsize
+    std::cout << " delsize: "    << delsize
                                  << " Calculated Blocksize: " << (presize-delsize) 
-                                 << libsystempp::Console[SYSOUT].endl;
+                                 << std::endl;
     if((presize-delsize)!=*qsize)
         throw httpexception[HTTPException::Critical] << "_resizeQueue: Calculated wrong size";
     #endif
+    
     return *firstdata;
-                                                               }
+}
                                                                
 int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos, 
                           ConnectionData* endblock, int endpos, char** buffer){
@@ -230,15 +230,15 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
   buf = new char[(copysize+1)]; //one more for termination
   for(ConnectionData *curdat=startblock; curdat; curdat=curdat->nextConnectionData()){
     if(curdat==startblock && curdat==endblock){
-      libsystempp::scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
+      sys::scopy(curdat->_Data+startpos,curdat->_Data+(endpos-startpos),buf+copypos);
     }else if(curdat==startblock){
-      libsystempp::scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
+      sys::scopy(curdat->_Data+startpos,curdat->_Data+(curdat->getDataSize()-startpos),buf+copypos);
       copypos+=curdat->getDataSize()-startpos;
     }else if(curdat==endblock){
-      libsystempp::scopy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
+      sys::scopy(curdat->_Data,curdat->_Data+endpos,buf+copypos);
       copypos+=endpos;
     }else{
-      libsystempp::scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
+      sys::scopy(curdat->_Data,curdat->_Data+curdat->getDataSize(),buf+copypos);
       copypos+=curdat->getDataSize();
     }
     if(curdat==endblock)
@@ -251,7 +251,7 @@ int libhttppp::Connection::copyValue(ConnectionData* startblock, int startpos,
 
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
                                        const char* keyword){
-    return searchValue(startblock, findblock, keyword,libsystempp::getlen(keyword));
+    return searchValue(startblock, findblock, keyword,sys::getlen(keyword));
 }
                                        
 int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionData** findblock, 
@@ -277,8 +277,8 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
     return -1;
 }
 
-libhttppp::Connection::Connection(libsystempp::ServerSocket *servsock,EventApi *event){
-  _ClientSocket=new libsystempp::ClientSocket();
+libhttppp::Connection::Connection(sys::ServerSocket *servsock,EventApi *event){
+  _ClientSocket=new sys::ClientSocket();
   _ServerSocket = servsock;
   _ReadDataFirst=nullptr;
   _ReadDataLast=nullptr;

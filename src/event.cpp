@@ -25,8 +25,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <iostream>
+
 #include <systempp/sysinfo.h>
-#include <systempp/sysconsole.h>
 
 #include "config.h"
 
@@ -40,7 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 bool libhttppp::Event::_Run=true;
 bool libhttppp::Event::_Restart=false;
 
-libhttppp::Event::Event(libsystempp::ServerSocket* serversocket) : EVENT(serversocket){
+libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket){
 //     libhttppp::CtrlHandler::initCtrlHandler();
 }
 
@@ -51,22 +52,21 @@ libhttppp::EventApi::~EventApi(){
 }
 
 void libhttppp::Event::runEventloop(){
-        libsystempp::CpuInfo cpuinfo;
+        sys::CpuInfo cpuinfo;
         size_t thrs = cpuinfo.getCores();
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;
         for (size_t i = 0; i < thrs; i++) {
-            libsystempp::Thread *cthread=thpool.addThread();
             try{
-                cthread->Create(WorkerThread, (void*)this);
+                thpool.addjob(WorkerThread, (void*)this);
             }catch(HTTPException &e){
                 throw e;
             }
-            for (libsystempp::Thread *curth = thpool.getfirstThread(); curth; curth = curth->nextThread) {
-                curth->Join();
-            }
         }
+        
+        thpool.join();
+        
         if(libhttppp::Event::_Restart){
             libhttppp::Event::_Restart=false;
             goto MAINWORKERLOOP;
@@ -95,8 +95,8 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                 eventptr->WriteEventHandler(i);
                                 break;
                             default:
-                                throw excep[HTTPException::Error] << "no action try to close";
-                                break;
+                                excep[HTTPException::Error] << "no action try to close";
+                                throw excep;
                         }
                         eventptr->UnlockConnection(i);
                     }catch(HTTPException &e){
@@ -105,8 +105,7 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                             eventptr->UnlockConnection(i);
                             throw e;
                         }
-                        libsystempp::Console[SYSOUT] << e.what() 
-                            << libsystempp::Console[SYSOUT].endl;                        
+                        std::cerr << e.what() << std::endl;                        
                         eventptr->UnlockConnection(i);
                     }
                 }                        
@@ -117,8 +116,7 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                     throw e;
                     break;
                 default:
-                    libsystempp::Console[SYSOUT] << e.what() 
-                        << libsystempp::Console[SYSOUT].endl; 
+                    std::cerr<< e.what() << std::endl; 
             }
         }
     }

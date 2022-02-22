@@ -39,7 +39,7 @@
 
 namespace libhttppp {
     
-    class HTTPException : libsystempp::SystemException{
+    class HTTPException : sys::SystemException{
     public:
         HTTPException();
         HTTPException(const HTTPException &exp);

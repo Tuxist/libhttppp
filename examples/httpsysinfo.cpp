@@ -25,11 +25,12 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <iostream>
+
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
 
-#include <systempp/sysconsole.h>
 #include <systempp/sysinfo.h>
 #include <systempp/sysutils.h>
 
@@ -64,7 +65,7 @@ public:
         
         Row &operator<<(int value){
             char buf[255];
-            libsystempp::itoa(value,buf);
+            sys::itoa(value,buf);
             return *this << buf;
         };
         
@@ -149,7 +150,7 @@ public:
     }
     
     void CPUInfo(){
-        libsystempp::CpuInfo cpuinfo;
+        sys::CpuInfo cpuinfo;
         _Index << "<h2>CPUInfo:</h2>";
         HtmlTable cputable;
         cputable.createRow() << "<td>Cores</td><td>" << cpuinfo.getCores()<<"</td>";
@@ -182,7 +183,7 @@ private:
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
         
     };
     
@@ -194,17 +195,16 @@ public:
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
-                 libsystempp::Console[SYSOUT] << cururl 
-            << libsystempp::Console[SYSOUT].endl;
-            if(libsystempp::ncompare(cururl, libsystempp::getlen(cururl),"/",1)==0){
+            std::cout << cururl << std::endl;
+            if(sys::ncompare(cururl, sys::getlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/images/header.png",18)==0){
+            }else if(sys::ncompare(cururl,sys::getlen(cururl),"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/favicon.ico ",12)==0){
+            }else if(sys::ncompare(cururl,sys::getlen(cururl),"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
@@ -221,8 +221,7 @@ public:
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
-            libsystempp::Console[SYSOUT] << e.what() 
-                << libsystempp::Console[SYSOUT].endl;
+            std::cerr << e.what() <<std::endl;
             throw e;
         }
     }
@@ -245,8 +244,7 @@ int main(int argc, char** argv){
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
-        libsystempp::Console[SYSOUT] << e.what() 
-            << libsystempp::Console[SYSOUT].endl;
+        std::cerr << e.what() <<std::endl;
         if(e.getErrorType()==libhttppp::HTTPException::Note 
             || libhttppp::HTTPException::Warning)
             return 0;

@@ -25,7 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/sysconsole.h>
+#include <iostream>
+
 #include <systempp/sysutils.h>
 
 #include "htmlpp/html.h"
@@ -37,17 +38,17 @@
 
 class Controller : public libhttppp::Event {
 public:
-    Controller(libsystempp::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
         
     };
     
     void RequestEvent(libhttppp::Connection *curcon){
         try{
-            libsystempp::Console[SYSOUT] << "Parse Request\n";
+            std::cout << "Parse Request\n" << std::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
-            if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/",1)==0){
+            if(sys::ncompare(cururl,sys::getlen(cururl),"/",1)==0){
                 libhttppp::HttpResponse curres;
                 curres.setState(HTTP200);
                 curres.setVersion(HTTPVERSION(1.1));
@@ -66,8 +67,8 @@ public:
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
                 curres.send(curcon,condat.c_str(),condat.size());
-            }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpbasicauth",13)==0 ||
-                libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpdigestauth",14)==0){
+            }else if(sys::ncompare(cururl,sys::getlen(cururl),"/httpbasicauth",13)==0 ||
+                sys::ncompare(cururl,sys::getlen(cururl),"/httpdigestauth",14)==0){
                 libhttppp::HttpAuth httpauth;
                 httpauth.parse(&curreq);
                 const char *username=httpauth.getUsername();
@@ -84,9 +85,9 @@ public:
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(NULL);
-                    if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpbasicauth",13)==0){
+                    if(sys::ncompare(cururl,sys::getlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(libsystempp::ncompare(cururl,libsystempp::getlen(cururl),"/httpdigestauth",14)==0){
+                    }else if(sys::ncompare(cururl,sys::getlen(cururl),"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");
@@ -102,7 +103,7 @@ public:
                 curres.send(curcon,NULL,0);
             }                
         }catch(libhttppp::HTTPException &e){
-            libsystempp::Console[SYSOUT] << e.what() << "\n";
+            std::cerr << e.what() << std::endl;
             throw e;
         }
     }
@@ -120,8 +121,7 @@ public:
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            libsystempp::Console[SYSOUT] << e.what() 
-                                         << libsystempp::Console[SYSOUT].endl;
+            std::cout << e.what() << std::endl;
         }
     };
 private:

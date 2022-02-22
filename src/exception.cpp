@@ -27,12 +27,10 @@
 
 #include "exception.h"
 
-
-
-libhttppp::HTTPException::HTTPException() : libsystempp::SystemException(){
+libhttppp::HTTPException::HTTPException() : sys::SystemException(){
 };
 
-libhttppp::HTTPException::HTTPException(const HTTPException &exp) : libsystempp::SystemException(){
+libhttppp::HTTPException::HTTPException(const HTTPException &exp) : sys::SystemException(){
 }
 
 libhttppp::HTTPException::~HTTPException(){
@@ -43,11 +41,11 @@ int libhttppp::HTTPException::getErrorType(){
 }
 
 const char* libhttppp::HTTPException::what(){
-    return libsystempp::SystemException::what();
+    return sys::SystemException::what();
 }
 
 libhttppp::HTTPException& libhttppp::HTTPException::asign(const char *src){
-    libsystempp::SystemException::asign(src);
+    sys::SystemException::asign(src);
     return *this;   
 }
 
@@ -61,7 +59,7 @@ libhttppp::HTTPException& libhttppp::HTTPException::operator<<(const char *src){
 };
 
 libhttppp::HTTPException& libhttppp::HTTPException::operator<<(int src){
-    libsystempp::SystemException::operator<<(src);
+    sys::SystemException::operator<<(src);
     return *this;
 }
 

@@ -30,7 +30,7 @@
 
 #pragma once
 
-namespace libsystempp {
+namespace sys {
     class ServerSocket;
     class CmdController;    
 }
@@ -40,13 +40,13 @@ namespace libhttppp {
     public:
         HttpD(int argc, char** argv);
         ~HttpD();
-        libsystempp::ServerSocket  *getServerSocket();
+        sys::ServerSocket  *getServerSocket();
     protected:
         void                        FileServer();
-        libsystempp::CmdController *HTTPDCmdController;
+        sys::CmdController *HTTPDCmdController;
     private:
         bool                        _fileServer;
-        libsystempp::ServerSocket  *_ServerSocket;
+        sys::ServerSocket          *_ServerSocket;
         HTTPException               _httpexception;
     };
 };

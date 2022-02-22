@@ -28,61 +28,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "threadpool.h"
 
 libhttppp::ThreadPool::ThreadPool(){
-    _firstThread=nullptr;
-    _lastThread=nullptr;
-    _Amount=0;
 }
 
 libhttppp::ThreadPool::~ThreadPool(){
-    delete _firstThread;
-    _lastThread=nullptr;
 }
 
-libsystempp::Thread *libhttppp::ThreadPool::addThread(){
-    ++_Amount;
-    if(!_firstThread){
-        _firstThread= new libsystempp::Thread;
-        _lastThread=_firstThread;
-    }else{
-        _lastThread->nextThread=new libsystempp::Thread;
-        _lastThread=_lastThread->nextThread;
-    }
-    return _lastThread;  
+void libhttppp::ThreadPool::addjob(void *func(void*),void *args){
+   _Threads.push_back(new std::thread(func,args));
 }
 
-libsystempp::Thread *libhttppp::ThreadPool::delThread(libsystempp::Thread *delthread){
-    libsystempp::Thread *prevthr=nullptr;
-    for(libsystempp::Thread *curthr=_firstThread; curthr; curthr=curthr->nextThread){
-        if(curthr==delthread){
-            if(prevthr){
-                prevthr->nextThread=curthr->nextThread;
-            }
-            if(curthr==_firstThread){
-              _firstThread=curthr->nextThread;  
-            }
-            if(curthr==_lastThread){
-              _lastThread=prevthr;
-            }
-            curthr->nextThread=nullptr;
-            --_Amount;
-            delete curthr;
-        }
-        prevthr=curthr;
-    }
-    if(prevthr)
-        return prevthr->nextThread;
-    else
-        return _firstThread;
-}
-
-libsystempp::Thread * libhttppp::ThreadPool::getfirstThread(){
-    return _firstThread;
-}
-
-libsystempp::Thread * libhttppp::ThreadPool::getlastThread(){
-    return _lastThread;
-}
 
 int libhttppp::ThreadPool::getAmount(){
-    return _Amount;
+    return _Threads.size();
+}
+
+void libhttppp::ThreadPool::join(){
+    for(;;){
+        if(_Threads.empty()){
+           break; 
+        }
+        for(std::vector<std::thread*>::iterator thit=_Threads.begin(); thit!=_Threads.end(); ++thit){
+            if((*thit)->joinable()){
+                (*thit)->join();
+                _Threads.erase(thit);
+            }
+        }
+    }
 }

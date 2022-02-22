@@ -25,14 +25,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "systempp/systhread.h"
+#include <thread>
 #include "eventapi.h"
 
 #include "event/${EVENT_HEADER}"
 
 #pragma once
 
-namespace libsystempp {
+namespace sys {
     class ServerSocket;
 };
 
@@ -44,7 +44,7 @@ namespace libhttppp {
 	class __attribute__((visibility("default"))) Event : public ${EVENT} {
 #endif
     public:
-        Event(libsystempp::ServerSocket *serversocket);
+        Event(sys::ServerSocket *serversocket);
         void runEventloop();
         static void *WorkerThread(void *wrkevent);
         virtual ~Event();
@@ -53,7 +53,7 @@ namespace libhttppp {
     private:
         struct _wArg {
             Event  *event;
-            libsystempp::Thread *cthread;
+            std::thread *cthread;
         };
     };
 };
