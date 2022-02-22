@@ -160,10 +160,11 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
             throw httpexception;
         }
         ConnectEvent(curct);
-    }catch (HTTPException& e) {
+    }catch (sys::SystemException& e) {
         delete curct;
         _Events[des].data=(__u64)nullptr;
-        throw e;
+        httpexception[HTTPException::Critical] << e.what();
+        throw httpexception;
     }
     curct->ConnectionLock.unlock();
 }
@@ -176,8 +177,13 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
         httpexception[HTTPException::Error] << "ReadEventHandler: no valid data !";
         throw httpexception;
     }
-    int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
-    curct->addRecvQueue(buf,rcvsize);
+    try{
+        int rcvsize=_ServerSocket->recvData(curct->getClientSocket(),&buf,BLOCKSIZE);
+        curct->addRecvQueue(buf,rcvsize);
+    }catch(sys::SystemException &e){
+        httpexception[HTTPException::Critical] << e.what();
+        throw httpexception;
+    }
     RequestEvent(curct);
 }
 
@@ -188,12 +194,17 @@ void libhttppp::EPOLL::WriteEventHandler(int des){
          httpexception[HTTPException::Error] << "WriteEventHandler: no valid data !";
          throw httpexception;
     }
-    ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
+    try{
+        ssize_t sended=_ServerSocket->sendData(curct->getClientSocket(),
                                        (void*)curct->getSendData()->getData(),
                                        curct->getSendData()->getDataSize());
-    curct->resizeSendQueue(sended);
-    if(!curct->getSendData())
-        _setEpollEvents(curct,EPOLLIN);
+        curct->resizeSendQueue(sended);
+        if(!curct->getSendData())
+            _setEpollEvents(curct,EPOLLIN);
+    }catch(sys::SystemException &e){
+        httpexception[HTTPException::Critical] << e.what();
+        throw httpexception;
+    }
     ResponseEvent(curct);
 }
 
