@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#define DEBUG
+//#define DEBUG
 
 #include <assert.h>
 
@@ -190,7 +190,7 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
         (*firstdata)->_nextConnectionData=NULL;
         if(*firstdata==*lastdata)
             (*lastdata)=nullptr; 
-        delete (*firstdata);
+        delete *firstdata;
         *firstdata=newdat;
     }
     

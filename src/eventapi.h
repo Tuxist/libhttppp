@@ -36,7 +36,6 @@ class EventApi {
     public:
         
         enum EventHandlerStatus{EVNOTREADY=-1,EVIN=0,EVOUT=1,EVUP=2,EVERR=3,EVWAIT=4};
-        enum LockState{LOCKED=0,UNLOCKED=1,NOLOCK=2,ERRLOCK=3};
         
         virtual ~EventApi();
         virtual void initEventHandler()=0;
@@ -51,7 +50,7 @@ class EventApi {
         /*Multithreading options*/
         virtual void LockEventPool()=0;
         virtual void UnlockEventPool()=0;
-        virtual int LockConnection(int des)=0;
+        virtual bool LockConnection(int des)=0;
         virtual void UnlockConnection(int des)=0;
         
         /*HTTP API Events*/

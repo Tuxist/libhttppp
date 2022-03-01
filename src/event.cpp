@@ -85,7 +85,7 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                 if(state==EventHandlerStatus::EVNOTREADY)
                     eventptr->ConnectEventHandler(i);
                 
-                if(eventptr->LockConnection(i)==LockState::LOCKED){
+                if(eventptr->LockConnection(i)){
                     try{
                         switch(state){
                             case EventHandlerStatus::EVIN:

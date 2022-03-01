@@ -25,12 +25,17 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <unistd.h>
+
 #include "threadpool.h"
 
 libhttppp::ThreadPool::ThreadPool(){
 }
 
 libhttppp::ThreadPool::~ThreadPool(){
+    for(std::vector<std::thread*>::iterator thit=_Threads.begin(); thit!=_Threads.end(); ++thit){
+        (*thit)->join();
+    }    
 }
 
 void libhttppp::ThreadPool::addjob(void *func(void*),void *args){
@@ -53,5 +58,6 @@ void libhttppp::ThreadPool::join(){
                 _Threads.erase(thit);
             }
         }
+        usleep(1000);
     }
 }

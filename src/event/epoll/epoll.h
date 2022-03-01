@@ -49,7 +49,7 @@ namespace libhttppp {
         /*Lock mechanism*/
         void LockEventPool();
         void UnlockEventPool();
-        int  LockConnection(int des);
+        bool LockConnection(int des);
         void UnlockConnection(int des);
                
         /*event handler function*/

@@ -153,6 +153,7 @@ public:
         sys::CpuInfo cpuinfo;
         _Index << "<h2>CPUInfo:</h2>";
         HtmlTable cputable;
+        cputable.createRow() << "<td>Vendor</td><td>" << cpuinfo.getVendor() << "</td>";
         cputable.createRow() << "<td>Cores</td><td>" << cpuinfo.getCores()<<"</td>";
         cputable.createRow() << "<td>Running on Thread</td><td>"<< cpuinfo.getActualThread()<<"</td>";
         cputable.createRow() << "<td>Threads</td><td>" << cpuinfo.getThreads()<<"</td>";
