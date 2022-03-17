@@ -313,6 +313,8 @@ libhttppp::HttpRequest::HttpRequest(){
 
 void libhttppp::HttpRequest::parse(Connection* curconnection){
     HTTPException excep;
+    if(!curconnection)
+        return;
     try{
         ConnectionData *curdat=curconnection->getRecvData();
         if(curdat){

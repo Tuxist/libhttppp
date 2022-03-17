@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-//#define DEBUG
+#define DEBUG
 
 #include <assert.h>
 
@@ -52,11 +52,16 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
   return _nextConnectionData;
 }
 
-libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize){
-  _Data = new char[BLOCKSIZE];
-  sys::scopy(data,data+datasize,_Data);
-  _DataSize=datasize;
-  _nextConnectionData=nullptr;
+libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize)  {
+    HTTPException excep;
+    _Data = new char[BLOCKSIZE];
+    if(datasize>BLOCKSIZE){
+        excep[HTTPException::Error] << "Blocksize too big !!!";
+        throw excep;
+    }
+    sys::scopy(data,data+datasize,_Data);
+    _DataSize=datasize;
+    _nextConnectionData=nullptr;
 }
 
 libhttppp::ConnectionData::~ConnectionData() {
@@ -173,7 +178,7 @@ size_t libhttppp::Connection::getRecvSize(){
 libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** firstdata, ConnectionData** lastdata,
                                                                size_t *qsize, size_t size){
     HTTPException httpexception;
-    if(!*firstdata){
+    if(!*firstdata || size > *qsize){
         httpexception[HTTPException::Error] << "_resizeQueue wrong datasize or ConnectionData";
         throw httpexception;
     }
@@ -181,7 +186,8 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
     size_t delsize=0,presize=*qsize;
     #endif
     (*qsize)-=size;
-    while(size>0 && size>=(*firstdata)->getDataSize()){
+HAVEDATA:
+    if((*firstdata)->getDataSize() <=size){
         #ifdef DEBUG
         delsize+=(*firstdata)->getDataSize();;
         #endif
@@ -192,8 +198,9 @@ libhttppp::ConnectionData *libhttppp::Connection::_resizeQueue(ConnectionData** 
             (*lastdata)=nullptr; 
         delete *firstdata;
         *firstdata=newdat;
+        if(*firstdata)
+            goto HAVEDATA;
     }
-    
     if(size>0){
         #ifdef DEBUG
         delsize+=size;

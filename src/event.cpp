@@ -79,15 +79,18 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-                
-                int state=eventptr->StatusEventHandler(i);
 
-                if(state==EventHandlerStatus::EVNOTREADY)
-                    eventptr->ConnectEventHandler(i);
+                if(!eventptr->isConnected(i)){
+                    try{
+                        eventptr->ConnectEventHandler(i);
+                    }catch(HTTPException &e){
+                        std::cerr << e.what() << std::endl;  
+                    }
+                }
                 
                 if(eventptr->LockConnection(i)){
                     try{
-                        switch(state){
+                        switch(eventptr->StatusEventHandler(i)){
                             case EventHandlerStatus::EVIN:
                                 eventptr->ReadEventHandler(i);
                                 break;
@@ -108,7 +111,7 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                         std::cerr << e.what() << std::endl;                        
                         eventptr->UnlockConnection(i);
                     }
-                }                        
+                }
             }
         }catch(HTTPException &e){
             switch(e.getErrorType()){

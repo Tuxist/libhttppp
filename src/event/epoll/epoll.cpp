@@ -37,8 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define READEVENT 0
 #define SENDEVENT 1
 
-#define DEBUG_MUTEX
-
 #include "epoll.h"
 #include "threadpool.h"
 
@@ -49,36 +47,23 @@ libhttppp::EPOLL::EPOLL(sys::ServerSocket* serversocket) {
 
 libhttppp::EPOLL::~EPOLL(){
 }
-
-void libhttppp::EPOLL::LockEventPool(){
-    _ConLock.lock();
-}
-
-void libhttppp::EPOLL::UnlockEventPool(){
-    _ConLock.unlock();
-}
         
 bool libhttppp::EPOLL::LockConnection(int des) {
-    _ConLock.lock();
     Connection *curct=(Connection*)_Events[des].data;
     if(curct){
         if(curct->ConnectionLock.try_lock()){
-             _ConLock.unlock();
             return true;
         }
     }
-    _ConLock.unlock();
     return false;
 }
 
 void libhttppp::EPOLL::UnlockConnection(int des){
     HTTPException excep;
-    _ConLock.lock();
     Connection *curct=(Connection*)_Events[des].data;
     if(curct){
         curct->ConnectionLock.unlock();
     }
-    _ConLock.unlock();
 }
 
 const char * libhttppp::EPOLL::getEventType(){
@@ -115,7 +100,7 @@ void libhttppp::EPOLL::initEventHandler(){
     
     _Events = new epoll_event[_ServerSocket->getMaxconnections()];
     for(int i=0; i<_ServerSocket->getMaxconnections(); ++i)
-        _Events[i].data = (__u64)nullptr;
+        _Events[i].data = 0;
 }
 
 int libhttppp::EPOLL::waitEventHandler(){
@@ -130,29 +115,38 @@ int libhttppp::EPOLL::waitEventHandler(){
 }
 
 int libhttppp::EPOLL::StatusEventHandler(int des){
-    HTTPException httpexception;
     Connection *curct=(Connection*)_Events[des].data;
-    if(!curct)
-        return EventHandlerStatus::EVNOTREADY;
-    if(curct->getSendSize()>0)
-            return EventHandlerStatus::EVOUT;
+    if(curct && curct->getSendSize()>0)
+        return EventHandlerStatus::EVOUT;
     return EventHandlerStatus::EVIN;
 }
+
+bool libhttppp::EPOLL::isConnected(int des){
+    if(_Events[des].data!=0)
+        return true;
+    return false;
+}
+
 
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
     Connection* curct = new Connection(_ServerSocket,this);
-    curct->ConnectionLock.lock();
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
+        
+        if((Connection*)_Events[des].data){
+            ((Connection*)_Events[des].data)->ConnectionLock.lock();
+        }
+        
         _ServerSocket->acceptEvent(curct->getClientSocket());
         curct->getClientSocket()->setnonblocking();
         struct epoll_event *setevent=new epoll_event{ 0 };
         setevent->events = EPOLLIN;
         setevent->data =(__u64) curct;
         curct->ConnectionPtr = setevent; 
+        curct->ConnectionLock.lock();
         if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
             curct->getClientSocket()->getSocket(),(unsigned long) setevent) < 0) {
             delete setevent;
@@ -160,13 +154,14 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
             throw httpexception;
         }
         ConnectEvent(curct);
+        curct->ConnectionLock.unlock();
     }catch (sys::SystemException& e) {
         delete curct;
-        _Events[des].data=(__u64)nullptr;
-        httpexception[HTTPException::Critical] << e.what();
+        if(_Events[des].data==(__u64)curct)
+            _Events[des].data=(__u64)nullptr;
+        httpexception[HTTPException::Error] << e.what();
         throw httpexception;
     }
-    curct->ConnectionLock.unlock();
 }
 
 void libhttppp::EPOLL::ReadEventHandler(int des){
@@ -190,7 +185,7 @@ void libhttppp::EPOLL::ReadEventHandler(int des){
 void libhttppp::EPOLL::WriteEventHandler(int des){
     HTTPException httpexception;
     Connection *curct=((Connection*)_Events[des].data);
-    if(!curct || !curct->getSendData()){
+    if(!curct){
          httpexception[HTTPException::Error] << "WriteEventHandler: no valid data !";
          throw httpexception;
     }
@@ -268,7 +263,6 @@ void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
     if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_MOD, 
         curcon->getClientSocket()->getSocket(), (unsigned long)setevent) < 0) {
         httpexception[HTTPException::Error] << "_setEpollEvents: can change socket!";
-        _ConLock.unlock();
         throw httpexception;
     }
 }

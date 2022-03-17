@@ -25,8 +25,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <mutex>
-
 #include "../../eventapi.h"
 #include "../../threadpool.h"
 
@@ -56,6 +54,7 @@ namespace libhttppp {
         void       initEventHandler();
         int        waitEventHandler();
         void       ConnectEventHandler(int des);
+        bool       isConnected(int des);
         int        StatusEventHandler(int des);
         void       ReadEventHandler(int des);
         void       WriteEventHandler(int des);
@@ -74,7 +73,6 @@ namespace libhttppp {
     private:
         void                       _setEpollEvents(Connection *curcon,int events);
         int                        _epollFD;
-        std::mutex                 _ConLock;
         struct epoll_event        *_Events;
         sys::ServerSocket *_ServerSocket;
     };
