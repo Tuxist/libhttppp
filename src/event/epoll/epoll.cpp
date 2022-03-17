@@ -137,7 +137,8 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
          */
         
         if((Connection*)_Events[des].data){
-            return;
+            ((Connection*)_Events[des].data)->ConnectionLock.lock();
+            CloseEventHandler(des);
         }
         
         _ServerSocket->acceptEvent(curct->getClientSocket());

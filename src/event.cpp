@@ -37,11 +37,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 
 #include "event.h"
+#include <signal.h>
 
 bool libhttppp::Event::_Run=true;
 bool libhttppp::Event::_Restart=false;
 
 libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket){
+    signal(SIGPIPE, SIG_IGN);
 //     libhttppp::CtrlHandler::initCtrlHandler();
 }
 
