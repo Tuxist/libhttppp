@@ -43,7 +43,6 @@ bool libhttppp::Event::_Run=true;
 bool libhttppp::Event::_Restart=false;
 
 libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket){
-    signal(SIGPIPE, SIG_IGN);
 //     libhttppp::CtrlHandler::initCtrlHandler();
 }
 
@@ -55,7 +54,8 @@ libhttppp::EventApi::~EventApi(){
 
 void libhttppp::Event::runEventloop(){
         sys::CpuInfo cpuinfo;
-        size_t thrs = cpuinfo.getCores();
+        signal(SIGPIPE, SIG_IGN);
+        size_t thrs = 48;
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;

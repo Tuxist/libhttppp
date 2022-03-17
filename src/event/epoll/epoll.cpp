@@ -130,16 +130,23 @@ bool libhttppp::EPOLL::isConnected(int des){
 
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
-    Connection* curct = new Connection(_ServerSocket,this);
+    Connection* curct;
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
         
         if((Connection*)_Events[des].data){
-            ((Connection*)_Events[des].data)->ConnectionLock.lock();
-            CloseEventHandler(des);
+            curct=((Connection*)_Events[des].data);
+            curct->ConnectionLock.lock();
+            struct epoll_event *setevent=(struct epoll_event*)curct->ConnectionPtr;
+            int ect=syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_DEL,curct->getClientSocket()->getSocket(), 
+                         (unsigned long)setevent);
+            curct->ConnectionLock.unlock();
+            delete curct;
         }
+        
+        curct = new Connection(_ServerSocket,this);
         
         _ServerSocket->acceptEvent(curct->getClientSocket());
         curct->getClientSocket()->setnonblocking();
