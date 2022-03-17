@@ -227,6 +227,7 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
             throw httpexception;
         }
         DisconnectEvent(curct);
+        curct->ConnectionLock.unlock();
         delete setevent;
         delete curct;
         _Events[des].data=(__u64)nullptr;
