@@ -44,12 +44,56 @@ bool libhttppp::Event::_Restart=false;
 
 libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket){
 //     libhttppp::CtrlHandler::initCtrlHandler();
+    _firstLock=nullptr;
 }
 
 libhttppp::Event::~Event(){
 }
 
 libhttppp::EventApi::~EventApi(){
+}
+
+bool libhttppp::Event::LockConnection(int des) {
+    LockedConnection *it;
+    _EventLock.lock();
+    for(it = _firstLock; it; it=it->_nextLockedConnection){
+        if(it->_Descriptor==des){
+            if(it->_ConectionLock.try_lock()){
+                _EventLock.unlock();
+                return true;
+            }
+            _EventLock.unlock();
+            return false;
+        }
+    }
+    
+    if(!it){
+        it=new LockedConnection;
+        _firstLock=it;
+    }else{
+        it=it->_nextLockedConnection;
+    }
+    it->_Descriptor=des;
+    it->_ConectionLock.lock();
+    it->_nextLockedConnection=nullptr;
+    _EventLock.unlock();
+    return true;
+}
+
+void libhttppp::Event::UnlockConnection(int des){
+    HTTPException excep;
+    LockedConnection *it;
+    _EventLock.lock();
+    for(it = _firstLock; it; it=it->_nextLockedConnection){
+        if(it->_Descriptor==des){
+            it->_ConectionLock.unlock();
+            _EventLock.unlock();
+            return;
+        }
+    }
+    excep[HTTPException::Critical]<<"UnlockConnection:" << des << "Lock not found";
+    _EventLock.unlock();
+    throw excep;
 }
 
 void libhttppp::Event::runEventloop(){
@@ -81,17 +125,11 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-
-                if(!eventptr->isConnected(i)){
+                if(eventptr->LockConnection(i)){                
                     try{
-                        eventptr->ConnectEventHandler(i);
-                    }catch(HTTPException &e){
-                        std::cerr << e.what() << std::endl;  
-                    }
-                }
-                
-                if(eventptr->LockConnection(i)){
-                    try{
+                        if(!eventptr->isConnected(i)){
+                            eventptr->ConnectEventHandler(i);
+                        }
                         switch(eventptr->StatusEventHandler(i)){
                             case EventHandlerStatus::EVIN:
                                 eventptr->ReadEventHandler(i);

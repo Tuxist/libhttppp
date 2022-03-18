@@ -41,15 +41,7 @@ extern "C" {
 };
 
 namespace libhttppp {
-    
-    class LockedConnection {
-    private:
-        Connection       *_Conection;
-        LockedConnection *_nextLockedConnection;
-        std::mutex        _ConectionLock;
-        friend class EPOLL;
-    };
-    
+
     class EPOLL : public EventApi{
     public:
         EPOLL(sys::ServerSocket* serversocket);
@@ -58,8 +50,6 @@ namespace libhttppp {
         /*Lock mechanism*/
         void LockEventPool();
         void UnlockEventPool();
-        bool LockConnection(int des);
-        void UnlockConnection(int des);
                
         /*event handler function*/
         void       initEventHandler();
@@ -84,7 +74,6 @@ namespace libhttppp {
     private:
         void                           _setEpollEvents(Connection *curcon,int events);
         int                            _epollFD;
-        LockedConnection              *_firstLock;
         struct epoll_event            *_Events;
         sys::ServerSocket             *_ServerSocket;
     };

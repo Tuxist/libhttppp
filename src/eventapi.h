@@ -48,10 +48,6 @@ class EventApi {
         virtual void WriteEventHandler(int des)=0;
         virtual void CloseEventHandler(int des)=0;
         
-        /*Multithreading options*/
-        virtual bool LockConnection(int des)=0;
-        virtual void UnlockConnection(int des)=0;
-        
         /*HTTP API Events*/
         virtual void RequestEvent(Connection *curcon)=0;
         virtual void ResponseEvent(Connection *curcon)=0;

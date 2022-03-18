@@ -26,6 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include <thread>
+#include <mutex>
+
 #include "eventapi.h"
 
 #include "event/${EVENT_HEADER}"
@@ -38,6 +40,15 @@ namespace sys {
 
 namespace libhttppp {
     class Connection;
+
+    class LockedConnection {
+    private:
+        LockedConnection *_nextLockedConnection;
+        int               _Descriptor;
+        std::mutex        _ConectionLock;
+        friend class Event;
+    };
+    
 #ifdef MSVC
 	class __declspec(dllexport) Event : public ${EVENT} {
 #else
@@ -47,6 +58,11 @@ namespace libhttppp {
         Event(sys::ServerSocket *serversocket);
         void runEventloop();
         static void *WorkerThread(void *wrkevent);
+        
+        /*Multithreading options*/
+        bool LockConnection(int des);
+        void UnlockConnection(int des);
+        
         virtual ~Event();
         static bool _Run;
         static bool _Restart;
@@ -55,5 +71,7 @@ namespace libhttppp {
             Event  *event;
             std::thread *cthread;
         };
+        std::mutex        _EventLock;
+        LockedConnection *_firstLock;
     };
 };
