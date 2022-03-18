@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 libhttppp::EPOLL::EPOLL(sys::ServerSocket* serversocket) {
     HTTPException httpexception;
     _ServerSocket=serversocket;
+    _firstLock=nullptr;
 }
 
 libhttppp::EPOLL::~EPOLL(){
@@ -51,9 +52,25 @@ libhttppp::EPOLL::~EPOLL(){
 bool libhttppp::EPOLL::LockConnection(int des) {
     Connection *curct=(Connection*)_Events[des].data;
     if(curct){
-        if(curct->ConnectionLock.try_lock()){
-            return true;
+        LockedConnection *it;
+        for(it = _firstLock; it; it=it->_nextLockedConnection){
+            if(it->_Conection==curct){
+                if(it->_ConectionLock.try_lock())
+                    return true;
+                return false;
+            }
         }
+        
+        if(!it){
+            it=new LockedConnection;
+            _firstLock=it;
+        }else{
+            it=it->_nextLockedConnection;
+        }
+        it->_Conection=curct;
+        it->_ConectionLock.lock();
+        it->_nextLockedConnection=nullptr;
+        return true;
     }
     return false;
 }
@@ -62,7 +79,15 @@ void libhttppp::EPOLL::UnlockConnection(int des){
     HTTPException excep;
     Connection *curct=(Connection*)_Events[des].data;
     if(curct){
-        curct->ConnectionLock.unlock();
+        LockedConnection *it;
+        for(it = _firstLock; it; it=it->_nextLockedConnection){
+            if(it->_Conection==curct){
+                it->_ConectionLock.unlock();
+                return;
+            }
+        }
+        excep[HTTPException::Critical]<<"UnlockConnection:" << des << "Lock not found";
+        throw excep;
     }
 }
 
@@ -142,16 +167,16 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         struct epoll_event setevent{0};
         setevent.events = EPOLLIN;
         setevent.data =(__u64) curct;
-        curct->ConnectionLock.lock();
+        LockConnection(des);
         if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
             curct->getClientSocket()->getSocket(),(unsigned long) &setevent) < 0) {
             httpexception[HTTPException::Error] << "ConnectEventHandler: can't add socket to epoll";
             throw httpexception;
         }
         ConnectEvent(curct);
-        curct->ConnectionLock.unlock();
+        UnlockConnection(des);
     }catch (sys::SystemException& e) {
-        curct->ConnectionLock.unlock();
+        UnlockConnection(des);
         delete curct;
         _Events[des].data=(__u64)nullptr;
         httpexception[HTTPException::Error] << e.what();

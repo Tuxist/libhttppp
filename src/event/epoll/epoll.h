@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <vector>
+
 #include "../../eventapi.h"
 #include "../../threadpool.h"
 
@@ -39,6 +41,15 @@ extern "C" {
 };
 
 namespace libhttppp {
+    
+    class LockedConnection {
+    private:
+        Connection       *_Conection;
+        LockedConnection *_nextLockedConnection;
+        std::mutex        _ConectionLock;
+        friend class EPOLL;
+    };
+    
     class EPOLL : public EventApi{
     public:
         EPOLL(sys::ServerSocket* serversocket);
@@ -71,9 +82,10 @@ namespace libhttppp {
         void sendReady(Connection *curcon,bool ready);
         
     private:
-        void                       _setEpollEvents(Connection *curcon,int events);
-        int                        _epollFD;
-        struct epoll_event        *_Events;
-        sys::ServerSocket *_ServerSocket;
+        void                           _setEpollEvents(Connection *curcon,int events);
+        int                            _epollFD;
+        LockedConnection              *_firstLock;
+        struct epoll_event            *_Events;
+        sys::ServerSocket             *_ServerSocket;
     };
 };

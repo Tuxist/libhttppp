@@ -80,8 +80,6 @@ namespace libhttppp {
         void            cleanRecvData();
         ConnectionData *getRecvData();
         size_t          getRecvSize();
-        
-        std::mutex      ConnectionLock;
     protected:
         /*Incomming Data*/
         size_t          _ReadDataSize;
