@@ -41,16 +41,11 @@ extern "C" {
 };
 
 namespace libhttppp {
-
+    
     class EPOLL : public EventApi{
     public:
         EPOLL(sys::ServerSocket* serversocket);
         ~EPOLL();
-        
-        /*Lock mechanism*/
-        void LockEventPool();
-        void UnlockEventPool();
-               
         /*event handler function*/
         void       initEventHandler();
         int        waitEventHandler();

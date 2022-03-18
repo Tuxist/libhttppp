@@ -43,6 +43,8 @@ class EventApi {
         virtual const char *getEventType()=0;
         virtual void ConnectEventHandler(int des)=0;
         virtual bool isConnected(int des)=0;
+        
+        /*EventHandler*/
         virtual int  StatusEventHandler(int des)=0;
         virtual void ReadEventHandler(int des)=0;
         virtual void WriteEventHandler(int des)=0;

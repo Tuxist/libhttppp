@@ -109,7 +109,6 @@ bool libhttppp::EPOLL::isConnected(int des){
     return false;
 }
 
-
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
     Connection* curct;
@@ -117,7 +116,6 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
          */
-        
         curct = new Connection(_ServerSocket,this);
         _ServerSocket->acceptEvent(curct->getClientSocket());
         curct->getClientSocket()->setnonblocking();

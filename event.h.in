@@ -44,6 +44,7 @@ namespace libhttppp {
     class LockedConnection {
     private:
         LockedConnection *_nextLockedConnection;
+        LockedConnection *_prevLockedConnection;
         int               _Descriptor;
         std::mutex        _ConectionLock;
         friend class Event;

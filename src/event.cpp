@@ -69,8 +69,12 @@ bool libhttppp::Event::LockConnection(int des) {
     
     if(!it){
         it=new LockedConnection;
+        it->_prevLockedConnection=nullptr;
         _firstLock=it;
+        
     }else{
+        it->_nextLockedConnection=new LockedConnection;
+        it->_prevLockedConnection=it;
         it=it->_nextLockedConnection;
     }
     it->_Descriptor=des;
@@ -87,6 +91,9 @@ void libhttppp::Event::UnlockConnection(int des){
     for(it = _firstLock; it; it=it->_nextLockedConnection){
         if(it->_Descriptor==des){
             it->_ConectionLock.unlock();
+            it->_prevLockedConnection=it->_nextLockedConnection;
+            it->_nextLockedConnection=nullptr;
+            delete it;
             _EventLock.unlock();
             return;
         }
