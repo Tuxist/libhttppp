@@ -116,13 +116,13 @@ int libhttppp::EPOLL::waitEventHandler(){
 
 int libhttppp::EPOLL::StatusEventHandler(int des){
     Connection *curct=(Connection*)_Events[des].data;
-    if(curct->getSendData())
+    if(curct && curct->getSendSize()>0)
         return EventHandlerStatus::EVOUT;
     return EventHandlerStatus::EVIN;
 }
 
 bool libhttppp::EPOLL::isConnected(int des){
-    if((Connection*)_Events[des].data)
+    if(_Events[des].data)
         return true;
     return false;
 }
@@ -139,13 +139,12 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         curct = new Connection(_ServerSocket,this);
         _ServerSocket->acceptEvent(curct->getClientSocket());
         curct->getClientSocket()->setnonblocking();
-        struct epoll_event *setevent=new epoll_event{ 0 };
-        setevent->events = EPOLLIN;
-        setevent->data =(__u64) curct;
+        struct epoll_event setevent{0};
+        setevent.events = EPOLLIN;
+        setevent.data =(__u64) curct;
         curct->ConnectionLock.lock();
         if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
-            curct->getClientSocket()->getSocket(),(unsigned long) setevent) < 0) {
-            delete setevent;
+            curct->getClientSocket()->getSocket(),(unsigned long) &setevent) < 0) {
             httpexception[HTTPException::Error] << "ConnectEventHandler: can't add socket to epoll";
             throw httpexception;
         }
@@ -207,13 +206,13 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
             httpexception[HTTPException::Error] << "CloseEvent empty DataPtr!";
             throw httpexception;
         }
+        
         int ect=syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_DEL,curct->getClientSocket()->getSocket(),0);
         if(ect<0) {
             httpexception[HTTPException::Error] << "CloseEvent can't delete Connection from epoll";
             throw httpexception;
         }
         DisconnectEvent(curct);
-        curct->ConnectionLock.unlock();
         delete curct;
         _Events[des].data=(__u64)nullptr;
         httpexception[HTTPException::Note] << "CloseEventHandler: Connection shutdown!";
@@ -251,12 +250,12 @@ void libhttppp::EPOLL::sendReady(libhttppp::Connection* curcon, bool ready){
 
 
 void libhttppp::EPOLL::_setEpollEvents(Connection *curcon,int events){
-    HTTPException httpexception;    
-    struct epoll_event *setevent=new epoll_event{ 0 };
-    setevent->events = events;
-    setevent->data =(__u64) curcon;
+    HTTPException httpexception;
+    struct epoll_event setevent{ 0 };
+    setevent.events = events;
+    setevent.data =(__u64) curcon;
     if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_MOD, 
-        curcon->getClientSocket()->getSocket(), (unsigned long)setevent) < 0) {
+        curcon->getClientSocket()->getSocket(), (unsigned long)&setevent) < 0) {
         httpexception[HTTPException::Error] << "_setEpollEvents: can change socket!";
         throw httpexception;
     }
