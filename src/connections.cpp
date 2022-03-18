@@ -292,7 +292,6 @@ libhttppp::Connection::Connection(sys::ServerSocket *servsock,EventApi *event){
   _SendDataLast=nullptr;
   _SendDataSize=0;
   _EventApi=event;
-  ConnectionPtr=nullptr;
 }
 
 libhttppp::Connection::~Connection(){

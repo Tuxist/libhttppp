@@ -82,7 +82,6 @@ namespace libhttppp {
         size_t          getRecvSize();
         
         std::mutex      ConnectionLock;
-        void           *ConnectionPtr;
     protected:
         /*Incomming Data*/
         size_t          _ReadDataSize;
