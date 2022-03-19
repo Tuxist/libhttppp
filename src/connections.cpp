@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#define DEBUG
+
 #include <assert.h>
 
 #include <systempp/sysutils.h>
@@ -191,7 +193,7 @@ HAVEDATA:
         #endif
         size-=(*firstdata)->getDataSize();
         ConnectionData *newdat=(*firstdata)->_nextConnectionData;
-        (*firstdata)->_nextConnectionData=NULL;
+        (*firstdata)->_nextConnectionData=nullptr;
         if(*firstdata==*lastdata)
             (*lastdata)=nullptr; 
         delete *firstdata;
@@ -273,7 +275,7 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
             }else{
                 fcurpos=0;
                 fpos=0;
-                *findblock=NULL;
+                *findblock=nullptr;
             }
             if(fcurpos==keylen)
                 return fpos;

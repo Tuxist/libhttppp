@@ -44,7 +44,7 @@ bool libhttppp::Event::_Restart=false;
 
 libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket){
 //     libhttppp::CtrlHandler::initCtrlHandler();
-    _firstLock=nullptr;
+    _Locks=nullptr;
 }
 
 libhttppp::Event::~Event(){
@@ -53,72 +53,61 @@ libhttppp::Event::~Event(){
 libhttppp::EventApi::~EventApi(){
 }
 
-bool libhttppp::Event::LockConnection(int des) {
-    LockedConnection *it;
-    _EventLock.lock();
-    for(it = _firstLock; it; it=it->_nextLockedConnection){
-        if(it->_Descriptor==des){
-            if(it->_ConectionLock.try_lock()){
-                _EventLock.unlock();
-                return true;
-            }
-            _EventLock.unlock();
+bool libhttppp::Event::LockConnection(int threadid,int des) {
+    _Lock.lock();
+    for(int i=0; i<_Threads; ++i){
+        if(_Locks[i]==des){
+            _Lock.unlock();
             return false;
         }
     }
-    
-    if(!it){
-        it=new LockedConnection;
-        it->_prevLockedConnection=nullptr;
-        _firstLock=it;
-        
-    }else{
-        it->_nextLockedConnection=new LockedConnection;
-        it->_prevLockedConnection=it;
-        it=it->_nextLockedConnection;
+    if(_Locks[threadid]==-1){
+        _Locks[threadid]=des;
+        _Lock.unlock();
+        return true;
     }
-    it->_Descriptor=des;
-    it->_ConectionLock.lock();
-    it->_nextLockedConnection=nullptr;
-    _EventLock.unlock();
-    return true;
+    _Lock.unlock();
+    return false;
 }
 
-void libhttppp::Event::UnlockConnection(int des){
+void libhttppp::Event::UnlockConnection(int threadid,int des){
     HTTPException excep;
-    LockedConnection *it;
-    _EventLock.lock();
-    for(it = _firstLock; it; it=it->_nextLockedConnection){
-        if(it->_Descriptor==des){
-            it->_ConectionLock.unlock();
-            it->_prevLockedConnection=it->_nextLockedConnection;
-            it->_nextLockedConnection=nullptr;
-            delete it;
-            _EventLock.unlock();
-            return;
-        }
+    _Lock.lock();
+    if(_Locks[threadid]!=des){
+        _Lock.unlock();
+        excep[HTTPException::Error] << "UnlockConnection:" << des << "not locked !";
+        throw excep;        
     }
-    excep[HTTPException::Critical]<<"UnlockConnection:" << des << "Lock not found";
-    _EventLock.unlock();
-    throw excep;
+    _Locks[threadid]=-1;
+    _Lock.unlock();
 }
 
 void libhttppp::Event::runEventloop(){
         sys::CpuInfo cpuinfo;
         signal(SIGPIPE, SIG_IGN);
-        size_t thrs = 48;
+        _Threads = 48;
         initEventHandler();
 MAINWORKERLOOP:
         ThreadPool thpool;
-        for (size_t i = 0; i < thrs; i++) {
+        
+        _Locks=new int[_Threads];
+        
+        
+        for (size_t i = 0; i < _Threads; i++) {
             try{
-                thpool.addjob(WorkerThread, (void*)this);
+                struct _wArg *warg= new struct _wArg;
+                warg->event=this;
+                warg->threaid=i;
+                _Locks[i]=-1;
+                thpool.addjob(WorkerThread,(void*)warg);
             }catch(HTTPException &e){
                 throw e;
             }
         }
-        
+                
         thpool.join();
+        
+        delete[] _Locks;
         
         if(libhttppp::Event::_Restart){
             libhttppp::Event::_Restart=false;
@@ -127,12 +116,12 @@ MAINWORKERLOOP:
 }
 
 void * libhttppp::Event::WorkerThread(void* wrkevent){
-    Event *eventptr=((Event*)wrkevent);
+    Event *eventptr=((_wArg*)wrkevent)->event;
     HTTPException excep;
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-                if(eventptr->LockConnection(i)){                
+                if(eventptr->LockConnection(((_wArg*)wrkevent)->threaid,i)){
                     try{
                         if(!eventptr->isConnected(i)){
                             eventptr->ConnectEventHandler(i);
@@ -148,15 +137,15 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                 excep[HTTPException::Error] << "no action try to close";
                                 throw excep;
                         }
-                        eventptr->UnlockConnection(i);
+                        eventptr->UnlockConnection(((_wArg*)wrkevent)->threaid,i);
                     }catch(HTTPException &e){
                         eventptr->CloseEventHandler(i);
                         if(e.getErrorType()==HTTPException::Critical){
-                            eventptr->UnlockConnection(i);
+                            eventptr->UnlockConnection(((_wArg*)wrkevent)->threaid,i);
                             throw e;
                         }
                         std::cerr << e.what() << std::endl;                        
-                        eventptr->UnlockConnection(i);
+                        eventptr->UnlockConnection(((_wArg*)wrkevent)->threaid,i);
                     }
                 }
             }
@@ -170,5 +159,6 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
             }
         }
     }
+    delete ((_wArg*)wrkevent);
     return nullptr;
 }

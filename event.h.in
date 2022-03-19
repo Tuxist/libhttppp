@@ -40,15 +40,6 @@ namespace sys {
 
 namespace libhttppp {
     class Connection;
-
-    class LockedConnection {
-    private:
-        LockedConnection *_nextLockedConnection;
-        LockedConnection *_prevLockedConnection;
-        int               _Descriptor;
-        std::mutex        _ConectionLock;
-        friend class Event;
-    };
     
 #ifdef MSVC
 	class __declspec(dllexport) Event : public ${EVENT} {
@@ -61,8 +52,8 @@ namespace libhttppp {
         static void *WorkerThread(void *wrkevent);
         
         /*Multithreading options*/
-        bool LockConnection(int des);
-        void UnlockConnection(int des);
+        bool LockConnection(int threadid,int des);
+        void UnlockConnection(int threadid,int des);
         
         virtual ~Event();
         static bool _Run;
@@ -70,9 +61,10 @@ namespace libhttppp {
     private:
         struct _wArg {
             Event  *event;
-            std::thread *cthread;
+            int     threaid;
         };
-        std::mutex        _EventLock;
-        LockedConnection *_firstLock;
+        int                _Threads;
+        std::mutex         _Lock;
+        int               *_Locks;
     };
 };
