@@ -42,7 +42,10 @@ class EventApi {
         virtual int    waitEventHandler()=0;
         virtual const char *getEventType()=0;
         virtual void ConnectEventHandler(int des)=0;
-        virtual bool isConnected(int des)=0;
+
+        /*Multithreading Options*/
+        virtual bool LockConnection(int des)=0;
+        virtual void UnlockConnection(int des)=0;
         
         /*EventHandler*/
         virtual int  StatusEventHandler(int des)=0;

@@ -51,20 +51,10 @@ namespace libhttppp {
         void runEventloop();
         static void *WorkerThread(void *wrkevent);
         
-        /*Multithreading options*/
-        bool LockConnection(int threadid,int des);
-        void UnlockConnection(int threadid,int des);
-        
         virtual ~Event();
         static bool _Run;
         static bool _Restart;
     private:
-        struct _wArg {
-            Event  *event;
-            int     threaid;
-        };
-        int                _Threads;
-        std::mutex         _Lock;
-        int               *_Locks;
+        int _Threads;
     };
 };

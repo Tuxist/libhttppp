@@ -31,7 +31,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "config.h"
 
-#include "connections.h"
 #include "eventapi.h"
 #include "threadpool.h"
 #include "exception.h"
@@ -42,91 +41,53 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 bool libhttppp::Event::_Run=true;
 bool libhttppp::Event::_Restart=false;
 
-libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket){
+libhttppp::Event::Event(sys::ServerSocket* serversocket) : EVENT(serversocket) {
 //     libhttppp::CtrlHandler::initCtrlHandler();
-    _Locks=nullptr;
 }
 
-libhttppp::Event::~Event(){
+libhttppp::Event::~Event() {
 }
 
-libhttppp::EventApi::~EventApi(){
+libhttppp::EventApi::~EventApi() {
 }
 
-bool libhttppp::Event::LockConnection(int threadid,int des) {
-    _Lock.lock();
-    for(int i=0; i<_Threads; ++i){
-        if(_Locks[i]==des){
-            _Lock.unlock();
-            return false;
-        }
-    }
-    if(_Locks[threadid]==-1){
-        _Locks[threadid]=des;
-        _Lock.unlock();
-        return true;
-    }
-    _Lock.unlock();
-    return false;
-}
 
-void libhttppp::Event::UnlockConnection(int threadid,int des){
-    HTTPException excep;
-    _Lock.lock();
-    if(_Locks[threadid]!=des){
-        _Lock.unlock();
-        excep[HTTPException::Error] << "UnlockConnection:" << des << "not locked !";
-        throw excep;        
-    }
-    _Locks[threadid]=-1;
-    _Lock.unlock();
-}
-
-void libhttppp::Event::runEventloop(){
-        sys::CpuInfo cpuinfo;
-        signal(SIGPIPE, SIG_IGN);
-        _Threads = 48;
-        initEventHandler();
+void libhttppp::Event::runEventloop() {
+    sys::CpuInfo cpuinfo;
+    signal(SIGPIPE, SIG_IGN);
+    _Threads = 48;
+    initEventHandler();
 MAINWORKERLOOP:
-        ThreadPool thpool;
-        
-        _Locks=new int[_Threads];
-        
-        
-        for (size_t i = 0; i < _Threads; i++) {
-            try{
-                struct _wArg *warg= new struct _wArg;
-                warg->event=this;
-                warg->threaid=i;
-                _Locks[i]=-1;
-                thpool.addjob(WorkerThread,(void*)warg);
-            }catch(HTTPException &e){
-                throw e;
-            }
+    ThreadPool thpool;
+
+    for (size_t i = 0; i < _Threads; ++i) {
+        try {
+            thpool.addjob(WorkerThread,(void*)this);
+        } catch(HTTPException &e) {
+            throw e;
         }
-                
-        thpool.join();
-        
-        delete[] _Locks;
-        
-        if(libhttppp::Event::_Restart){
-            libhttppp::Event::_Restart=false;
-            goto MAINWORKERLOOP;
-        }
+    }
+
+    thpool.join();
+
+    if(libhttppp::Event::_Restart) {
+        libhttppp::Event::_Restart=false;
+        goto MAINWORKERLOOP;
+    }
 }
 
-void * libhttppp::Event::WorkerThread(void* wrkevent){
-    Event *eventptr=((_wArg*)wrkevent)->event;
+void * libhttppp::Event::WorkerThread(void* wrkevent) {
+    Event *eventptr=(Event*)wrkevent;
     HTTPException excep;
     while (libhttppp::Event::_Run) {
         try {
             for (int i = 0; i < eventptr->waitEventHandler(); ++i) {
-                if(eventptr->LockConnection(((_wArg*)wrkevent)->threaid,i)){
-                    try{
-                        if(!eventptr->isConnected(i)){
-                            eventptr->ConnectEventHandler(i);
-                        }
-                        switch(eventptr->StatusEventHandler(i)){
+
+                eventptr->ConnectEventHandler(i);
+                
+                if(eventptr->LockConnection(i)) {
+                    try {
+                        switch(eventptr->StatusEventHandler(i)) {
                             case EventHandlerStatus::EVIN:
                                 eventptr->ReadEventHandler(i);
                                 break;
@@ -137,28 +98,26 @@ void * libhttppp::Event::WorkerThread(void* wrkevent){
                                 excep[HTTPException::Error] << "no action try to close";
                                 throw excep;
                         }
-                        eventptr->UnlockConnection(((_wArg*)wrkevent)->threaid,i);
-                    }catch(HTTPException &e){
+                    } catch(HTTPException &e) {
                         eventptr->CloseEventHandler(i);
-                        if(e.getErrorType()==HTTPException::Critical){
-                            eventptr->UnlockConnection(((_wArg*)wrkevent)->threaid,i);
+                        if(e.getErrorType()==HTTPException::Critical) {
+                            eventptr->UnlockConnection(i);
                             throw e;
                         }
-                        std::cerr << e.what() << std::endl;                        
-                        eventptr->UnlockConnection(((_wArg*)wrkevent)->threaid,i);
+                        std::cerr << e.what() << std::endl;
                     }
+                    eventptr->UnlockConnection(i);
                 }
             }
-        }catch(HTTPException &e){
-            switch(e.getErrorType()){
-                case HTTPException::Critical:
-                    throw e;
-                    break;
-                default:
-                    std::cerr<< e.what() << std::endl; 
+        } catch(HTTPException &e) {
+            switch(e.getErrorType()) {
+            case HTTPException::Critical:
+                throw e;
+                break;
+            default:
+                std::cerr<< e.what() << std::endl;
             }
         }
     }
-    delete ((_wArg*)wrkevent);
     return nullptr;
 }

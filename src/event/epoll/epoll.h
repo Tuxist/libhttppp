@@ -50,13 +50,16 @@ namespace libhttppp {
         void       initEventHandler();
         int        waitEventHandler();
         void       ConnectEventHandler(int des);
-        bool       isConnected(int des);
         int        StatusEventHandler(int des);
         void       ReadEventHandler(int des);
         void       WriteEventHandler(int des);
         void       CloseEventHandler(int des);
         const char *getEventType();
-
+        
+        /*Multithreading Options*/
+        bool LockConnection(int des);
+        void UnlockConnection(int des);
+        
         /*HTTP API Events*/
         void RequestEvent(Connection *curcon);
         void ResponseEvent(Connection *curcon);
@@ -71,5 +74,6 @@ namespace libhttppp {
         int                            _epollFD;
         struct epoll_event            *_Events;
         sys::ServerSocket             *_ServerSocket;
+        std::mutex                     _Lock;
     };
 };

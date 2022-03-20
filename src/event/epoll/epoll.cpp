@@ -47,7 +47,29 @@ libhttppp::EPOLL::EPOLL(sys::ServerSocket* serversocket) {
 
 libhttppp::EPOLL::~EPOLL(){
 }
-        
+
+bool libhttppp::EPOLL::LockConnection(int des) {
+    std::lock_guard<std::mutex> lock(_Lock);
+
+    Connection *curct=(Connection*)_Events[des].data;
+
+    if(curct && !curct->Locked){
+        curct->Locked=true;
+        return true;
+    }
+
+    return false;
+}
+
+void libhttppp::EPOLL::UnlockConnection(int des) {
+    Connection *curct=(Connection*)_Events[des].data;
+    if(curct)
+        curct->Locked=false;
+    HTTPException httpexception;
+    httpexception[HTTPException::Critical]<<"UnlockConnection:" << des << "no Connection Data";
+    throw httpexception;   
+}
+
 const char * libhttppp::EPOLL::getEventType(){
     return "EPOLL";
 }
@@ -103,15 +125,15 @@ int libhttppp::EPOLL::StatusEventHandler(int des){
     return EventHandlerStatus::EVIN;
 }
 
-bool libhttppp::EPOLL::isConnected(int des){
-    if(_Events[des].data)
-        return true;
-    return false;
-}
-
 void libhttppp::EPOLL::ConnectEventHandler(int des) {
     HTTPException httpexception;
     Connection* curct;
+
+    std::lock_guard<std::mutex> lock(_Lock);
+    
+    if(_Events[des].data)
+        return;
+
     try {
         /*will create warning debug mode that normally because the check already connection
          * with this socket if getconnection throw they will be create a new one
@@ -122,12 +144,14 @@ void libhttppp::EPOLL::ConnectEventHandler(int des) {
         struct epoll_event setevent{0};
         setevent.events = EPOLLIN;
         setevent.data =(__u64) curct;
+        curct->Locked=true;
         if (syscall4(__NR_epoll_ctl,_epollFD,EPOLL_CTL_ADD,
             curct->getClientSocket()->getSocket(),(unsigned long) &setevent) < 0) {
             httpexception[HTTPException::Error] << "ConnectEventHandler: can't add socket to epoll";
             throw httpexception;
         }
         ConnectEvent(curct);
+        curct->Locked=false;
     }catch (sys::SystemException& e) {
         delete curct;
         _Events[des].data=(__u64)nullptr;
@@ -179,6 +203,7 @@ void libhttppp::EPOLL::CloseEventHandler(int des){
     HTTPException httpexception;
     try {
         Connection *curct=((Connection*)_Events[des].data);
+        
         if(!curct){
             httpexception[HTTPException::Error] << "CloseEvent empty DataPtr!";
             throw httpexception;

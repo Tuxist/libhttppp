@@ -39,7 +39,7 @@ libhttppp::ThreadPool::~ThreadPool(){
 }
 
 void libhttppp::ThreadPool::addjob(void *func(void*),void *args){
-   _Threads.push_back(new std::thread(func,args));
+   _Threads.push_back((new std::thread(func,args)));
 }
 
 

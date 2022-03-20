@@ -25,8 +25,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#define DEBUG
-
 #include <assert.h>
 
 #include <systempp/sysutils.h>
@@ -54,11 +52,11 @@ libhttppp::ConnectionData *libhttppp::ConnectionData::nextConnectionData(){
 
 libhttppp::ConnectionData::ConnectionData(const char*data,size_t datasize)  {
     HTTPException excep;
-    _Data = new char[BLOCKSIZE];
     if(datasize>BLOCKSIZE){
         excep[HTTPException::Error] << "Blocksize too big !!!";
         throw excep;
     }
+    _Data = new char[BLOCKSIZE];
     sys::scopy(data,data+datasize,_Data);
     _DataSize=datasize;
     _nextConnectionData=nullptr;
@@ -285,15 +283,16 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 }
 
 libhttppp::Connection::Connection(sys::ServerSocket *servsock,EventApi *event){
-  _ClientSocket=new sys::ClientSocket();
-  _ServerSocket = servsock;
-  _ReadDataFirst=nullptr;
-  _ReadDataLast=nullptr;
-  _ReadDataSize=0;
-  _SendDataFirst=nullptr;
-  _SendDataLast=nullptr;
-  _SendDataSize=0;
-  _EventApi=event;
+    Locked=false;
+    _ClientSocket=new sys::ClientSocket();
+    _ServerSocket = servsock;
+    _ReadDataFirst=nullptr;
+    _ReadDataLast=nullptr;
+    _ReadDataSize=0;
+    _SendDataFirst=nullptr;
+    _SendDataLast=nullptr;
+    _SendDataSize=0;
+    _EventApi=event;
 }
 
 libhttppp::Connection::~Connection(){
