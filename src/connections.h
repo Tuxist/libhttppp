@@ -80,7 +80,7 @@ namespace libhttppp {
         void            cleanRecvData();
         ConnectionData *getRecvData();
         size_t          getRecvSize();
-        bool            Locked;
+        std::mutex      Lock;
     protected:
         /*Incomming Data*/
         size_t          _ReadDataSize;
@@ -100,7 +100,9 @@ namespace libhttppp {
         ConnectionData *_SendDataFirst;
         ConnectionData *_SendDataLast;
         EventApi       *_EventApi;
+
         friend class ConnectionPool;
+        friend class Event;
     };
 
     class ClientConnection {

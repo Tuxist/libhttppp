@@ -283,7 +283,6 @@ int libhttppp::Connection::searchValue(ConnectionData* startblock, ConnectionDat
 }
 
 libhttppp::Connection::Connection(sys::ServerSocket *servsock,EventApi *event){
-    Locked=false;
     _ClientSocket=new sys::ClientSocket();
     _ServerSocket = servsock;
     _ReadDataFirst=nullptr;
