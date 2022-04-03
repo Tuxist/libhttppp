@@ -28,6 +28,7 @@
 #include <iostream>
 
 #include <systempp/sysutils.h>
+#include <systempp/syseventapi.h>
 
 #include "htmlpp/html.h"
 
@@ -36,13 +37,13 @@
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public libhttppp::Event {
+class Controller : public sys::Event {
 public:
     Controller(sys::ServerSocket* serversocket) : Event(serversocket){
         
     };
     
-    void RequestEvent(libhttppp::Connection *curcon){
+    void RequestEvent(sys::Connection *curcon){
         try{
             std::cout << "Parse Request\n" << std::endl;
             libhttppp::HttpRequest curreq;

@@ -27,6 +27,7 @@
 
 #include <iostream>
 
+#include <systempp/syseventapi.h>
 #include <systempp/sysutils.h>
 
 #include "htmlpp/html.h"
@@ -39,7 +40,7 @@
 
 class CookieTest {
 public:
-    CookieTest(libhttppp::Connection *curcon,libhttppp::HttpRequest *curreq){
+    CookieTest(sys::Connection *curcon,libhttppp::HttpRequest *curreq){
         _Curcon=curcon;
         _Curreq=curreq;
         
@@ -126,16 +127,16 @@ private:
     libhtmlpp::HtmlString  _HTMLDat;
     libhttppp::HttpCookie   _Cookie;
     libhttppp::HttpResponse _Curres;
-    libhttppp::Connection  *_Curcon;
+    sys::Connection        *_Curcon;
     libhttppp::HttpRequest *_Curreq;
 };
 
-class Controller : public libhttppp::Event {
+class Controller : public sys::Event {
 public:
     Controller(sys::ServerSocket* serversocket) : Event(serversocket){
         
     };
-    void RequestEvent(libhttppp::Connection *curcon){
+    void RequestEvent(sys::Connection *curcon){
 
         try{
             std::cout << "Parse Request" << std::endl;

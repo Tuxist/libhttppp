@@ -25,7 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include "event.h"
+#include "systempp/syseventapi.h"
 #include "exception.h"
 
 #pragma once

@@ -265,10 +265,8 @@ void libhttppp::HttpResponse::setVersion(const char* version){
   _Version[vlen]='\0';
 }
 
-void libhttppp::HttpResponse::parse(ClientConnection *curconnection){
-}
 
-void libhttppp::HttpResponse::send(Connection* curconnection, const char* data){
+void libhttppp::HttpResponse::send(sys::Connection* curconnection, const char* data){
   send(curconnection,data,sys::getlen(data));
 }
 
@@ -290,7 +288,7 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
 }
 
 
-void libhttppp::HttpResponse::send(Connection* curconnection,const char* data, unsigned long datalen){
+void libhttppp::HttpResponse::send(sys::Connection* curconnection,const char* data, unsigned long datalen){
   if(datalen>=0){
         setContentLength(datalen);
   }
@@ -311,14 +309,14 @@ libhttppp::HttpRequest::HttpRequest(){
   _RequestSize=0;
 }
 
-void libhttppp::HttpRequest::parse(Connection* curconnection){
+void libhttppp::HttpRequest::parse(sys::Connection* curconnection){
     HTTPException excep;
     if(!curconnection)
         return;
     try{
-        ConnectionData *curdat=curconnection->getRecvData();
+        sys::ConnectionData *curdat=curconnection->getRecvData();
         if(curdat){
-            ConnectionData *startblock;
+            sys::ConnectionData *startblock;
             int startpos=0;
             
             if((startpos=curconnection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
@@ -330,7 +328,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                 curconnection->cleanRecvData();
                 throw excep;
             }
-            ConnectionData *endblock;
+            sys::ConnectionData *endblock;
             ssize_t endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
             if(endpos==-1){
                 excep[HTTPException::Error] << "can't find newline headerend";
@@ -417,7 +415,7 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 if(csize<=rsize){
                     size_t dlocksize=curconnection->getRecvSize();
-                    ConnectionData *dblock=nullptr;
+                    sys::ConnectionData *dblock=nullptr;
                     size_t cdlocksize=0;
                     for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextConnectionData()){
                         dlocksize-=dblock->getDataSize();
@@ -442,10 +440,6 @@ void libhttppp::HttpRequest::parse(Connection* curconnection){
         curconnection->cleanRecvData();
         throw e;
     }
-}
-
-void libhttppp::HttpRequest::send(ClientConnection *curconnection){
-
 }
 
 int libhttppp::HttpRequest::getRequestType(){

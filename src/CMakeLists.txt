@@ -4,14 +4,11 @@ set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 include(GenerateExportHeader)
 
 set(libhttpSrcs
-  threadpool.cpp
   exception.cpp
-  connections.cpp
   http.cpp
   httpd.cpp
 #  https.cpp
   base64.cpp
-  event.cpp
 )
 
 IF(${EVENT} MATCHES "SELECT")
@@ -34,13 +31,8 @@ add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(httppp ${OPENSSL_LIBRARIES} wsock32 ws2_32 systempp cmd)
-  target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} wsock32 ws2_32 systempp cmd)
-ELSE()
-  target_link_libraries(httppp ${OPENSSL_LIBRARIES} systempp cmd pthread)
-  target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} systempp cmd pthread)    
-ENDIF()
+target_link_libraries(httppp ${OPENSSL_LIBRARIES} systempp cmd) 
+target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} systempp cmd)    
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 

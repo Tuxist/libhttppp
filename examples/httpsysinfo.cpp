@@ -33,6 +33,7 @@
 
 #include <systempp/sysinfo.h>
 #include <systempp/sysutils.h>
+#include <systempp/syseventapi.h>
 
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"
@@ -182,13 +183,13 @@ private:
     libhtmlpp::HtmlString  _Index;
 };
 
-class Controller : public libhttppp::Event {
+class Controller : public sys::Event {
 public:
     Controller(sys::ServerSocket* serversocket) : Event(serversocket){
         
     };
     
-    void IndexController(libhttppp::Connection *curcon){
+    void IndexController(sys::Connection *curcon){
         try{
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
@@ -218,7 +219,7 @@ public:
         }
     }
     
-    void RequestEvent(libhttppp::Connection *curcon){
+    void RequestEvent(sys::Connection *curcon){
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){

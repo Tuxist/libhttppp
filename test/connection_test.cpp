@@ -26,7 +26,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include <iostream>
-#include "connections.h"
 
 #define SENDDATA "6a3a08f0-f84f-11eb-b83a-97319b38c7ae"
 

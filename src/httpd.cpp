@@ -30,6 +30,7 @@
 
 #include "httpd.h"
 
+#define MAXDEFAULTCONN 1024
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
     HTTPDCmdController= &sys::CmdController::getInstance();

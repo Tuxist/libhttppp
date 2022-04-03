@@ -25,12 +25,12 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <systempp/syseventapi.h>
+
 #include "config.h"
 
-#include "connections.h"
 #include "httpdefinitions.h"
 #include "exception.h"
-#include "eventapi.h"
 
 #pragma once
 
@@ -90,9 +90,8 @@ namespace libhttppp {
     void   setContentLength(size_t len);
     void   setConnection(const char *type);
     void   setVersion(const char* version);
-    void   send(Connection *curconnection,const char* data);
-    void   send(Connection *curconnection,const char* data, unsigned long datalen); //only use as server
-    void   parse(ClientConnection *curconnection); //only use as client
+    void   send(sys::Connection *curconnection,const char* data);
+    void   send(sys::Connection *curconnection,const char* data, unsigned long datalen); //only use as server
     size_t printHeader(char **buffer);
   private:
     char          _State[255];
@@ -110,8 +109,7 @@ namespace libhttppp {
   public:
     HttpRequest();
     ~HttpRequest();
-    void           parse(Connection *curconnection); //only use as server
-    void           send(ClientConnection *curconnection); //only use as client
+    void           parse(sys::Connection *curconnection); //only use as server
     size_t         printHeader(char **buffer);
     int            getRequestType();
     const char    *getRequestURL();
@@ -126,9 +124,9 @@ namespace libhttppp {
     char           _Version[255];
     size_t         _VersionLen;
     
-    HttpHeader    *_HttpHeader;
-    Connection    *_Connection;
-    HTTPException  _httpexception;
+    HttpHeader      *_HttpHeader;
+    sys::Connection *_Connection;
+    HTTPException    _httpexception;
   };
   
   class HttpForm {
