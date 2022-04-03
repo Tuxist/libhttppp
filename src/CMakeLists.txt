@@ -11,16 +11,6 @@ set(libhttpSrcs
   base64.cpp
 )
 
-IF(${EVENT} MATCHES "SELECT")
-    list(APPEND libhttpSrcs "event/select/select.cpp")
-ELSEIF(${EVENT} MATCHES "IOCP")
-    list(APPEND libhttpSrcs "event/iocp/iocp.cpp")
-ELSEIF(${EVENT} MATCHES "EPOLL")
-    list(APPEND libhttpSrcs "event/epoll/epoll.cpp")
-ELSEIF(${EVENT} MATCHES "KQUEUE")
-    list(APPEND libhttpSrcs "event/kqueue/kqueue.cpp")
-ENDIF()
-
 include_directories(
     ${systempp_INCLUDE_DIR}
     ${OPENSSL_INCLUDE_DIR}
@@ -53,34 +43,17 @@ install(TARGETS httppp-static
   ARCHIVE DESTINATION lib
 )
 
-install(FILES connections.h
-              threadpool.h
-              httpd.h
+install(FILES httpd.h
               http.h
               httpdefinitions.h
               exception.h
-              eventapi.h
               https.h
               mimetypes.h
               "${CMAKE_BINARY_DIR}/config.h"
-              "${CMAKE_BINARY_DIR}/event.h"
               "${CMAKE_CURRENT_BINARY_DIR}/httppp_export.h"
         DESTINATION include/httppp
         COMPONENT Devel
 )
-
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    install(FILES event/epoll/epoll.h 
-            DESTINATION include/httppp/event/epoll
-            COMPONENT Devel
-    )
-ELSEIF(${CMAKE_SYSTEM_NAME} MATCHES "BSD" OR 
-       ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    install(FILES event/kqueue/kqueue.h
-            DESTINATION include/httppp/event/kqueue
-            COMPONENT Devel
-    )
-ENDIF()
 
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
