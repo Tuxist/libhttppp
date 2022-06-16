@@ -40,7 +40,7 @@
 
 class CookieTest {
 public:
-    CookieTest(sys::Connection *curcon,libhttppp::HttpRequest *curreq){
+    CookieTest(sys::con *curcon,libhttppp::HttpRequest *curreq){
         _Curcon=curcon;
         _Curreq=curreq;
         
@@ -127,16 +127,16 @@ private:
     libhtmlpp::HtmlString  _HTMLDat;
     libhttppp::HttpCookie   _Cookie;
     libhttppp::HttpResponse _Curres;
-    sys::Connection        *_Curcon;
+    sys::con        *_Curcon;
     libhttppp::HttpRequest *_Curreq;
 };
 
-class Controller : public sys::Event {
+class Controller : public sys::event {
 public:
-    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::Connection *curcon){
+    void RequestEvent(sys::con *curcon){
 
         try{
             std::cout << "Parse Request" << std::endl;

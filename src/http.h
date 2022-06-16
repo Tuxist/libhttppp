@@ -90,8 +90,8 @@ namespace libhttppp {
     void   setContentLength(size_t len);
     void   setConnection(const char *type);
     void   setVersion(const char* version);
-    void   send(sys::Connection *curconnection,const char* data);
-    void   send(sys::Connection *curconnection,const char* data, unsigned long datalen); //only use as server
+    void   send(sys::con *curconnection,const char* data);
+    void   send(sys::con *curconnection,const char* data, unsigned long datalen); //only use as server
     size_t printHeader(char **buffer);
   private:
     char          _State[255];
@@ -109,7 +109,7 @@ namespace libhttppp {
   public:
     HttpRequest();
     ~HttpRequest();
-    void           parse(sys::Connection *curconnection); //only use as server
+    void           parse(sys::con *curconnection); //only use as server
     size_t         printHeader(char **buffer);
     int            getRequestType();
     const char    *getRequestURL();
@@ -125,7 +125,7 @@ namespace libhttppp {
     size_t         _VersionLen;
     
     HttpHeader      *_HttpHeader;
-    sys::Connection *_Connection;
+    sys::con        *_Connection;
     HTTPException    _httpexception;
   };
   

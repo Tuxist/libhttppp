@@ -37,13 +37,13 @@
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public sys::Event {
+class Controller : public sys::event {
 public:
-    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : event(serversocket){
         
     };
     
-    void RequestEvent(sys::Connection *curcon){
+    void RequestEvent(sys::con *curcon){
         try{
             std::cout << "Parse Request\n" << std::endl;
             libhttppp::HttpRequest curreq;

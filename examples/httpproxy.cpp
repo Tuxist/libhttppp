@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include "httpd.h"
 
-void sendResponse(sys::Connection *curcon,libhttppp::HttpRequest *curreq) {
+void sendResponse(sys::con *curcon,libhttppp::HttpRequest *curreq) {
      libhttppp::HttpResponse curres;
      curres.setState(HTTP200);
      curres.setVersion(HTTPVERSION(1.1));
@@ -60,12 +60,12 @@ void sendResponse(sys::Connection *curcon,libhttppp::HttpRequest *curreq) {
      curres.send(curcon,condat.c_str(),condat.size());
 };
 
-class Controller : public sys::Event {
+class Controller : public sys::event {
 public:
-    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::Connection *curcon){
+    void RequestEvent(sys::con *curcon){
         try{
             std::cout << "Parse Request" << std::endl;
             libhttppp::HttpRequest curreq;

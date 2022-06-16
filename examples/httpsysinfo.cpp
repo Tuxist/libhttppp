@@ -183,13 +183,13 @@ private:
     libhtmlpp::HtmlString  _Index;
 };
 
-class Controller : public sys::Event {
+class Controller : public sys::event {
 public:
-    Controller(sys::ServerSocket* serversocket) : Event(serversocket){
+    Controller(sys::ServerSocket* serversocket) : event(serversocket){
         
     };
     
-    void IndexController(sys::Connection *curcon){
+    void IndexController(sys::con *curcon){
         try{
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
@@ -219,7 +219,7 @@ public:
         }
     }
     
-    void RequestEvent(sys::Connection *curcon){
+    void RequestEvent(sys::con *curcon){
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
