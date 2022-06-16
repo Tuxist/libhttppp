@@ -25,12 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <iostream>
-
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
 
+#include <systempp/sysconsole.h>
 #include <systempp/sysinfo.h>
 #include <systempp/sysutils.h>
 #include <systempp/syseventapi.h>
@@ -197,7 +196,7 @@ public:
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
-            std::cout << cururl << std::endl;
+            sys::cout << cururl << sys::endl;
             if(sys::ncompare(cururl, sys::getlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
@@ -223,7 +222,7 @@ public:
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() <<std::endl;
+            sys::cerr << e.what() <<sys::endl;
             throw e;
         }
     }
@@ -246,7 +245,7 @@ int main(int argc, char** argv){
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
-        std::cerr << e.what() <<std::endl;
+        sys::cerr << e.what() <<sys::endl;
         if(e.getErrorType()==libhttppp::HTTPException::Note 
             || libhttppp::HTTPException::Warning)
             return 0;

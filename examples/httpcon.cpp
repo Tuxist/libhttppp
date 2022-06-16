@@ -25,7 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <iostream>
+#include <systempp/sysconsole.h>
 #include <systempp/syseventapi.h>
 
 #include "htmlpp/html.h"
@@ -67,13 +67,13 @@ public:
     };
     void RequestEvent(sys::con *curcon){
         try{
-            std::cout << "Parse Request" << std::endl;
+            sys::cout << "Parse Request" << sys::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            std::cout << "Send answer" << std::endl;
+            sys::cout << "Send answer" << sys::endl;
             sendResponse(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() << std::endl;
+            sys::cerr << e.what() << sys::endl;
             throw e;
         }
     }
@@ -90,7 +90,7 @@ public:
       Controller controller(getServerSocket());
       controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
-      std::cout << e.what() << std::endl;
+      sys::cout << e.what() << sys::endl;
     }
   };
 private:
