@@ -25,8 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <iostream>
-
+#include <systempp/sysconsole.h>
 #include <systempp/syseventapi.h>
 #include <systempp/sysutils.h>
 
@@ -72,7 +71,7 @@ public:
                     return cururlform->getValue();
                 }
         }
-        return NULL;
+        return nullptr;
     }
     
     int getDataInt(const char *key){
@@ -139,13 +138,13 @@ public:
     void RequestEvent(sys::con *curcon){
 
         try{
-            std::cout << "Parse Request" << std::endl;
+            sys::cout << "Parse Request" << sys::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            std::cout << "Send answer" << std::endl;
+            sys::cout << "Send answer" << sys::endl;
             CookieTest(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() << std::endl;
+            sys::cerr << e.what() << sys::endl;
             throw e;
         }
     }
@@ -163,7 +162,7 @@ public:
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() << std::endl;
+            sys::cerr << e.what() << sys::endl;
         }
     };
 private:

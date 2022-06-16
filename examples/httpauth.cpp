@@ -25,8 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <iostream>
-
+#include <systempp/sysconsole.h>
 #include <systempp/sysutils.h>
 #include <systempp/syseventapi.h>
 
@@ -45,7 +44,7 @@ public:
     
     void RequestEvent(sys::con *curcon){
         try{
-            std::cout << "Parse Request\n" << std::endl;
+            sys::cout << "Parse Request\n" << sys::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
@@ -78,14 +77,14 @@ public:
                     libhttppp::HttpResponse curres;
                     curres.setState(HTTP200);
                     curres.setVersion(HTTPVERSION(1.1));
-                    curres.setContentType(NULL);
-                    curres.send(curcon,NULL,0);
+                    curres.setContentType(nullptr);
+                    curres.send(curcon,nullptr,0);
                     return;
                 }else{
                     libhttppp::HttpResponse curres;
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
-                    curres.setContentType(NULL);
+                    curres.setContentType(nullptr);
                     if(sys::ncompare(cururl,sys::getlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
                     }else if(sys::ncompare(cururl,sys::getlen(cururl),"/httpdigestauth",14)==0){
@@ -93,7 +92,7 @@ public:
                     }
                     httpauth.setRealm("httpauthtest");
                     httpauth.setAuth(&curres);
-                    curres.send(curcon,NULL,0);
+                    curres.send(curcon,nullptr,0);
                     return;
                 }
             }else{
@@ -101,10 +100,10 @@ public:
                 curres.setState(HTTP404);
                 curres.setVersion(HTTPVERSION(1.1));
                 curres.setContentType("text/html");
-                curres.send(curcon,NULL,0);
+                curres.send(curcon,nullptr,0);
             }                
         }catch(libhttppp::HTTPException &e){
-            std::cerr << e.what() << std::endl;
+            sys::cerr << e.what() << sys::endl;
             throw e;
         }
     }
@@ -122,7 +121,7 @@ public:
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            std::cout << e.what() << std::endl;
+            sys::cout << e.what() << sys::endl;
         }
     };
 private:
