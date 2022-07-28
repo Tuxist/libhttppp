@@ -21,8 +21,8 @@ add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)
 
-target_link_libraries(httppp ${OPENSSL_LIBRARIES} systempp cmd crt1) 
-target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} systempp cmd crt1)    
+target_link_libraries(httppp ${OPENSSL_LIBRARIES} systempp cmd) 
+target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} systempp cmd)    
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 

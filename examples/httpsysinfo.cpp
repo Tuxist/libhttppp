@@ -33,6 +33,7 @@
 #include <systempp/sysinfo.h>
 #include <systempp/sysutils.h>
 #include <systempp/syseventapi.h>
+#include <systempp/systime.h>
 
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"
@@ -130,11 +131,23 @@ public:
         _Index << "<!DOCTYPE html><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
         << "<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">"
         << "<div id=\"headerimage\"><img src=\"images/header.png\"/></div>"
-        << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br/>"; 
+        << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br/>";
+        TimeInfo();
         KernelInfo();
         CPUInfo();
         SysInfo();
         _Index << "</div></div></body></html>";
+    }
+    
+    void TimeInfo() {
+        sys::Time mytime;
+        _Index << "<h2>CPUInfo:</h2>";
+        _Index << "<span>Time:" << mytime.getHour() << ":" 
+                                << mytime.getMinute() << ":"
+                                << mytime.getSeconds() << "</span>"
+               << "<span>Date:" << mytime.getDay() << "."
+                                << mytime.getMounth() << "."
+                                << mytime.getYear() << "</span>";
     }
     
     void KernelInfo(){
