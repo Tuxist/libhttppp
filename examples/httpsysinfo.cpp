@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <stdlib.h>
+
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
@@ -66,7 +68,7 @@ public:
         
         Row &operator<<(int value){
             char buf[255];
-            sys::itoa(value,buf);
+            itoa(value,buf);
             return *this << buf;
         };
         
@@ -210,15 +212,15 @@ public:
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
             sys::cout << cururl << sys::endl;
-            if(sys::ncompare(cururl, sys::getlen(cururl),"/",1)==0){
+            if(sys::ncompare(cururl, strlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(sys::ncompare(cururl,sys::getlen(cururl),"/images/header.png",18)==0){
+            }else if(sys::ncompare(cururl,strlen(cururl),"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(sys::ncompare(cururl,sys::getlen(cururl),"/favicon.ico ",12)==0){
+            }else if(sys::ncompare(cururl,strlen(cururl),"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);

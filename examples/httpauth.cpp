@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <string.h>
+
 #include <systempp/sysconsole.h>
 #include <systempp/sysutils.h>
 #include <systempp/syseventapi.h>
@@ -48,7 +50,7 @@ public:
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
-            if(sys::ncompare(cururl,sys::getlen(cururl),"/",1)==0){
+            if(sys::ncompare(cururl,strlen(cururl),"/",1)==0){
                 libhttppp::HttpResponse curres;
                 curres.setState(HTTP200);
                 curres.setVersion(HTTPVERSION(1.1));
@@ -67,8 +69,8 @@ public:
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
                 curres.send(curcon,condat.c_str(),condat.size());
-            }else if(sys::ncompare(cururl,sys::getlen(cururl),"/httpbasicauth",13)==0 ||
-                sys::ncompare(cururl,sys::getlen(cururl),"/httpdigestauth",14)==0){
+            }else if(sys::ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0 ||
+                sys::ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
                 libhttppp::HttpAuth httpauth;
                 httpauth.parse(&curreq);
                 const char *username=httpauth.getUsername();
@@ -85,9 +87,9 @@ public:
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(nullptr);
-                    if(sys::ncompare(cururl,sys::getlen(cururl),"/httpbasicauth",13)==0){
+                    if(sys::ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(sys::ncompare(cururl,sys::getlen(cururl),"/httpdigestauth",14)==0){
+                    }else if(sys::ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");

@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <stdlib.h>
+
 #include "config.h"
 
 #include "http.h"
@@ -40,11 +42,11 @@ libhttppp::HttpHeader::HttpHeader(){
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(const char* value){
     if(!value)
         return *this;
-    size_t nsize=sys::getlen(value)+_Valuelen;
+    size_t nsize=strlen(value)+_Valuelen;
     char *buf=new char [nsize+1];
     if(_Valuelen>0)
         sys::scopy(_Value,_Value+_Valuelen,buf);
-    sys::scopy(value,value+sys::getlen(value),buf+_Valuelen);
+    sys::scopy(value,value+strlen(value),buf+_Valuelen);
     _Valuelen=nsize;
     delete[] _Value;
     buf[nsize]='\0';
@@ -54,14 +56,14 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
   char buf[255];
-  sys::ultoa(value,buf);
+  ultoa(value,buf);
   *this<<buf;
   return *this;
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(int value){
   char buf[255];
-  sys::itoa(value,buf);
+  itoa(value,buf);
   *this<<buf;
   return *this;
 }
@@ -84,7 +86,7 @@ const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
 
 const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(sys::ncompare(key,sys::getlen(key),
+    if(sys::ncompare(key,strlen(key),
                             curdat->_Key,curdat->_Keylen)==0){
       if(pos!=nullptr)
         *pos=curdat;
@@ -96,20 +98,20 @@ const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderDat
 
 size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
   const char *val=getData(key,pos);
-  if(sys::getlen(val)<255)
+  if(strlen(val)<255)
       return 0;
   char buf[255];
-  sys::scopy(val,val+sys::getlen(val),buf);
-  return sys::atoi(buf);
+  sys::scopy(val,val+strlen(val),buf);
+  return atoi(buf);
 }
 
 int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
   const char *val=getData(key,pos);
-  if(sys::getlen(val)<255)
+  if(strlen(val)<255)
       return 0;
   char buf[255];
-  sys::scopy(val,val+sys::getlen(val),buf);
-  return sys::atoi(buf);
+  sys::scopy(val,val+strlen(val),buf);
+  return atoi(buf);
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key){
@@ -131,7 +133,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
   if(pos){
     delete[] pos->_Key;
     delete[] pos->_Value;
-    pos->_Keylen=sys::getlen(key);
+    pos->_Keylen=strlen(key);
     pos->_Key=new char[pos->_Keylen+1];
     sys::scopy(key,key+(pos->_Keylen+1),pos->_Key);
     pos->_Value=nullptr;
@@ -145,7 +147,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 void libhttppp::HttpHeader::deldata(const char* key){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
     if(sys::ncompare(curdat->_Key,curdat->_Keylen,key,
-        sys::getlen(key))==0){
+        strlen(key))==0){
       deldata(curdat);  
     }
   }
@@ -197,7 +199,7 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
         throw excep;
     }
     _nextHeaderData=nullptr;
-    _Keylen=sys::getlen(key);
+    _Keylen=strlen(key);
     _Key=new char[_Keylen+1];
     sys::scopy(key,key+(_Keylen+1),_Key);
     _Valuelen=0;
@@ -228,7 +230,7 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
     _httpexception[HTTPException::Error] << "http state not set don't do that !!!";
     throw _httpexception;
   }
-  size_t hlen=sys::getlen(httpstate);
+  size_t hlen=strlen(httpstate);
   if(hlen>254){
     _httpexception[HTTPException::Error] << "http state with over 255 signs sorry your are drunk !";
     throw _httpexception;
@@ -257,7 +259,7 @@ void libhttppp::HttpResponse::setVersion(const char* version){
   HTTPException excep;  
   if(version==nullptr)
     throw excep[HTTPException::Error] << "http version not set don't do that !!!";
-  size_t vlen=sys::getlen(version);
+  size_t vlen=strlen(version);
   if(vlen>254)
     throw excep[HTTPException::Error] << "http version with over 255 signs sorry your are drunk !";
   _VersionLen=vlen;
@@ -267,12 +269,12 @@ void libhttppp::HttpResponse::setVersion(const char* version){
 
 
 void libhttppp::HttpResponse::send(sys::con* curconnection, const char* data){
-  send(curconnection,data,sys::getlen(data));
+  send(curconnection,data,strlen(data));
 }
 
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
-    *buffer=new char[sys::getlen(_Version)+1];
-    sys::scopy(_Version,_Version+(sys::getlen(_Version)+1),*buffer);
+    *buffer=new char[strlen(_Version)+1];
+    sys::scopy(_Version,_Version+(strlen(_Version)+1),*buffer);
     sys::append(buffer," ");
     sys::append(buffer,_State);
     sys::append(buffer,"\r\n");
@@ -284,7 +286,7 @@ size_t libhttppp::HttpResponse::printHeader(char **buffer){
         sys::append(buffer,"\r\n");
     } 
     sys::append(buffer,"\r\n");
-    return sys::getlen((*buffer));
+    return strlen((*buffer));
 }
 
 
@@ -543,8 +545,8 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   size_t ctendpos=0;
   const char *boundary="boundary=\0";
   size_t bdpos=0;
-  for(size_t cpos=0; cpos<sys::getlen(contenttype); cpos++){
-    if(bdpos==(sys::getlen(boundary)-1)){
+  for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
+    if(bdpos==(strlen(boundary)-1)){
       break;
     }else if(contenttype[cpos]==boundary[bdpos]){
       if(ctstartpos==0)
@@ -555,15 +557,15 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
       ctstartpos=0;
     }
   }
-  for(size_t cpos=ctstartpos; cpos<sys::getlen(contenttype); cpos++){
+  for(size_t cpos=ctstartpos; cpos<strlen(contenttype); cpos++){
       if(contenttype[cpos]==';'){
           ctendpos=cpos;
       }
   }
   if(ctendpos==0)
-    ctendpos=sys::getlen(contenttype);
+    ctendpos=strlen(contenttype);
   /*cut boundary=*/
-  ctstartpos+=sys::getlen(boundary);
+  ctstartpos+=strlen(boundary);
   if(_Boundary)
     delete[] _Boundary;
   _BoundarySize=(ctendpos-ctstartpos);
@@ -629,7 +631,7 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
   _Elements++;
   MultipartFormData *curmultipartformdata=addMultipartFormData();
   const char *windelimter="\r\n\r\n";
-  size_t windelimtersize=sys::getlen(windelimter);
+  size_t windelimtersize=strlen(windelimter);
   size_t fpos=0,fendpos=0,fcurpos=0;
   for(size_t dp=0; dp<sectionsize; dp++){
     if(windelimter[fcurpos]==section[dp]){
@@ -743,7 +745,7 @@ libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm:
 }
 
 void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
-  size_t dislen=sys::getlen(disposition);
+  size_t dislen=strlen(disposition);
   
   for(size_t dpos=0; dpos<dislen; dpos++){
     if(disposition[dpos]==';' || disposition[dpos]=='\r'){
@@ -757,7 +759,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   }
   
   const char *namedelimter="name=\"";
-  ssize_t namedelimtersize=sys::getlen(namedelimter);
+  ssize_t namedelimtersize=strlen(namedelimter);
   ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
   for(size_t dp=0; dp<dislen; dp++){
     if(namedelimter[fcurpos]==disposition[dp]){
@@ -790,7 +792,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   }
   
   const char *filenamedelimter="filename=\"";
-  ssize_t filenamedelimtersize=sys::getlen(filenamedelimter);
+  ssize_t filenamedelimtersize=strlen(filenamedelimter);
   ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
   for(size_t dp=0; dp<dislen; dp++){
     if(filenamedelimter[filecurpos]==disposition[dp]){
@@ -838,7 +840,7 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
     return nullptr;
   for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
     if(sys::ncompare(curcontent->getKey(),
-        sys::getlen(curcontent->getKey()),key,sys::getlen(key))==0){
+        strlen(curcontent->getKey()),key,strlen(key))==0){
       return curcontent->getValue();
     }
   }
@@ -858,13 +860,13 @@ libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const c
   if(!key || !value)
     return;
   
-  _Key=new char[sys::getlen(key)+1];
-  sys::scopy(key,key+sys::getlen(key),_Key);
-  _Key[sys::getlen(key)]='\0';
+  _Key=new char[strlen(key)+1];
+  sys::scopy(key,key+strlen(key),_Key);
+  _Key[strlen(key)]='\0';
   
-  _Value=new char[sys::getlen(value)+1];
-  sys::scopy(value,value+sys::getlen(value),_Value);
-  _Value[sys::getlen(value)]='\0';
+  _Value=new char[strlen(value)+1];
+  sys::scopy(value,value+strlen(value),_Value);
+  _Value[strlen(value)]='\0';
 }
 
 libhttppp::HttpForm::MultipartFormData::Content::~Content(){
@@ -911,23 +913,23 @@ char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getName(){
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setDisposition(const char* disposition){
   delete[] _Disposition;
-  _Disposition=new char[sys::getlen(disposition)+1];
-  sys::scopy(disposition,disposition+sys::getlen(disposition),_Disposition);
-  _Disposition[sys::getlen(disposition)]='\0';
+  _Disposition=new char[strlen(disposition)+1];
+  sys::scopy(disposition,disposition+strlen(disposition),_Disposition);
+  _Disposition[strlen(disposition)]='\0';
 }
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setName(const char* name){
   delete[] _Name;
-  _Name=new char[sys::getlen(name)+1];
-  sys::scopy(name,name+sys::getlen(name),_Name);
-  _Name[sys::getlen(name)]='\0';
+  _Name=new char[strlen(name)+1];
+  sys::scopy(name,name+strlen(name),_Name);
+  _Name[strlen(name)]='\0';
 }
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(const char* filename){
   delete[] _Filename;
-  _Filename=new char[sys::getlen(filename)+1];
-  sys::scopy(filename,filename+sys::getlen(filename),_Filename);
-  _Filename[sys::getlen(filename)]='\0';
+  _Filename=new char[strlen(filename)+1];
+  sys::scopy(filename,filename+strlen(filename),_Filename);
+  _Filename[strlen(filename)]='\0';
 }
 
 void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
@@ -939,7 +941,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
       formdat[rsize]='\0';
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequestURL();
-      size_t rurlsize=sys::getlen(rurl);
+      size_t rurlsize=strlen(rurl);
       ssize_t rdelimter=-1;
       for(size_t cpos=0; cpos<rurlsize; cpos++){
         if(rurl[cpos]=='?'){
@@ -961,7 +963,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   }
   size_t fdatstpos=0;
   size_t keyendpos=0;
-  for(size_t fdatpos=0; fdatpos<sys::getlen(formdat)+1; fdatpos++){
+  for(size_t fdatpos=0; fdatpos<strlen(formdat)+1; fdatpos++){
     switch(formdat[fdatpos]){
         case '&': case '\0':{
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
@@ -976,9 +978,9 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
                 sys::scopy(formdat+vlstpos,formdat+fdatpos,value);
                 key[(keyendpos-fdatstpos)]='\0';
                 value[(fdatpos-vlstpos)]='\0';
-                urlDecode(value,sys::getlen(value),&urldecdValue);
+                urlDecode(value,strlen(value),&urldecdValue);
             }            
-            urlDecode(key,sys::getlen(key),&urldecdKey);
+            urlDecode(key,strlen(key),&urldecdKey);
             UrlcodedFormData *newenrty;
             newenrty=addUrlcodedFormData();
             newenrty->setKey(urldecdKey);
@@ -1001,9 +1003,9 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
 void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
   if(_Key)
     delete[] _Key;
-  _Key=new char [sys::getlen(key)+1];
-  sys::scopy(key,key+sys::getlen(key),_Key);
-  _Key[sys::getlen(key)]='\0';  
+  _Key=new char [strlen(key)+1];
+  sys::scopy(key,key+strlen(key),_Key);
+  _Key[strlen(key)]='\0';  
 }
 
 void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
@@ -1013,9 +1015,9 @@ void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
       _Value=nullptr;
       return;
   }
-  _Value=new char [sys::getlen(value)+1];
-  sys::scopy(value,value+sys::getlen(value),_Value);
-  _Value[sys::getlen(value)]='\0'; 
+  _Value=new char [strlen(value)+1];
+  sys::scopy(value,value+strlen(value),_Value);
+  _Value[strlen(value)]='\0'; 
 }
 
 const char *libhttppp::HttpForm::UrlcodedFormData::getKey(){
@@ -1131,7 +1133,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   size_t keyendpos=0;
   size_t startpos=0;
   
-  for(size_t cpos=0; cpos < sys::getlen(cdat)+1; cpos++){
+  for(size_t cpos=0; cpos < strlen(cdat)+1; cpos++){
     if(cdat[cpos]=='='){
       keyendpos=cpos;  
     }
@@ -1195,15 +1197,15 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
   const char *authstr=curreq->getData("Authorization");
   if(!authstr)
     return;
-  if(sys::ncompare(authstr,sys::getlen(authstr),"Basic",5)==0)
+  if(sys::ncompare(authstr,strlen(authstr),"Basic",5)==0)
     _Authtype=BASICAUTH;
-  else if(sys::ncompare(authstr,sys::getlen(authstr),"Digest",6)==0)
+  else if(sys::ncompare(authstr,strlen(authstr),"Digest",6)==0)
     _Authtype=DIGESTAUTH;
   switch(_Authtype){
     case BASICAUTH:{
-      size_t base64strsize=sys::getlen(authstr+6);
+      size_t base64strsize=strlen(authstr+6);
       char *base64str=new char[base64strsize+1];
-      sys::scopy(authstr+6,authstr+(sys::getlen(authstr)+1),base64str);
+      sys::scopy(authstr+6,authstr+(strlen(authstr)+1),base64str);
       Base64 base64;
       char *clearstr=new char[base64.Decodelen(base64str)];
       size_t cleargetlen=base64.Decode(clearstr,base64str);
@@ -1221,7 +1223,7 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
       delete[] clearstr;
     };
     case DIGESTAUTH:{
-      for(size_t authstrpos=7; authstrpos<sys::getlen(authstr)+1; authstrpos++){
+      for(size_t authstrpos=7; authstrpos<strlen(authstr)+1; authstrpos++){
         switch(authstr[authstrpos]){
           case '\0':{
         
@@ -1271,7 +1273,7 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
   if(_Realm)
     delete[] _Realm;
   if(realm){
-    size_t realmsize=sys::getlen(realm);
+    size_t realmsize=strlen(realm);
     _Realm=new char [realmsize+1];
     sys::scopy(realm,realm+realmsize,_Realm);
     _Realm[realmsize]='\0';
@@ -1283,7 +1285,7 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
 void libhttppp::HttpAuth::setUsername(const char* username){
   if(_Username)
     delete[] _Username;
-  size_t usernamelen=sys::getlen(username);
+  size_t usernamelen=strlen(username);
   _Username=new char[usernamelen+1];
   sys::scopy(username,username+(usernamelen+1),_Username);
 }
@@ -1291,7 +1293,7 @@ void libhttppp::HttpAuth::setUsername(const char* username){
 void libhttppp::HttpAuth::setPassword(const char* password){
   if(_Password)
     delete[] _Password;
-  size_t passwordlen=sys::getlen(password);
+  size_t passwordlen=strlen(password);
   _Password=new char[passwordlen+1];
   sys::scopy(password,password+(passwordlen+1),_Password);
 }

@@ -26,7 +26,7 @@
  *******************************************************************************/
 
 #include <systempp/syssocket.h>
-#include <libcmd/cmd.h>
+#include <systempp/syscmd.h>
 
 #include "httpd.h"
 

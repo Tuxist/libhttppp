@@ -25,6 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <stdlib.h>
+
 #include <systempp/sysconsole.h>
 #include <systempp/syseventapi.h>
 #include <systempp/sysutils.h>
@@ -67,7 +69,7 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(sys::ncompare(key,sys::getlen(key),cururlform->getKey(),sys::getlen(key))==0)
+                if(sys::ncompare(key,strlen(key),cururlform->getKey(),strlen(key))==0)
                     return cururlform->getValue();
                 }
         }
@@ -80,13 +82,13 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(sys::ncompare(key,sys::getlen(key),cururlform->getKey(),
-                    sys::getlen(cururlform->getKey()))==0){
+                if(sys::ncompare(key,strlen(key),cururlform->getKey(),
+                    strlen(cururlform->getKey()))==0){
                         char ktmp[255];
                         sys::scopy(cururlform->getValue(),cururlform->getValue()+
-                                         sys::getlen(cururlform->getValue()),
+                                         strlen(cururlform->getValue()),
                                          ktmp);
-                        return sys::atoi(ktmp);
+                        return atoi(ktmp);
                     }
                 }
         }

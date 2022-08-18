@@ -1,25 +1,5 @@
 #pragma once
 
-#if defined(_MSC_VER)
-  #include <BaseTsd.h> 
-  #define strerror_r(errno,buf,len) strerror_s(buf,len,errno)
-  #ifndef ssize_t  
-    typedef SSIZE_T ssize_t;
-    #define ssize_t ptrdiff_t
-  #endif
-  #define MSVC
-#else
-  #include <sys/types.h>
-#endif
-
-#if defined(_MSC_VER) && _MSC_VER < 1900
-  #ifndef EWOULDBLOCK
-    #define EWOULDBLOCK WSAEWOULDBLOCK
-  #endif
-  #define snprintf(buf,len, format,...) _snprintf_s(buf, len,len, format, __VA_ARGS__)
-  #define nullptr NULL
-#endif
-
 #define ${CMAKE_SYSTEM_NAME}
 
 #define EVENT ${EVENT}
