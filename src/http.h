@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include <stddef.h>
-#include <type.h>
+#include <sys/types.h>
 
 #include <systempp/syseventapi.h>
 
