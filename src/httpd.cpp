@@ -85,11 +85,11 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     try {
         #ifndef Windows
         if (portset == true)
-            _ServerSocket = new sys::TCP(httpaddr, port, maxconnections,-1,-1);
+            _ServerSocket = new sys::tcp(httpaddr, port, maxconnections,-1,-1);
         else
-            _ServerSocket = new sys::TCP(httpaddr, maxconnections,-1,-1);
+            _ServerSocket = new sys::tcp(httpaddr, maxconnections,-1,-1);
         #else
-        _ServerSocket = new sys::TCP(httpaddr, port, maxconnections);
+        _ServerSocket = new sys::tcp(httpaddr, port, maxconnections);
         #endif
         
         
