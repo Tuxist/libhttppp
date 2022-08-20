@@ -25,7 +25,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <systempp/syssocket.h>
 #include "systempp/syseventapi.h"
+
 #include "exception.h"
 
 #pragma once
@@ -40,13 +42,13 @@ namespace libhttppp {
     public:
         HttpD(int argc, char** argv);
         ~HttpD();
-        sys::ServerSocket  *getServerSocket();
+        sys::socket                *getServerSocket();
     protected:
         void                        FileServer();
         sys::CmdController *HTTPDCmdController;
     private:
         bool                        _fileServer;
-        sys::ServerSocket          *_ServerSocket;
+        sys::socket                *_ServerSocket;
         HTTPException               _httpexception;
     };
 };

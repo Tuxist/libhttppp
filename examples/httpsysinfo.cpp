@@ -199,7 +199,7 @@ private:
 
 class Controller : public sys::event {
 public:
-    Controller(sys::ServerSocket* serversocket) : event(serversocket){
+    Controller(sys::socket* serversocket) : event(serversocket){
         
     };
     

@@ -25,7 +25,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/syssocket.h>
 #include <systempp/syscmd.h>
 
 #include "httpd.h"
@@ -86,11 +85,11 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     try {
         #ifndef Windows
         if (portset == true)
-            _ServerSocket = new sys::ServerSocket(httpaddr, port, maxconnections,-1,-1);
+            _ServerSocket = new sys::TCP(httpaddr, port, maxconnections,-1,-1);
         else
-            _ServerSocket = new sys::ServerSocket(httpaddr, maxconnections,-1,-1);
+            _ServerSocket = new sys::TCP(httpaddr, maxconnections,-1,-1);
         #else
-        _ServerSocket = new ServerSocket(httpaddr, port, maxconnections);
+        _ServerSocket = new sys::TCP(httpaddr, port, maxconnections);
         #endif
         
         
@@ -104,7 +103,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     }
 }
 
-sys::ServerSocket *libhttppp::HttpD::getServerSocket(){
+sys::socket *libhttppp::HttpD::getServerSocket(){
   return _ServerSocket;
 }
 

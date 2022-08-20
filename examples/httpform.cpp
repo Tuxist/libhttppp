@@ -154,7 +154,7 @@ void sendResponse(sys::con *curcon,libhttppp::HttpRequest *curreq) {
 
 class Controller : public sys::event {
 public:
-    Controller(sys::ServerSocket* serversocket) : event(serversocket){
+    Controller(sys::socket* serversocket) : event(serversocket){
         
     };
     void RequestEvent(sys::con *curcon){
