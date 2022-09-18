@@ -17,6 +17,9 @@ include_directories(
 )
 
 add_library(httppp        SHARED ${libhttpSrcs} )
+
+target_compile_definitions(httppp PUBLIC -DSHARED)
+
 add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)

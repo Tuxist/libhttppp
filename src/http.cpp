@@ -34,10 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <systempp/sysutils.h>
 
-extern "C" {
-    void *__dso_handle=&__dso_handle;
-}
-
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
   _lastHeaderData=nullptr;

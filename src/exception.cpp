@@ -30,7 +30,7 @@
 libhttppp::HTTPException::HTTPException() : sys::SystemException(){
 };
 
-libhttppp::HTTPException::HTTPException(const HTTPException &exp) : sys::SystemException(){
+libhttppp::HTTPException::HTTPException(const HTTPException &exp) : sys::SystemException(exp){
 }
 
 libhttppp::HTTPException::~HTTPException(){
