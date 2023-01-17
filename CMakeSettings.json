@@ -1,42 +1,49 @@
 ﻿{
   "configurations": [
     {
-      "name": "x64-Debug",
+      "name": "Linux-Clang-Debug",
       "generator": "Ninja",
       "configurationType": "Debug",
-      "inheritEnvironments": [ "msvc_x64_x64" ],
-      "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
-      "installRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\install\\${name}",
+      "cmakeExecutable": "cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
       "cmakeCommandArgs": "",
-      "buildCommandArgs": "-v",
+      "buildCommandArgs": "",
       "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_clang_x64" ],
+      "remoteMachineName": "-468509905;10.1.2.209 (username=root, port=22, authentication=Password)",
+      "remoteCMakeListsRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/src",
+      "remoteBuildRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/build/${name}",
+      "remoteInstallRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete",
+      "remoteCopyBuildOutput": false,
+      "remoteCopySourcesMethod": "rsync",
       "variables": [
         {
-          "name": "OPENSSL_INCLUDE_DIR",
-          "value": "C:/Program Files/OpenSSL-Win64/include",
+          "name": "CMAKE_INSTALL_PREFIX",
+          "value": "/usr/local",
           "type": "PATH"
-        },
-        {
-          "name": "LIB_EAY_DEBUG",
-          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libcrypto64MDd.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "LIB_EAY_RELEASE",
-          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libcrypto64MD.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "SSL_EAY_DEBUG",
-          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libssl64MDd.lib",
-          "type": "FILEPATH"
-        },
-        {
-          "name": "SSL_EAY_RELEASE",
-          "value": "C:/Program Files/OpenSSL-Win64/lib/VC/libssl64MT.lib",
-          "type": "FILEPATH"
         }
       ]
+    },
+    {
+      "name": "Linux-Clang-Release",
+      "generator": "Ninja",
+      "configurationType": "RelWithDebInfo",
+      "cmakeExecutable": "cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", ".git", "out" ],
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_clang_x64" ],
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "remoteCMakeListsRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/src",
+      "remoteBuildRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/build/${name}",
+      "remoteInstallRoot": "$HOME/.vs/${projectDirName}/${workspaceHash}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete",
+      "remoteCopyBuildOutput": false,
+      "remoteCopySourcesMethod": "rsync"
     }
   ]
 }

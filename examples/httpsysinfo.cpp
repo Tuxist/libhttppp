@@ -25,6 +25,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <http.h>
@@ -68,7 +69,7 @@ public:
         
         Row &operator<<(int value){
             char buf[255];
-            itoa(value,buf);
+            snprintf(buf,255,"%d",value);
             return *this << buf;
         };
         
@@ -142,14 +143,15 @@ public:
     }
     
     void TimeInfo() {
-        sys::Time mytime;
+        sys::time mytime;
+//         mytime.getHWTime();
         _Index << "<h2>CPUInfo:</h2>";
-        _Index << "<span>Time:" << mytime.getHour() << ":" 
-                                << mytime.getMinute() << ":"
-                                << mytime.getSeconds() << "</span>"
-               << "<span>Date:" << mytime.getDay() << "."
-                                << mytime.getMounth() << "."
-                                << mytime.getYear() << "</span>";
+        _Index << "<span>Time:" << (unsigned long)mytime.getHour() << ":" 
+                                << (unsigned long)mytime.getMinute() << ":"
+                                << (unsigned long)mytime.getSeconds() << "</span>"
+               << "<span>Date:" << (unsigned long)mytime.getDay() << "."
+                                << (unsigned long)mytime.getMounth() << "."
+                                << (unsigned long)mytime.getYear() << "</span>";
     }
     
     void KernelInfo(){
@@ -176,13 +178,13 @@ public:
     }
     
     void SysInfo(){
-//         libhttppp::SysInfo sysinfo;
-//         _Index << "<h2>SysInfo:</h2>";
-//         HtmlTable cputable;
-//         cputable.createRow() << "<td>Total Ram</td><td>" << sysinfo.getTotalRam()<<"</td>";
-//         cputable.createRow() << "<td>Free Ram</td><td>" << sysinfo.getFreeRam()<<"</td>";
-//         cputable.createRow() << "<td>Buffered Ram</td><td>" <<sysinfo.getBufferRam()<<"</td>";
-//         _Index << cputable.getTable();   
+/*        libhttppp::SysInfo sysinfo;
+        _Index << "<h2>SysInfo:</h2>";
+        HtmlTable cputable;
+        cputable.createRow() << "<td>Total Ram</td><td>" << sysinfo.getTotalRam()<<"</td>";
+        cputable.createRow() << "<td>Free Ram</td><td>" << sysinfo.getFreeRam()<<"</td>";
+        cputable.createRow() << "<td>Buffered Ram</td><td>" <<sysinfo.getBufferRam()<<"</td>";
+        _Index << cputable.getTable();  */ 
     }
     
     const char *getIndexPage(){
@@ -197,13 +199,13 @@ private:
     libhtmlpp::HtmlString  _Index;
 };
 
-class Controller : public sys::event {
+class Controller : public sys::net::event {
 public:
-    Controller(sys::socket* serversocket) : event(serversocket){
+    Controller(sys::net::socket* serversocket) : event(serversocket){
         
     };
     
-    void IndexController(sys::con *curcon){
+    void IndexController(sys::net::con *curcon){
         try{
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
@@ -212,15 +214,15 @@ public:
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
             sys::cout << cururl << sys::endl;
-            if(sys::ncompare(cururl, strlen(cururl),"/",1)==0){
+            if(sys::utils::ncompare(cururl, strlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(sys::ncompare(cururl,strlen(cururl),"/images/header.png",18)==0){
+            }else if(sys::utils::ncompare(cururl,strlen(cururl),"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(sys::ncompare(cururl,strlen(cururl),"/favicon.ico ",12)==0){
+            }else if(sys::utils::ncompare(cururl,strlen(cururl),"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
@@ -233,7 +235,7 @@ public:
         }
     }
     
-    void RequestEvent(sys::con *curcon){
+    void RequestEvent(sys::net::con *curcon){
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){

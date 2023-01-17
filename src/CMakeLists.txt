@@ -8,7 +8,6 @@ set(libhttpSrcs
   http.cpp
   httpd.cpp
 #  https.cpp
-  base64.cpp
 )
 
 include_directories(
@@ -21,8 +20,8 @@ add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)
 
-target_link_libraries(httppp ${OPENSSL_LIBRARIES} c) 
-target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} c )    
+target_link_libraries(httppp ${OPENSSL_LIBRARIES} systempp) 
+target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} systempp )    
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 

@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "config.h"
 
 #include "httpdefinitions.h"
-#include "exception.h"
 
 #pragma once
 
@@ -55,7 +54,6 @@ namespace libhttppp {
       char         *_Value;
       size_t        _Valuelen;
       HeaderData   *_nextHeaderData;
-      HTTPException _httpexception;
       friend class HttpHeader;
     };
     
@@ -81,7 +79,6 @@ namespace libhttppp {
     ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
-    HTTPException  _httpexception;
   };
   
   class HttpResponse : public HttpHeader {
@@ -93,8 +90,8 @@ namespace libhttppp {
     void   setContentLength(size_t len);
     void   setConnection(const char *type);
     void   setVersion(const char* version);
-    void   send(sys::con *curconnection,const char* data);
-    void   send(sys::con *curconnection,const char* data, unsigned long datalen); //only use as server
+    void   send(sys::net::con *curconnection,const char* data);
+    void   send(sys::net::con *curconnection,const char* data, unsigned long datalen); //only use as server
     size_t printHeader(char **buffer);
   private:
     char          _State[255];
@@ -104,7 +101,6 @@ namespace libhttppp {
     HeaderData   *_Connection;
     HeaderData   *_ContentType;
     HeaderData   *_ContentLength;
-    HTTPException _httpexception;
   };
   
  
@@ -112,7 +108,7 @@ namespace libhttppp {
   public:
     HttpRequest();
     ~HttpRequest();
-    void           parse(sys::con *curconnection); //only use as server
+    void           parse(sys::net::con *curconnection); //only use as server
     size_t         printHeader(char **buffer);
     int            getRequestType();
     const char    *getRequestURL();
@@ -128,8 +124,7 @@ namespace libhttppp {
     size_t         _VersionLen;
     
     HttpHeader      *_HttpHeader;
-    sys::con        *_Connection;
-    HTTPException    _httpexception;
+    sys::net::con   *_Connection;
   };
   
   class HttpForm {
@@ -242,7 +237,6 @@ namespace libhttppp {
     inline int         _ishex(int x);
     size_t             _Elements;
     const char*        _ContentType;
-    HTTPException      _httpexception;
   };
 
   class HttpCookie {
@@ -268,14 +262,13 @@ namespace libhttppp {
                    const char *key,const char *value,
                    const char *comment=nullptr,const char *domain=nullptr, 
                    int maxage=-1,const char *path=nullptr,
-                   bool secure=false,const char *version="1");
+                   bool secure=true,const char *version="1",const char *samesite="None");
     CookieData    *getfirstCookieData();
     CookieData    *getlastCookieData();
     CookieData    *addCookieData();
   private:
     CookieData     *_firstCookieData;
     CookieData     *_lastCookieData;
-    HTTPException  _httpexception;
   };
 
 #define BASICAUTH  0

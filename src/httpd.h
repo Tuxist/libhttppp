@@ -42,13 +42,13 @@ namespace libhttppp {
     public:
         HttpD(int argc, char** argv);
         ~HttpD();
-        sys::socket                *getServerSocket();
+        sys::net::socket           *getServerSocket();
     protected:
         void                        FileServer();
         sys::CmdController *HTTPDCmdController;
     private:
         bool                        _fileServer;
-        sys::socket                *_ServerSocket;
+        sys::net::socket           *_ServerSocket;
         HTTPException               _httpexception;
     };
 };

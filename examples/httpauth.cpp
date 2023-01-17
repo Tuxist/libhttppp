@@ -29,6 +29,8 @@
 
 #include <systempp/sysconsole.h>
 #include <systempp/sysutils.h>
+#include <string.h>
+
 #include <systempp/syseventapi.h>
 
 #include "htmlpp/html.h"
@@ -38,19 +40,19 @@
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public sys::event {
+class Controller : public sys::net::event {
 public:
-    Controller(sys::socket* serversocket) : event(serversocket){
+    Controller(sys::net::socket* serversocket) : event(serversocket){
         
     };
     
-    void RequestEvent(sys::con *curcon){
+    void RequestEvent(sys::net::con *curcon){
         try{
             sys::cout << "Parse Request\n" << sys::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
-            if(sys::ncompare(cururl,strlen(cururl),"/",1)==0){
+            if(strncmp(cururl,"/",strlen(cururl))==0){
                 libhttppp::HttpResponse curres;
                 curres.setState(HTTP200);
                 curres.setVersion(HTTPVERSION(1.1));
@@ -69,27 +71,40 @@ public:
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
                 curres.send(curcon,condat.c_str(),condat.size());
-            }else if(sys::ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0 ||
-                sys::ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
+            }else if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0 ||
+                strncmp(cururl,"/httpdigestauth",strlen(cururl))==0){
                 libhttppp::HttpAuth httpauth;
-                httpauth.parse(&curreq);
-                const char *username=httpauth.getUsername();
-                const char *password=httpauth.getPassword();
-                if(username && password){
-                    libhttppp::HttpResponse curres;
-                    curres.setState(HTTP200);
-                    curres.setVersion(HTTPVERSION(1.1));
-                    curres.setContentType(nullptr);
-                    curres.send(curcon,nullptr,0);
-                    return;
+            httpauth.parse(&curreq);
+            const char *username=httpauth.getUsername();
+            const char *password=httpauth.getPassword();
+            if(username && password){
+                libhtmlpp::HtmlString condat;
+                condat  << "<!DOCTYPE HTML>"
+                        << " <html>"
+                        << "  <head>"
+                        << "    <title>AuthTest</title>"
+                        << "    <meta content=\"\">"
+                        << "    <meta charset=\"utf-8\">"
+                        << "    <style></style>"
+                        << "  </head>"
+                        << "<body><ul>"
+                        << "<li> username: " << username << "</li>"
+                        << "<li> password: " << password << "</li>";
+                condat  << "</ul></body></html>";
+                libhttppp::HttpResponse curres;
+                curres.setState(HTTP200);
+                curres.setVersion(HTTPVERSION(1.1));
+                curres.setContentType("text/html");
+                curres.send(curcon,condat.c_str(),condat.size());
+                return;
                 }else{
                     libhttppp::HttpResponse curres;
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(nullptr);
-                    if(sys::ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0){
+                    if(sys::utils::ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(sys::ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
+                    }else if(sys::utils::ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");

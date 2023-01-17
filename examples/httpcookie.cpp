@@ -41,7 +41,7 @@
 
 class CookieTest {
 public:
-    CookieTest(sys::con *curcon,libhttppp::HttpRequest *curreq){
+    CookieTest(sys::net::con *curcon,libhttppp::HttpRequest *curreq){
         _Curcon=curcon;
         _Curreq=curreq;
         
@@ -69,7 +69,7 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(sys::ncompare(key,strlen(key),cururlform->getKey(),strlen(key))==0)
+                if(sys::utils::ncompare(key,strlen(key),cururlform->getKey(),strlen(key))==0)
                     return cururlform->getValue();
                 }
         }
@@ -82,10 +82,10 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(sys::ncompare(key,strlen(key),cururlform->getKey(),
+                if(sys::utils::ncompare(key,strlen(key),cururlform->getKey(),
                     strlen(cururlform->getKey()))==0){
                         char ktmp[255];
-                        sys::scopy(cururlform->getValue(),cururlform->getValue()+
+                        sys::utils::scopy(cururlform->getValue(),cururlform->getValue()+
                                          strlen(cururlform->getValue()),
                                          ktmp);
                         return atoi(ktmp);
@@ -128,16 +128,16 @@ private:
     libhtmlpp::HtmlString  _HTMLDat;
     libhttppp::HttpCookie   _Cookie;
     libhttppp::HttpResponse _Curres;
-    sys::con        *_Curcon;
+    sys::net::con          *_Curcon;
     libhttppp::HttpRequest *_Curreq;
 };
 
-class Controller : public sys::event {
+class Controller : public sys::net::event {
 public:
-    Controller(sys::socket* serversocket) : event(serversocket){
+    Controller(sys::net::socket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::con *curcon){
+    void RequestEvent(sys::net::con *curcon){
 
         try{
             sys::cout << "Parse Request" << sys::endl;

@@ -25,19 +25,47 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include "exception.h"
+#include <string.h>
 
-#pragma once
+#include <systempp/sysconsole.h>
+#include <systempp/syseventapi.h>
 
-namespace libhttppp {
-  class Base64 {
-  public:
-    size_t Decodelen(const char *bufcoded);
-    size_t Decode(char *bufplain, const char *bufcoded);
-    
-    size_t Encodelen(size_t len);
-    size_t Encode(char *encoded, const char *string, size_t len);
-  private:
+#include "http.h"
+#include "httpd.h"
 
-  };
+class Controller : public sys::net::event {
+public:
+    Controller(sys::net::socket* serversocket) : event(serversocket){
+        
+    };
+    void RequestEvent(sys::net::con *curcon){
+        try{
+            libhttppp::HttpResponse curres;
+            const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
+            curres.setContentType("text/html");
+            curres.send(curcon,hello,strlen(hello));
+        }catch(libhttppp::HTTPException &e){
+            sys::cerr << e.what() << sys::endl;
+            throw e;
+        }
+    }
+private:
 };
+
+class HttpConD : public libhttppp::HttpD {
+public:
+  HttpConD(int argc, char** argv) : HttpD(argc,argv){
+    libhttppp::HTTPException httpexception;
+    try {
+      Controller controller(getServerSocket());
+      controller.runEventloop();
+    }catch(libhttppp::HTTPException &e){
+      sys::cout << e.what() << sys::endl;
+    }
+  };
+private:
+};
+
+int main(int argc, char** argv){
+  HttpConD(argc,argv);
+}

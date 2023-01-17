@@ -25,18 +25,18 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "config.h"
 
 #include "http.h"
-#include "base64.h"
+
+#include "exception.h"
 
 #include <systempp/sysutils.h>
-
-extern "C" {
-    void *__dso_handle=&__dso_handle;
-}
+#include <systempp/sysconsole.h>
+#include <systempp/syscrypt.h>
 
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
@@ -49,8 +49,8 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
     size_t nsize=strlen(value)+_Valuelen;
     char *buf=new char [nsize+1];
     if(_Valuelen>0)
-        sys::scopy(_Value,_Value+_Valuelen,buf);
-    sys::scopy(value,value+strlen(value),buf+_Valuelen);
+        sys::utils::scopy(_Value,_Value+_Valuelen,buf);
+    sys::utils::scopy(value,value+strlen(value),buf+_Valuelen);
     _Valuelen=nsize;
     delete[] _Value;
     buf[nsize]='\0';
@@ -60,14 +60,14 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
   char buf[255];
-  ultoa(value,buf);
+  snprintf(buf,255,"%ld",value);
   *this<<buf;
   return *this;
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(int value){
   char buf[255];
-  itoa(value,buf);
+  snprintf(buf,255,"%d",value);
   *this<<buf;
   return *this;
 }
@@ -90,32 +90,36 @@ const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
 
 const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(sys::ncompare(key,strlen(key),
-                            curdat->_Key,curdat->_Keylen)==0){
-      if(pos!=nullptr)
-        *pos=curdat;
-      return curdat->_Value;
+    if(strncmp(curdat->_Key,key,strlen(key))==0){
+        if(pos!=nullptr)
+            *pos=curdat;
+        return curdat->_Value;
     }
   }
   return nullptr;
 }
 
 size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
-  const char *val=getData(key,pos);
-  if(strlen(val)<255)
-      return 0;
-  char buf[255];
-  sys::scopy(val,val+strlen(val),buf);
-  return atoi(buf);
+    HTTPException httpexception;
+    const char *val=getData(key,pos);
+    if(!val){
+        httpexception[HTTPException::Note] << "getDataSizet key: " << key << " not found !";
+        throw httpexception;
+    }
+    if(strlen(val)<255)
+        return 0;
+    char buf[255];
+    sys::utils::scopy(val,val+strlen(val),buf);
+    return atoi(buf);
 }
 
 int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
-  const char *val=getData(key,pos);
-  if(strlen(val)<255)
-      return 0;
-  char buf[255];
-  sys::scopy(val,val+strlen(val),buf);
-  return atoi(buf);
+    const char *val=getData(key,pos);
+    if(strlen(val)<255)
+        return 0;
+    char buf[255];
+    sys::utils::scopy(val,val+strlen(val),buf);
+    return atoi(buf);
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key){
@@ -130,16 +134,17 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key,libhttppp::HttpHeader::HeaderData *pos){
+  HTTPException httpexception;
   if(!key){
-    _httpexception[HTTPException::Error] << "no headerdata key set can't do this";
-    throw _httpexception;
+    httpexception[HTTPException::Error] << "no headerdata key set can't do this";
+    throw httpexception;
   }
   if(pos){
     delete[] pos->_Key;
     delete[] pos->_Value;
     pos->_Keylen=strlen(key);
     pos->_Key=new char[pos->_Keylen+1];
-    sys::scopy(key,key+(pos->_Keylen+1),pos->_Key);
+    sys::utils::scopy(key,key+(pos->_Keylen+1),pos->_Key);
     pos->_Value=nullptr;
     pos->_Valuelen=0;
     return pos;
@@ -150,7 +155,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 
 void libhttppp::HttpHeader::deldata(const char* key){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(sys::ncompare(curdat->_Key,curdat->_Keylen,key,
+    if(sys::utils::ncompare(curdat->_Key,curdat->_Keylen,key,
         strlen(key))==0){
       deldata(curdat);  
     }
@@ -205,7 +210,7 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     _nextHeaderData=nullptr;
     _Keylen=strlen(key);
     _Key=new char[_Keylen+1];
-    sys::scopy(key,key+(_Keylen+1),_Key);
+    sys::utils::scopy(key,key+(_Keylen+1),_Key);
     _Valuelen=0;
     _Value=nullptr;
 }
@@ -222,7 +227,7 @@ libhttppp::HttpHeader::~HttpHeader(){
 
 libhttppp::HttpResponse::HttpResponse(){
   setState(HTTP200);
-  setVersion(HTTPVERSION("2.0"));
+  setVersion(HTTPVERSION(2.0));
   _ContentType=nullptr;
   _ContentLength=nullptr;
   _Connection=setData("Connection");
@@ -230,17 +235,18 @@ libhttppp::HttpResponse::HttpResponse(){
 }
 
 void libhttppp::HttpResponse::setState(const char* httpstate){
+  HTTPException httpexception;
   if(httpstate==nullptr){
-    _httpexception[HTTPException::Error] << "http state not set don't do that !!!";
-    throw _httpexception;
+    httpexception[HTTPException::Error] << "http state not set don't do that !!!";
+    throw httpexception;
   }
   size_t hlen=strlen(httpstate);
   if(hlen>254){
-    _httpexception[HTTPException::Error] << "http state with over 255 signs sorry your are drunk !";
-    throw _httpexception;
+    httpexception[HTTPException::Error] << "http state with over 255 signs sorry your are drunk !";
+    throw httpexception;
   }
   _Statelen=hlen;
-  sys::scopy(httpstate,httpstate+hlen,_State);
+  sys::utils::scopy(httpstate,httpstate+hlen,_State);
   _State[hlen]='\0';
 }
 
@@ -267,34 +273,34 @@ void libhttppp::HttpResponse::setVersion(const char* version){
   if(vlen>254)
     throw excep[HTTPException::Error] << "http version with over 255 signs sorry your are drunk !";
   _VersionLen=vlen;
-  sys::scopy(version,version+vlen,_Version);
+  sys::utils::scopy(version,version+vlen,_Version);
   _Version[vlen]='\0';
 }
 
 
-void libhttppp::HttpResponse::send(sys::con* curconnection, const char* data){
+void libhttppp::HttpResponse::send(sys::net::con* curconnection, const char* data){
   send(curconnection,data,strlen(data));
 }
 
 size_t libhttppp::HttpResponse::printHeader(char **buffer){
     *buffer=new char[strlen(_Version)+1];
-    sys::scopy(_Version,_Version+(strlen(_Version)+1),*buffer);
-    sys::append(buffer," ");
-    sys::append(buffer,_State);
-    sys::append(buffer,"\r\n");
+    sys::utils::scopy(_Version,_Version+(strlen(_Version)+1),*buffer);
+    sys::utils::append(buffer," ");
+    sys::utils::append(buffer,_State);
+    sys::utils::append(buffer,"\r\n");
     for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-        sys::append(buffer,getKey(curdat));
-        sys::append(buffer,": ");
+        sys::utils::append(buffer,getKey(curdat));
+        sys::utils::append(buffer,": ");
         if(getValue(curdat))
-            sys::append(buffer,getValue(curdat));
-        sys::append(buffer,"\r\n");
+            sys::utils::append(buffer,getValue(curdat));
+        sys::utils::append(buffer,"\r\n");
     } 
-    sys::append(buffer,"\r\n");
+    sys::utils::append(buffer,"\r\n");
     return strlen((*buffer));
 }
 
 
-void libhttppp::HttpResponse::send(sys::con* curconnection,const char* data, unsigned long datalen){
+void libhttppp::HttpResponse::send(sys::net::con* curconnection,const char* data, unsigned long datalen){
   if(datalen>=0){
         setContentLength(datalen);
   }
@@ -302,7 +308,7 @@ void libhttppp::HttpResponse::send(sys::con* curconnection,const char* data, uns
   size_t headersize = printHeader(&header);
   curconnection->addSendQueue(header,headersize);
   delete[] header;
-  if(datalen>=0)
+  if(datalen>0)
     curconnection->addSendQueue(data,datalen);
 }
 
@@ -315,14 +321,14 @@ libhttppp::HttpRequest::HttpRequest(){
   _RequestSize=0;
 }
 
-void libhttppp::HttpRequest::parse(sys::con* curconnection){
+void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
     HTTPException excep;
     if(!curconnection)
         return;
     try{
-        sys::con::condata *curdat=curconnection->getRecvData();
+        sys::net::con::condata *curdat=curconnection->getRecvData();
         if(curdat){
-            sys::con::condata *startblock;
+            sys::net::con::condata *startblock;
             int startpos=0;
             
             if((startpos=curconnection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
@@ -334,7 +340,7 @@ void libhttppp::HttpRequest::parse(sys::con* curconnection){
                 curconnection->cleanRecvData();
                 throw excep;
             }
-            sys::con::condata *endblock;
+            sys::net::con::condata *endblock;
             ssize_t endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
             if(endpos==-1){
                 excep[HTTPException::Error] << "can't find newline headerend";
@@ -358,7 +364,7 @@ void libhttppp::HttpRequest::parse(sys::con* curconnection){
 
             for(int cpos=pos; cpos<headersize; ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    sys::scopy(header+pos,header+cpos,_RequestURL);
+                    sys::utils::scopy(header+pos,header+cpos,_RequestURL);
                     _RequestURL[cpos-pos]='\0';
                     ++pos;
                     break;
@@ -367,7 +373,7 @@ void libhttppp::HttpRequest::parse(sys::con* curconnection){
 
             for(int cpos=pos; cpos<headersize; ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    sys::scopy(header+pos,header+cpos,_Version);
+                    sys::utils::scopy(header+pos,header+cpos,_Version);
                     _Version[cpos-pos]='\0';
                     ++pos;
                     found=true;
@@ -392,13 +398,13 @@ void libhttppp::HttpRequest::parse(sys::con* curconnection){
                         size_t keylen=delimeter-startkeypos;
                         if(keylen>0 && keylen <=headersize){
                             char *key=new char[keylen+1];
-                            sys::scopy(header+startkeypos,header+(startkeypos+keylen),key);
+                            sys::utils::scopy(header+startkeypos,header+(startkeypos+keylen),key);
                             key[keylen]='\0';
                             size_t valuelen=(pos-delimeter)-2;
                             if(pos > 0 && valuelen <= headersize){
                                 char *value=new char[valuelen+1];
                                 size_t vstart=delimeter+2;
-                                sys::scopy(header+vstart,header+(vstart+valuelen),value);
+                                sys::utils::scopy(header+vstart,header+(vstart+valuelen),value);
                                 value[valuelen]='\0';
                                 *setData(key)<<value;
                                 delete[] value;
@@ -417,11 +423,11 @@ void libhttppp::HttpRequest::parse(sys::con* curconnection){
             curconnection->resizeRecvQueue(headersize);
             
             if(_RequestType==POSTREQUEST){
-                size_t csize=getDataSizet("content-length");
+                size_t csize=getDataSizet("Content-Length");
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 if(csize<=rsize){
                     size_t dlocksize=curconnection->getRecvSize();
-                    sys::con::condata *dblock=nullptr;
+                    sys::net::con::condata *dblock=nullptr;
                     size_t cdlocksize=0;
                     for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextcondata()){
                         dlocksize-=dblock->getDataSize();
@@ -494,7 +500,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
     }
     case POSTREQUEST:{
       if(request->getData("Content-Type") && 
-         sys::ncompare(request->getData("Content-Type"),12,"multipart/form-data",18)==0){
+         strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
          _parseMulitpart(request);
       }else{
          _parseUrlDecode(request);
@@ -524,8 +530,8 @@ ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,char *
         c = *urlin++;
         if (c == '+'){
             c = ' ';
-        }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	/*||*/
-            /*!sscanf(urlin - 2, "%2x", &c)*/)){
+        }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	||
+            !sscanf(urlin - 2, "%2x", &c))){
             return -1;
             }
             if (dec){
@@ -571,64 +577,64 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   /*cut boundary=*/
   ctstartpos+=strlen(boundary);
   if(_Boundary)
-    delete[] _Boundary;
+     delete[] _Boundary;
   _BoundarySize=(ctendpos-ctstartpos);
   _Boundary=new char[_BoundarySize+1];
-  sys::scopy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
+  sys::utils::scopy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
   _Boundary[(ctendpos-ctstartpos)]='\0';
 }
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
-  _parseBoundary(request->getData("Content-Type"));
-  char *realboundary = new char[_BoundarySize+3];
-  sys::scopy(realboundary+2,realboundary+(_BoundarySize+1),_Boundary);
-  realboundary[0]='-';
-  realboundary[1]='-';
-  size_t realboundarylen=_BoundarySize+2;
-  const char *req=request->getRequest();
-  size_t reqsize=request->getRequestSize();
-  size_t realboundarypos=0;
-  unsigned int datalength = 0;
-  const char *datastart=0;
-  size_t oldpos=0; 
-  for(size_t cr=0; cr < reqsize; cr++){
-    //check if boundary
-    if(req[cr]==realboundary[realboundarypos]){
-      //check if boundary completed
-      if((realboundarypos+1)==realboundarylen){
-	//ceck if boundary before found set data end
-	if(datastart!=nullptr){
-        //cut boundarylen
-	  datalength=(cr-oldpos)-realboundarylen;
-	  if(datalength>0)
-	    _parseMultiSection(datastart,datalength);
-	}
-	//set cr one higher to cut boundary
-	cr++;
-        //cut first new line
-        while(req[cr]=='\r' || req[cr]=='\n'){
-          cr++;
+    _parseBoundary(request->getData("Content-Type"));
+    char *realboundary = new char[_BoundarySize+3];
+    sys::utils::scopy(_Boundary,_Boundary+(_BoundarySize+1),realboundary+2);
+    realboundary[0]='-';
+    realboundary[1]='-';
+    size_t realboundarylen=_BoundarySize+2;
+    const char *req=request->getRequest();
+    size_t reqsize=request->getRequestSize();
+    size_t realboundarypos=0;
+    unsigned int datalength = 0;
+    const char *datastart=nullptr;
+    size_t oldpos=0; 
+    sys::cout << req << sys::endl;
+    size_t cr=0;
+    while(cr < reqsize){
+        //check if boundary
+        if(req[cr++]==realboundary[realboundarypos++]){
+            //check if boundary completed
+            if((realboundarypos+1)==realboundarylen){
+                //ceck if boundary before found set data end
+                if(datastart!=nullptr){
+                    //cut boundarylen
+                    datalength=(cr-oldpos)-realboundarylen;
+                    if(datalength>0)
+                        _parseMultiSection(datastart,datalength);
+                    datastart=nullptr;
+                }
+                //set cr one higher to cut boundary
+                cr++;
+                //cut first new line
+                while(req[cr]=='\r' || req[cr]=='\n'){
+                    cr++;
+                }
+                datastart=req+cr;
+                //store pos dor datalength
+                oldpos=cr;
+                //check if boundary finished
+                if(req[cr]=='-' && req[cr+1]=='-'){
+                    //boundary finished
+                    realboundarylen=0;
+                    delete[] realboundary;
+                    return;
+                }
+            }
+        }else{
+            //boundary reset if sign not correct
+            realboundarypos=0;
         }
-	datastart=req+cr;
-        //store pos dor datalength
-	oldpos=cr;
-        //check if boundary finished
-        if(req[cr]=='-' && req[cr+1]=='-'){
-            //boundary finished
-            realboundarylen=0;
-            delete[] realboundary;
-            return;
-        }
-      }else{
-        //boundary not completed test next sign
-	realboundarypos++;
-      }
-    }else{
-      //boundary reset if sign not correct
-      realboundarypos=0;
     }
-  }
-  delete[] realboundary;
+    delete[] realboundary;
 }
 
 void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
@@ -675,13 +681,13 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
         size_t keylen=delimeter-startkeypos;
         if(keylen>0 && keylen <=sectionsize){
           char *key=new char[keylen+1];
-          sys::scopy(section+startkeypos,section+(startkeypos+keylen),key);
+          sys::utils::scopy(section+startkeypos,section+(startkeypos+keylen),key);
           key[keylen]='\0';
           size_t valuelen=((pos-delimeter)-2);
           if(pos > 0 && valuelen <= sectionsize){
             char *value=new char[valuelen+1];
             size_t vstart=delimeter+2;
-            sys::scopy(section+vstart,section+(vstart+valuelen),value);
+            sys::utils::scopy(section+vstart,section+(vstart+valuelen),value);
             value[valuelen]='\0';
             curmultipartformdata->addContent(key,value);
             delete[] value;
@@ -754,7 +760,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   for(size_t dpos=0; dpos<dislen; dpos++){
     if(disposition[dpos]==';' || disposition[dpos]=='\r'){
       char *ctype = new char[dpos+1];
-      sys::scopy(disposition,disposition+dpos,ctype);
+      sys::utils::scopy(disposition,disposition+dpos,ctype);
       ctype[dpos]='\0';
       getContentDisposition()->setDisposition(ctype);
       delete[] ctype;
@@ -789,7 +795,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   
     size_t namesize=(fterm-fendpos);
     char *name=new char[namesize+1];
-    sys::scopy(disposition+fendpos,disposition+(fendpos+namesize),name);
+    sys::utils::scopy(disposition+fendpos,disposition+(fendpos+namesize),name);
     name[namesize]='\0';
     getContentDisposition()->setName(name);
     delete[] name;
@@ -822,7 +828,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   
     size_t filenamesize=(fileterm-fileendpos);
     char *filename=new char[filenamesize+1];
-    sys::scopy(disposition+fileendpos,disposition+(fileendpos+filenamesize),filename);
+    sys::utils::scopy(disposition+fileendpos,disposition+(fileendpos+filenamesize),filename);
     filename[filenamesize]='\0';
     getContentDisposition()->setFilename(filename);
     delete[] filename;
@@ -843,7 +849,7 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
   if(!key)
     return nullptr;
   for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
-    if(sys::ncompare(curcontent->getKey(),
+    if(sys::utils::ncompare(curcontent->getKey(),
         strlen(curcontent->getKey()),key,strlen(key))==0){
       return curcontent->getValue();
     }
@@ -865,11 +871,11 @@ libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const c
     return;
   
   _Key=new char[strlen(key)+1];
-  sys::scopy(key,key+strlen(key),_Key);
+  sys::utils::scopy(key,key+strlen(key),_Key);
   _Key[strlen(key)]='\0';
   
   _Value=new char[strlen(value)+1];
-  sys::scopy(value,value+strlen(value),_Value);
+  sys::utils::scopy(value,value+strlen(value),_Value);
   _Value[strlen(value)]='\0';
 }
 
@@ -918,30 +924,31 @@ char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getName(){
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setDisposition(const char* disposition){
   delete[] _Disposition;
   _Disposition=new char[strlen(disposition)+1];
-  sys::scopy(disposition,disposition+strlen(disposition),_Disposition);
+  sys::utils::scopy(disposition,disposition+strlen(disposition),_Disposition);
   _Disposition[strlen(disposition)]='\0';
 }
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setName(const char* name){
   delete[] _Name;
   _Name=new char[strlen(name)+1];
-  sys::scopy(name,name+strlen(name),_Name);
+  sys::utils::scopy(name,name+strlen(name),_Name);
   _Name[strlen(name)]='\0';
 }
 
 void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(const char* filename){
   delete[] _Filename;
   _Filename=new char[strlen(filename)+1];
-  sys::scopy(filename,filename+strlen(filename),_Filename);
+  sys::utils::scopy(filename,filename+strlen(filename),_Filename);
   _Filename[strlen(filename)]='\0';
 }
 
 void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
+  HTTPException httpexception;
   char *formdat=nullptr;
   if(request->getRequestType()==POSTREQUEST){
       size_t rsize=request->getRequestSize();
       formdat = new char[rsize+1];
-      sys::scopy(request->getRequest(),request->getRequest()+rsize,formdat);
+      sys::utils::scopy(request->getRequest(),request->getRequest()+rsize,formdat);
       formdat[rsize]='\0';
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequestURL();
@@ -959,11 +966,11 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
       }
       size_t rsize=rurlsize-rdelimter;
       formdat = new char[rsize+1];
-      sys::scopy(rurl+rdelimter,rurl+(rdelimter+rsize),formdat);
+      sys::utils::scopy(rurl+rdelimter,rurl+(rdelimter+rsize),formdat);
       formdat[rsize]='\0';
   }else{
-    _httpexception[HTTPException::Error] << "HttpForm unknown Requestype";
-    throw _httpexception;
+    httpexception[HTTPException::Error] << "HttpForm unknown Requestype";
+    throw httpexception;
   }
   size_t fdatstpos=0;
   size_t keyendpos=0;
@@ -976,10 +983,10 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
             char *value=nullptr;
             char *urldecdValue=nullptr;
             char *urldecdKey=nullptr;
-            sys::scopy(formdat+fdatstpos,formdat+keyendpos,key);
+            sys::utils::scopy(formdat+fdatstpos,formdat+keyendpos,key);
             if(formdat+vlstpos){
                 value=new char[(fdatpos-vlstpos)+1];
-                sys::scopy(formdat+vlstpos,formdat+fdatpos,value);
+                sys::utils::scopy(formdat+vlstpos,formdat+fdatpos,value);
                 key[(keyendpos-fdatstpos)]='\0';
                 value[(fdatpos-vlstpos)]='\0';
                 urlDecode(value,strlen(value),&urldecdValue);
@@ -1008,7 +1015,7 @@ void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
   if(_Key)
     delete[] _Key;
   _Key=new char [strlen(key)+1];
-  sys::scopy(key,key+strlen(key),_Key);
+  sys::utils::scopy(key,key+strlen(key),_Key);
   _Key[strlen(key)]='\0';  
 }
 
@@ -1020,7 +1027,7 @@ void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
       return;
   }
   _Value=new char [strlen(value)+1];
-  sys::scopy(value,value+strlen(value),_Value);
+  sys::utils::scopy(value,value+strlen(value),_Value);
   _Value[strlen(value)]='\0'; 
 }
 
@@ -1103,9 +1110,10 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
                                       const char* key, const char* value,
                                       const char *comment,const char *domain,  
                                       int maxage, const char* path,
-                                      bool secure,const char *version){
+                                      bool secure,const char *version,const char *samesite){
+    HTTPException httpexception;
     if(!key || !value){
-        _httpexception[HTTPException::Note] << "no key or value set in cookie!";
+        httpexception[HTTPException::Note] << "no key or value set in cookie!";
         return;
     }
     HttpHeader::HeaderData *dat=curresp->setData("Set-Cookie");
@@ -1120,6 +1128,7 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         *dat << "; Max-Age=" << maxage;
     if(path)
         *dat << "; Path=" << path;
+    *dat << "; SameSite=" << samesite;
     if(secure)
         *dat << "; Secure";
     if(version)
@@ -1148,12 +1157,12 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
       CookieData *curcookie=addCookieData();
         
       curcookie->_Key=new char[(keyendpos-startpos)+1];
-      sys::scopy(cdat+startpos,cdat+keyendpos,curcookie->_Key);
+      sys::utils::scopy(cdat+startpos,cdat+keyendpos,curcookie->_Key);
       curcookie->_Key[(keyendpos-startpos)]='\0';
       
       size_t valuestartpos=keyendpos+1;
       curcookie->_Value=new char[(delimeter-valuestartpos)+1];
-      sys::scopy(cdat+valuestartpos,cdat+delimeter,curcookie->_Value);
+      sys::utils::scopy(cdat+valuestartpos,cdat+delimeter,curcookie->_Value);
       curcookie->_Value[(delimeter-valuestartpos)]='\0';
       
       startpos=delimeter+2;
@@ -1201,23 +1210,23 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
   const char *authstr=curreq->getData("Authorization");
   if(!authstr)
     return;
-  if(sys::ncompare(authstr,strlen(authstr),"Basic",5)==0)
+  if(sys::utils::ncompare(authstr,strlen(authstr),"Basic",5)==0)
     _Authtype=BASICAUTH;
-  else if(sys::ncompare(authstr,strlen(authstr),"Digest",6)==0)
+  else if(sys::utils::ncompare(authstr,strlen(authstr),"Digest",6)==0)
     _Authtype=DIGESTAUTH;
   switch(_Authtype){
     case BASICAUTH:{
       size_t base64strsize=strlen(authstr+6);
       char *base64str=new char[base64strsize+1];
-      sys::scopy(authstr+6,authstr+(strlen(authstr)+1),base64str);
-      Base64 base64;
-      char *clearstr=new char[base64.Decodelen(base64str)];
-      size_t cleargetlen=base64.Decode(clearstr,base64str);
+      sys::utils::scopy(authstr+6,authstr+(strlen(authstr)+1),base64str);
+      sys::crypt::base64 hbase64;
+      char *clearstr=new char[hbase64.Decodelen(base64str)];
+      size_t cleargetlen=hbase64.Decode(clearstr,base64str);
       delete[] base64str;
       for(size_t clearpos=0; clearpos<cleargetlen; clearpos++){
          if(clearstr[clearpos]==':'){
             char *usernm=new char[clearpos+1];
-            sys::scopy(clearstr,clearstr+clearpos,usernm);
+            sys::utils::scopy(clearstr,clearstr+clearpos,usernm);
             usernm[clearpos]='\0';
             setUsername(usernm);
             setPassword(clearstr+(clearpos+1));
@@ -1279,7 +1288,7 @@ void libhttppp::HttpAuth::setRealm(const char* realm){
   if(realm){
     size_t realmsize=strlen(realm);
     _Realm=new char [realmsize+1];
-    sys::scopy(realm,realm+realmsize,_Realm);
+    sys::utils::scopy(realm,realm+realmsize,_Realm);
     _Realm[realmsize]='\0';
   }else{
     _Realm=nullptr;  
@@ -1291,7 +1300,7 @@ void libhttppp::HttpAuth::setUsername(const char* username){
     delete[] _Username;
   size_t usernamelen=strlen(username);
   _Username=new char[usernamelen+1];
-  sys::scopy(username,username+(usernamelen+1),_Username);
+  sys::utils::scopy(username,username+(usernamelen+1),_Username);
 }
 
 void libhttppp::HttpAuth::setPassword(const char* password){
@@ -1299,7 +1308,7 @@ void libhttppp::HttpAuth::setPassword(const char* password){
     delete[] _Password;
   size_t passwordlen=strlen(password);
   _Password=new char[passwordlen+1];
-  sys::scopy(password,password+(passwordlen+1),_Password);
+  sys::utils::scopy(password,password+(passwordlen+1),_Password);
 }
 
 

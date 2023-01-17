@@ -26,6 +26,7 @@
  *******************************************************************************/
 
 #include <systempp/syscmd.h>
+#include <systempp/sysfile.h>
 
 #include "httpd.h"
 
@@ -50,8 +51,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
 
     if (!HTTPDCmdController->checkRequired()) {
         HTTPDCmdController->printHelp();
-        _httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";
-        throw _httpexception;
+        _httpexception[HTTPException::Critical] << "cmd parser not enough arguments given";        throw _httpexception;
     }
       
     /*get port from console paramter*/
@@ -83,27 +83,41 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
         sslkeypath = HTTPDCmdController->getCmdbyKey("httpskey")->getValue();
     
     try {
-        #ifndef Windows
-        if (portset == true)
-            _ServerSocket = new sys::tcp(httpaddr, port, maxconnections,-1,-1);
-        else
-            _ServerSocket = new sys::tcp(httpaddr, maxconnections,-1,-1);
-        #else
-        _ServerSocket = new sys::tcp(httpaddr, port, maxconnections);
-        #endif
-        
-        
         if (sslcertpath && sslkeypath) {
-//             _ServerSocket->createContext();
-//             _ServerSocket->loadCertfile(sslcertpath);
-//             _ServerSocket->loadKeyfile(sslkeypath);
+            
+            auto readFile = [] (const char *file,unsigned char **out,size_t &outlen){
+                size_t read=0,readed=0;
+                sys::file myfile(file);
+                outlen = myfile.getsize();
+                *out = new unsigned char[outlen];
+                do{
+                    read=myfile.read(*out+readed,(outlen-readed));
+                }while(read<0);
+            };
+            
+            unsigned char *cert,*key;
+            size_t certlen,keylen;
+
+            readFile(sslcertpath,&cert,certlen);
+            readFile(sslkeypath,&key,keylen);
+            
+            _ServerSocket = new sys::net::ssl(httpaddr, port, maxconnections,-1,cert,certlen,key,keylen);            
+        }else{
+            #ifndef Windows
+            if (portset == true)
+                _ServerSocket = new sys::net::tcp(httpaddr, port, maxconnections,-1);
+            else
+                _ServerSocket = new sys::net::tcp(httpaddr, maxconnections,-1);
+            #else
+            _ServerSocket = new sys::net::tcp(httpaddr, port, maxconnections);
+            #endif 
         }
     }catch (HTTPException &e) {
         throw e;
     }
 }
 
-sys::socket *libhttppp::HttpD::getServerSocket(){
+sys::net::socket *libhttppp::HttpD::getServerSocket(){
   return _ServerSocket;
 }
 
