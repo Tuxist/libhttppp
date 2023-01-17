@@ -21,9 +21,3 @@
 #define DEFAULTCONNECTTRIES 5
 
 #define ARCH_${CMAKE_SYSTEM_PROCESSOR}
-
-#ifdef SHARED
-extern "C" {
-    extern void *__dso_handle=&__dso_handle;
-}
-#endif
