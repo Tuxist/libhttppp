@@ -102,9 +102,9 @@ public:
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(nullptr);
-                    if(sys::utils::ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0){
+                    if(ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(sys::utils::ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
+                    }else if(ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");

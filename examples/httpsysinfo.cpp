@@ -214,15 +214,15 @@ public:
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
             sys::cout << cururl << sys::endl;
-            if(sys::utils::ncompare(cururl, strlen(cururl),"/",1)==0){
+            if(ncompare(cururl, strlen(cururl),"/",1)==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(sys::utils::ncompare(cururl,strlen(cururl),"/images/header.png",18)==0){
+            }else if(ncompare(cururl,strlen(cururl),"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(sys::utils::ncompare(cururl,strlen(cururl),"/favicon.ico ",12)==0){
+            }else if(ncompare(cururl,strlen(cururl),"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
