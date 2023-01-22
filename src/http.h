@@ -262,7 +262,7 @@ namespace libhttppp {
                    const char *key,const char *value,
                    const char *comment=nullptr,const char *domain=nullptr, 
                    int maxage=-1,const char *path=nullptr,
-                   bool secure=true,const char *version="1",const char *samesite="None");
+                   bool secure=false,const char *version="1",const char *samesite="None");
     CookieData    *getfirstCookieData();
     CookieData    *getlastCookieData();
     CookieData    *addCookieData();
