@@ -1128,7 +1128,8 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         *dat << "; Max-Age=" << maxage;
     if(path)
         *dat << "; Path=" << path;
-    *dat << "; SameSite=" << samesite;
+    if(samesite)
+        *dat << "; SameSite=" << samesite;
     if(secure)
         *dat << "; Secure";
     if(version)
