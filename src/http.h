@@ -50,11 +50,9 @@ namespace libhttppp {
       HeaderData(const char *key);
       ~HeaderData();
     private:
-      char         *_Key;
-      size_t        _Keylen;
-      char         *_Value;
-      size_t        _Valuelen;
-      HeaderData   *_nextHeaderData;
+      sys::array<char> _Key;
+      sys::array<char> _Value;
+      HeaderData      *_nextHeaderData;
       friend class HttpHeader;
     };
     
@@ -93,15 +91,13 @@ namespace libhttppp {
     void   setVersion(const char* version);
     void   send(sys::net::con *curconnection,const char* data);
     void   send(sys::net::con *curconnection,const char* data, unsigned long datalen); //only use as server
-    size_t printHeader(char **buffer);
+    size_t printHeader(sys::array<char> &buffer);
   private:
-    char          _State[255];
-    size_t        _Statelen;
-    char          _Version[255];
-    size_t        _VersionLen;
-    HeaderData   *_Connection;
-    HeaderData   *_ContentType;
-    HeaderData   *_ContentLength;
+    sys::array<char> _State;
+    sys::array<char> _Version;
+    HeaderData      *_Connection;
+    HeaderData      *_ContentType;
+    HeaderData      *_ContentLength;
   };
   
  

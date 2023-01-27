@@ -43,18 +43,10 @@ libhttppp::HttpHeader::HttpHeader(){
   _lastHeaderData=nullptr;
 }
 
-libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(const char* value){
-    if(!value)
+libhttppp::HttpHeader::HeaderData& libhttppp::HttpHeader::HeaderData::operator<<(const char* value) {
+    if (!value)
         return *this;
-    size_t nsize=strlen(value)+_Valuelen;
-    char *buf=new char [nsize+1];
-    if(_Valuelen>0)
-        scopy(_Value,_Value+_Valuelen,buf);
-    scopy(value,value+strlen(value),buf+_Valuelen);
-    _Valuelen=nsize;
-    delete[] _Value;
-    buf[nsize]='\0';
-    _Value=buf;
+    _Value.append(value);
     return *this;
 }
 
@@ -81,19 +73,19 @@ libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::nextHeaderData(HttpHea
 }
 
 const char* libhttppp::HttpHeader::getKey(HttpHeader::HeaderData* pos){
-  return pos->_Key;
+  return pos->_Key.c_str();
 }
 
 const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
-  return pos->_Value;
+  return pos->_Value.c_str();
 }
 
 const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(strncmp(curdat->_Key,key,strlen(key))==0){
+    if(curdat->_Key==key){
         if(pos!=nullptr)
             *pos=curdat;
-        return curdat->_Value;
+        return curdat->_Value.c_str();
     }
   }
   return nullptr;
@@ -139,14 +131,8 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     httpexception[HTTPException::Error] << "no headerdata key set can't do this";
     throw httpexception;
   }
-  if(pos){
-    delete[] pos->_Key;
-    delete[] pos->_Value;
-    pos->_Keylen=strlen(key);
-    pos->_Key=new char[pos->_Keylen+1];
-    scopy(key,key+(pos->_Keylen+1),pos->_Key);
-    pos->_Value=nullptr;
-    pos->_Valuelen=0;
+  if(pos){   
+    pos->_Key = key;
     return pos;
   }else{
     return setData(key);
@@ -155,8 +141,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
 
 void libhttppp::HttpHeader::deldata(const char* key){
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    if(ncompare(curdat->_Key,curdat->_Keylen,key,
-        strlen(key))==0){
+    if(curdat->_Key==key){
       deldata(curdat);  
     }
   }
@@ -195,7 +180,7 @@ size_t libhttppp::HttpHeader::getElements(){
 size_t libhttppp::HttpHeader::getHeaderSize(){
   size_t hsize=0;
   for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
-    hsize+=curdat->_Keylen+curdat->_Valuelen;
+    hsize+=curdat->_Key.length() + curdat->_Value.length();
   }
   return hsize;
 }
@@ -208,16 +193,11 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
         throw excep;
     }
     _nextHeaderData=nullptr;
-    _Keylen=strlen(key);
-    _Key=new char[_Keylen+1];
-    scopy(key,key+(_Keylen+1),_Key);
-    _Valuelen=0;
+    _Key = key;
     _Value=nullptr;
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
-  delete[] _Key;
-  delete[] _Value;
   delete _nextHeaderData;
 }
 
@@ -245,9 +225,7 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
     httpexception[HTTPException::Error] << "http state with over 255 signs sorry your are drunk !";
     throw httpexception;
   }
-  _Statelen=hlen;
-  scopy(httpstate,httpstate+hlen,_State);
-  _State[hlen]='\0';
+  _State=httpstate;
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
@@ -272,9 +250,7 @@ void libhttppp::HttpResponse::setVersion(const char* version){
   size_t vlen=strlen(version);
   if(vlen>254)
     throw excep[HTTPException::Error] << "http version with over 255 signs sorry your are drunk !";
-  _VersionLen=vlen;
-  scopy(version,version+vlen,_Version);
-  _Version[vlen]='\0';
+  _Version=version;
 }
 
 
@@ -282,21 +258,20 @@ void libhttppp::HttpResponse::send(sys::net::con* curconnection, const char* dat
   send(curconnection,data,strlen(data));
 }
 
-size_t libhttppp::HttpResponse::printHeader(char **buffer){
-    *buffer=new char[strlen(_Version)+1];
-    scopy(_Version,_Version+(strlen(_Version)+1),*buffer);
-    appendstr(buffer," ");
-    appendstr(buffer,_State);
-    appendstr(buffer,"\r\n");
+size_t libhttppp::HttpResponse::printHeader(sys::array<char> &buffer){
+    buffer=_Version;
+    buffer.append(" ");
+    buffer.append(_State.c_str());
+    buffer.append("\r\n");
     for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-        appendstr(buffer,getKey(curdat));
-        appendstr(buffer,": ");
+        buffer.append(getKey(curdat));
+        buffer.append(": ");
         if(getValue(curdat))
-            appendstr(buffer,getValue(curdat));
-        appendstr(buffer,"\r\n");
+            buffer.append(getValue(curdat));
+        buffer.append("\r\n");
     } 
-    appendstr(buffer,"\r\n");
-    return strlen((*buffer));
+    buffer.append("\r\n");
+    return buffer.length();
 }
 
 
@@ -304,10 +279,10 @@ void libhttppp::HttpResponse::send(sys::net::con* curconnection,const char* data
   if(datalen>=0){
         setContentLength(datalen);
   }
-  char *header;
-  size_t headersize = printHeader(&header);
-  curconnection->addSendQueue(header,headersize);
-  delete[] header;
+  sys::array<char> header;
+  size_t headersize = printHeader(header);
+  curconnection->addSendQueue(header.c_str(), headersize);
+  sys::cout << header << sys::endl;
   if(datalen>0)
     curconnection->addSendQueue(data,datalen);
 }
@@ -1145,7 +1120,9 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   int startpos=0;
   
   for (size_t cpos = 0; cpos < cdat.length(); cpos++) {
-	  if (cdat[cpos] == '=') {
+      if (cdat[cpos] == ' ') {
+          ++startpos;
+      }else if (cdat[cpos] == '=') {
 		  keyendpos = cpos;
 	  }else if (cdat[cpos] == ';' || cpos == (cdat.length() - 1)) {
 		  delimeter = cpos;
