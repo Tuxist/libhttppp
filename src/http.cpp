@@ -1071,14 +1071,10 @@ libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::getUrlcodedFormData
 }
 
 libhttppp::HttpCookie::CookieData::CookieData(){
-  _Key=nullptr;
-  _Value=nullptr;
   _nextCookieData=nullptr;
 }
 
 libhttppp::HttpCookie::CookieData::~CookieData(){
-  delete[] _Key;
-  delete[] _Value;
   delete   _nextCookieData;
 }
 
@@ -1087,11 +1083,11 @@ libhttppp::HttpCookie::CookieData * libhttppp::HttpCookie::CookieData::nextCooki
 }
 
 const char * libhttppp::HttpCookie::CookieData::getKey(){
-  return _Key;
+  return _Key.c_str();
 }
 
 const char * libhttppp::HttpCookie::CookieData::getValue(){
-  return _Value;
+  return _Value.c_str();
 }
 
 
@@ -1139,37 +1135,33 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
 
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
-  const char *cdat=curreq->getData("Cookie");
-  if(!cdat)
+  sys::array<char> cdat = curreq->getData("Cookie");
+  if(cdat.empty())
     return;
   
-  size_t delimeter=0;
-  size_t keyendpos=0;
-  size_t startpos=0;
+  int delimeter=-1;
+  int keyendpos=-1;
+  int startpos=0;
   
-  for(size_t cpos=0; cpos < strlen(cdat)+1; cpos++){
-    if(cdat[cpos]=='='){
-      keyendpos=cpos;  
-    }
-    if(cdat[cpos]==';' || cdat[cpos]=='\0'){
-      delimeter=cpos;  
-    }
-    if(keyendpos!=0 && delimeter!=0){
-      CookieData *curcookie=addCookieData();
-        
-      curcookie->_Key=new char[(keyendpos-startpos)+1];
-      scopy(cdat+startpos,cdat+keyendpos,curcookie->_Key);
-      curcookie->_Key[(keyendpos-startpos)]='\0';
-      
-      size_t valuestartpos=keyendpos+1;
-      curcookie->_Value=new char[(delimeter-valuestartpos)+1];
-      scopy(cdat+valuestartpos,cdat+delimeter,curcookie->_Value);
-      curcookie->_Value[(delimeter-valuestartpos)]='\0';
-      
-      startpos=delimeter+2;
-      keyendpos=0;
-      delimeter=0;
-    }
+  for (size_t cpos = 0; cpos < cdat.length(); cpos++) {
+	  if (cdat[cpos] == '=') {
+		  keyendpos = cpos;
+	  }else if (cdat[cpos] == ';' || cpos == (cdat.length() - 1)) {
+		  delimeter = cpos;
+	  }
+	  if (keyendpos != -1 && delimeter != -1) {
+		  CookieData* curcookie = addCookieData();
+
+          sys::cout << keyendpos - startpos << sys::endl;
+
+          curcookie->_Key = cdat.substr(startpos, keyendpos-startpos);
+
+		  curcookie->_Value = cdat.substr((keyendpos+1),delimeter-keyendpos);
+
+		  keyendpos = -1;
+		  delimeter = -1;
+          startpos = cpos;
+	  }
   }
 }
 

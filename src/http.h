@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h>
 #include <sys/types.h>
 
+#include <systempp/sysarray.h>
 #include <systempp/syseventapi.h>
 
 #include "config.h"
@@ -249,8 +250,8 @@ namespace libhttppp {
     private:
       CookieData();
       ~CookieData();
-      char       *_Key;
-      char       *_Value;
+      sys::array<char> _Key;
+      sys::array<char> _Value;
       CookieData *_nextCookieData;
 
       friend class HttpCookie;
