@@ -149,7 +149,7 @@ void sendResponse(sys::net::con *curcon,libhttppp::HttpRequest *curreq) {
       Multiform(curreq,condat);
       URlform(curreq,condat);
       condat << "</div></body></html>";
-      curres.send(curcon,condat.c_str(),condat.size());
+      curres.send(curcon,condat.c_str(),condat.length());
 }
 
 class Controller : public sys::net::event {

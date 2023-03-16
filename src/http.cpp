@@ -1110,10 +1110,17 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
 
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
-  if(!curreq->getData("Cookie"))
+  if(!curreq->getData("cookie") && !curreq->getData("Cookie"))
     return;
+
+  sys::array<char> cdat;  
+
+  if(curreq->getData("cookie"))
+  	cdat = curreq->getData("cookie");
+  else
+	cdat = curreq->getData("Cookie");
+
   
-  sys::array<char> cdat = curreq->getData("Cookie");
 
   int delimeter=-1;
   int keyendpos=-1;
