@@ -377,7 +377,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                             scopy(header+startkeypos,header+(startkeypos+keylen),key);
                             key[keylen]='\0';
                             for (int it = 0; it < keylen; ++it) {
-                                key[i] = tolower(key[i]);
+                                key[it] = tolower(key[it]);
                             }
                             size_t valuelen=(pos-delimeter)-2;
                             if(pos > 0 && valuelen <= headersize){
@@ -387,7 +387,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 value[valuelen]='\0';
 
                                 for (int it = 0; it < valuelen; ++it) {
-                                    value[i] = tolower(value[i]);
+                                    value[it] = tolower(value[it]);
                                 }
 
                                 *setData(key)<<value;
