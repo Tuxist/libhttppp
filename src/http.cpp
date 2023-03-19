@@ -537,14 +537,12 @@ size_t libhttppp::HttpForm::getBoundarySize(){
 void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   size_t ctstartpos=0;
   size_t ctendpos=0;
-  const char* lowboundary="boundary=";
-  const char* HIGHboundary="BOUNDARY=";
+  const char* boundary="boundary=";
   size_t bdpos=0;
   for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
-    if(bdpos==(strlen(lowboundary)-1)){
+    if(bdpos==(strlen(loundary)-1)){
       break;
-    }else if(contenttype[cpos]==lowboundary[bdpos] ||
-        contenttype[cpos] == HIGHboundary[bdpos] ){
+    }else if(contenttype[cpos]==boundary[bdpos]){
       if(ctstartpos==0)
         ctstartpos=cpos;
       bdpos++;
@@ -561,18 +559,13 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   if(ctendpos==0)
     ctendpos=strlen(contenttype);
   /*cut boundary=*/
-  ctstartpos+=strlen(lowboundary);
+  ctstartpos+=strlen(boundary);
   if(_Boundary)
      delete[] _Boundary;
   _BoundarySize=(ctendpos-ctstartpos);
   _Boundary=new char[_BoundarySize+1];
   scopy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
   _Boundary[(ctendpos-ctstartpos)]='\0';
-
-  for (size_t it = 0; it < _BoundarySize; ++it) {
-      _Boundary[it] = tolower(_Boundary[it]);
-  }
-
 }
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
