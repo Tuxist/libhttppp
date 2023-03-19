@@ -484,7 +484,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
     }
     case POSTREQUEST:{
       if(request->getData("content-type") && 
-         strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
+         strncmp(request->getData("content-type"),"multipart/form-data",18)==0){
          _parseMulitpart(request);
       }else{
          _parseUrlDecode(request);
@@ -1096,24 +1096,24 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
         httpexception[HTTPException::Note] << "no key or value set in cookie!";
         return;
     }
-    HttpHeader::HeaderData *dat=curresp->setData("Set-Cookie");
+    HttpHeader::HeaderData *dat=curresp->setData("set-cookie");
     *dat << key << "=" << value;
     if(comment){
-        *dat << "; Comment="; 
+        *dat << "; comment="; 
         *dat << comment;
     }
     if(domain)
-        *dat << "; Domain=" << domain;
+        *dat << "; domain=" << domain;
     if(maxage>=0)
-        *dat << "; Max-Age=" << maxage;
+        *dat << "; max-age=" << maxage;
     if(path)
-        *dat << "; Path=" << path;
+        *dat << "; path=" << path;
     if(samesite)
-        *dat << "; SameSite=" << samesite;
+        *dat << "; sameSite=" << samesite;
     if(secure)
-        *dat << "; Secure";
+        *dat << "; secure";
     if(version)
-        *dat << "; Version=" << version;
+        *dat << "; version=" << version;
     
 }
 
@@ -1237,13 +1237,13 @@ void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
   switch(_Authtype){
     case BASICAUTH:{
       if(_Realm){
-        *dat << "Basic realm=\"" << _Realm << "\"";
+        *dat << "basic realm=\"" << _Realm << "\"";
       }else{
-        *dat << "Basic";
+        *dat << "basic";
       }
     };
     case DIGESTAUTH:{
-      *dat << "Digest";
+      *dat << "digest";
       if(_Realm){
         *dat << " realm=\"" << _Realm <<"\"";
       }  
