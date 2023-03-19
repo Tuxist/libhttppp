@@ -416,7 +416,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                         }
                     }
                     size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
-                    curconnection->resizeRecvQueue(rcsize);
+                    curconnection->resizeRecvQueue(rsize);
                     _RequestSize=rcsize;
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
@@ -431,7 +431,9 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             throw excep;
         }
     }catch(HTTPException &e){
-        curconnection->cleanRecvData();
+        if (e.getErrorType() != libhttppp::HTTPException::Note) {
+            curconnection->cleanRecvData();           
+        }
         throw e;
     }
 }
