@@ -568,6 +568,11 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary=new char[_BoundarySize+1];
   scopy(contenttype+ctstartpos,contenttype+ctendpos,_Boundary);
   _Boundary[(ctendpos-ctstartpos)]='\0';
+
+  for (size_t it = 0; it < _BoundarySize; ++it) {
+      _Boundary[it] = tolower(_Boundary[it]);
+  }
+
 }
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
@@ -582,12 +587,11 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
     size_t realboundarypos=0;
     unsigned int datalength = 0;
     const char *datastart=nullptr;
-    size_t oldpos=0; 
-    sys::cout << req << sys::endl;
+    size_t oldpos=0;
     size_t cr=0;
     while(cr < reqsize){
         //check if boundary
-        if(req[cr++]==realboundary[realboundarypos++]){
+        if(tolower(req[cr++])==realboundary[realboundarypos++]){
             //check if boundary completed
             if((realboundarypos+1)==realboundarylen){
                 //ceck if boundary before found set data end
