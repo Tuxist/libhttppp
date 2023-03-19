@@ -377,7 +377,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                             scopy(header+startkeypos,header+(startkeypos+keylen),key);
                             key[keylen]='\0';
                             for (size_t it = 0; it < keylen; ++it) {
-                                key[it] = tolower(key[it]);
+                                key[it] = (char)tolower(key[it]);
                             }
                             size_t valuelen=(pos-delimeter)-2;
                             if(pos > 0 && valuelen <= headersize){
@@ -387,7 +387,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 value[valuelen]='\0';
 
                                 for (size_t it = 0; it < valuelen; ++it) {
-                                    value[it] = tolower(value[it]);
+                                    value[it] = (char)tolower(value[it]);
                                 }
 
                                 *setData(key)<<value;
@@ -584,7 +584,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
     size_t cr=0;
     while(cr < reqsize){
         //check if boundary
-        if(tolower(req[cr++])==realboundary[realboundarypos++]){
+        if((char)tolower(req[cr++])==realboundary[realboundarypos++]){
             //check if boundary completed
             if((realboundarypos+1)==realboundarylen){
                 //ceck if boundary before found set data end
@@ -668,7 +668,7 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
           key[keylen]='\0';
 
           for (size_t it = 0; it < keylen; ++it) {
-              key[it] = tolower(key[it]);
+              key[it] = (char)tolower(key[it]);
           }
 
           size_t valuelen=((pos-delimeter)-2);
