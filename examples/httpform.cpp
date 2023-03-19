@@ -44,8 +44,6 @@ public:
         
     };
     void RequestEvent(sys::net::con *curcon){
-        try{
-            
             libhttppp::HttpRequest curreq;
             libhtmlpp::HtmlString formdat;
             try {
@@ -66,10 +64,6 @@ public:
                     curres.send(curcon, e.what(), strlen(e.what()));
                 }
             }
-        }catch(libhttppp::HTTPException &e){
-            sys::cerr <<  e.what() << sys::endl;
-            throw e;
-        }
     }
 private:
     void Multiform(libhttppp::HttpRequest& curreq, libhtmlpp::HtmlString& condat) {

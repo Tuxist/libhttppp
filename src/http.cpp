@@ -99,11 +99,7 @@ size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderDat
         httpexception[HTTPException::Note] << "getDataSizet key: " << key << " not found !";
         throw httpexception;
     }
-    if(strlen(val)<255)
-        return 0;
-    char buf[255];
-    scopy(val,val+strlen(val),buf);
-    return atoi(buf);
+    return atoi(val);
 }
 
 int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
@@ -407,6 +403,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             if(_RequestType==POSTREQUEST){
                 size_t csize=getDataSizet("content-length");
                 size_t rsize=curconnection->getRecvSize()-headersize;
+                sys::cout << csize << ": " << rsize << sys::endl;
                 if(csize==rsize){
                     size_t dlocksize=curconnection->getRecvSize();
                     sys::net::con::condata *dblock=nullptr;
