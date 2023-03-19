@@ -537,12 +537,14 @@ size_t libhttppp::HttpForm::getBoundarySize(){
 void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   size_t ctstartpos=0;
   size_t ctendpos=0;
-  const char *boundary="boundary=\0";
+  const char* lowboundary="boundary=";
+  const char* HIGHboundary="BOUNDARY=";
   size_t bdpos=0;
   for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
     if(bdpos==(strlen(boundary)-1)){
       break;
-    }else if(contenttype[cpos]==boundary[bdpos]){
+    }else if(contenttype[cpos]==lowboundary[bdpos] ||
+        contenttype[cpos] == HIGHboundary[bdpos] ){
       if(ctstartpos==0)
         ctstartpos=cpos;
       bdpos++;
@@ -667,6 +669,11 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
           char *key=new char[keylen+1];
           scopy(section+startkeypos,section+(startkeypos+keylen),key);
           key[keylen]='\0';
+
+          for (size_t it = 0; it < keylen; ++it) {
+              key[it] = tolower(key[it]);
+          }
+
           size_t valuelen=((pos-delimeter)-2);
           if(pos > 0 && valuelen <= sectionsize){
             char *value=new char[valuelen+1];
@@ -752,11 +759,13 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
     }
   }
   
-  const char *namedelimter="name=\"";
+  const char *lownamedelimter="name=\"";
+  const char* HIGHnamedelimter = "NAME=\"";
   ssize_t namedelimtersize=strlen(namedelimter);
   ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
   for(size_t dp=0; dp<dislen; dp++){
-    if(namedelimter[fcurpos]==disposition[dp]){
+    if(lownamedelimter[fcurpos]==disposition[dp] ||
+        HIGHnamedelimter[fcurpos] == disposition[dp]){
         if(fcurpos==0){
           fpos=dp;
         }
@@ -785,11 +794,13 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
     delete[] name;
   }
   
-  const char *filenamedelimter="filename=\"";
+  const char *lowfilenamedelimter="filename=\"";
+  const char* HIGHfilenamedelimter = "FILENAME=\"";
   ssize_t filenamedelimtersize=strlen(filenamedelimter);
   ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
   for(size_t dp=0; dp<dislen; dp++){
-    if(filenamedelimter[filecurpos]==disposition[dp]){
+    if(lowfilenamedelimter[filecurpos]==disposition[dp] || 
+        HIGHfilenamedelimter== disposition[dp]){
         if(filecurpos==0){
           filepos=dp;
         }
