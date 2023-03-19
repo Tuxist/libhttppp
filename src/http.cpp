@@ -541,7 +541,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   const char* HIGHboundary="BOUNDARY=";
   size_t bdpos=0;
   for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
-    if(bdpos==(strlen(boundary)-1)){
+    if(bdpos==(strlen(lowboundary)-1)){
       break;
     }else if(contenttype[cpos]==lowboundary[bdpos] ||
         contenttype[cpos] == HIGHboundary[bdpos] ){
@@ -561,7 +561,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   if(ctendpos==0)
     ctendpos=strlen(contenttype);
   /*cut boundary=*/
-  ctstartpos+=strlen(boundary);
+  ctstartpos+=strlen(lowboundary);
   if(_Boundary)
      delete[] _Boundary;
   _BoundarySize=(ctendpos-ctstartpos);
@@ -761,7 +761,7 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   
   const char *lownamedelimter="name=\"";
   const char* HIGHnamedelimter = "NAME=\"";
-  ssize_t namedelimtersize=strlen(namedelimter);
+  ssize_t namedelimtersize=strlen(lownamedelimter);
   ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
   for(size_t dp=0; dp<dislen; dp++){
     if(lownamedelimter[fcurpos]==disposition[dp] ||
@@ -796,11 +796,11 @@ void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char
   
   const char *lowfilenamedelimter="filename=\"";
   const char* HIGHfilenamedelimter = "FILENAME=\"";
-  ssize_t filenamedelimtersize=strlen(filenamedelimter);
+  ssize_t filenamedelimtersize=strlen(lowfilenamedelimter);
   ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
   for(size_t dp=0; dp<dislen; dp++){
     if(lowfilenamedelimter[filecurpos]==disposition[dp] || 
-        HIGHfilenamedelimter== disposition[dp]){
+        HIGHfilenamedelimter[filecurpos]==disposition[dp]){
         if(filecurpos==0){
           filepos=dp;
         }
@@ -1199,7 +1199,7 @@ libhttppp::HttpAuth::~HttpAuth(){
 
 
 void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
-  const char *authstr=curreq->getData("áuthorization");
+  const char *authstr=curreq->getData("authorization");
   if(!authstr)
     return;
   if(ncompare(authstr,strlen(authstr),"basic",5)==0)
