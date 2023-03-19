@@ -25,132 +25,18 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <string.h>
+
 #include <systempp/sysconsole.h>
 #include <systempp/syseventapi.h>
 
-#include "htmlpp/html.h"
+#include <htmlpp/html.h>
 
 #include "../src/exception.h"
 
 #include "http.h"
 #include "httpd.h"
 
-void Multiform(libhttppp::HttpRequest *curreq,libhtmlpp::HtmlString &condat){
-  libhttppp::HttpForm curform;
-  curform.parse(curreq);
-  if(curform.getBoundary()){
-     condat  << "Boundary: " << curform.getBoundary() << "<br>";
-     for(libhttppp::HttpForm::MultipartFormData *curformdat=curform.getMultipartFormData(); curformdat; curformdat=curformdat->nextMultipartFormData()){
-        condat << "Content-Disposition: <br>";
-        libhttppp::HttpForm::MultipartFormData::ContentDisposition *curctdisp=curformdat->getContentDisposition();
-        if(curctdisp->getDisposition())
-          condat << "Disposition: " << curctdisp->getDisposition() << "<br>";
-        if(curctdisp->getName())
-          condat << "Name: " << curctdisp->getName() << "<br>";
-        if(curctdisp->getFilename())
-          condat << "Filename: " << curctdisp->getFilename() << "<br>";
-        condat << "Multiform Section Data<br>"
-               << "<div style=\"border: thin solid black\">";
-        if(curformdat->getContentType())
-          condat << "ContentType: " << curformdat->getContentType() << "<br>\r\n";
-        condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
-        for(size_t datapos=0; datapos<curformdat->getDataSize(); datapos++){
-         condat.push_back(curformdat->getData()[datapos]);
-         if(curformdat->getData()[datapos]=='\n')
-           condat << "<br>";
-        }
-        condat << "\r\n<br></div>";
-     }
-  }
-}
-
-void URlform(libhttppp::HttpRequest *curreq,libhtmlpp::HtmlString &condat){
-  libhttppp::HttpForm curform;
-  curform.parse(curreq); 
-  if(curform.getUrlcodedFormData()){
-    for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
-        cururlform=cururlform->nextUrlcodedFormData()){
-      condat << "<span>"
-             << "Key: " << cururlform->getKey()
-             << " Value: " << cururlform->getValue()
-             << "</span><br/>";
-    }
-  }
-}
-
-void sendResponse(sys::net::con *curcon,libhttppp::HttpRequest *curreq) {
-     libhttppp::HttpResponse curres;
-     curres.setState(HTTP200);
-     curres.setVersion(HTTPVERSION(1.1));
-     curres.setContentType("text/html");
-     libhtmlpp::HtmlString condat;
-     condat  << "<!DOCTYPE HTML>"
-             << " <html>"
-             << "  <head>"
-             << "    <title>FormTest</title>"
-             << "    <meta content=\"\">"
-             << "    <meta charset=\"utf-8\">"
-             << "    <style></style>"
-             << "  </head>"
-             << "<body>"
-             
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Get Request</h2>"
-             << "<form action=\"/\" method=\"get\">"
-             << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
-             << "Last name:<br>  <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
-             << "<button type=\"submit\">Submit</button>"
-             << "</form>"
-             << "</div><br/>"
-             
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Post Request</h2>"
-             << "<form action=\"/\" method=\"post\">"
-             << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
-             << "Last name:<br> <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
-             << "<button type=\"submit\">Submit</button>"
-             << "</form>"
-             << "</div></br>"
-             
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Post Multiform Request</h2>"
-             << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
-             << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
-             << "Last name:<br> <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
-             << "<button type=\"submit\">Submit</button>"
-             << "</form>"
-             << "</div></br>"
-            
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Post Multiform File upload</h2>"
-             << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
-             << "File name:<br><input name=\"datei\" type=\"file\"><br>"
-             << "<button type=\"submit\">Submit</button>"
-             << "</form>"
-             << "</div></br>"
-             
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Post Multiform mutiple File upload</h2>"
-             << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
-             << "File name:<br><input name=\"datei\" type=\"file\" multiple><br>"
-             << "<button type=\"submit\">Submit</button>"
-             << "</form>"
-             << "</div></br>"
-             
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Encoding Test</h2>"
-             << "<form action=\"/\" method=\"post\">"
-             << "First name:<br> <input type=\"text\" name=\"encoding\" value=\"&=\" readonly><br>"
-             << "<button type=\"submit\">Submit</button>"
-             << "</form>"
-             << "</div></br>"
-             << "<div style=\"border: thin solid black\">"
-             << "<h2>Output</h2>";
-      Multiform(curreq,condat);
-      URlform(curreq,condat);
-      condat << "</div></body></html>";
-      curres.send(curcon,condat.c_str(),condat.length());
-}
 
 class Controller : public sys::net::event {
 public:
@@ -159,18 +45,148 @@ public:
     };
     void RequestEvent(sys::net::con *curcon){
         try{
-            sys::cout << "Parse Request" << sys::endl;
+            
             libhttppp::HttpRequest curreq;
-            curreq.parse(curcon);
-            sys::cout << "Send answer" << sys::endl;
-            sendResponse(curcon,&curreq);
+            libhtmlpp::HtmlString formdat;
+            try {
+                sys::cout << "Parse Request" << sys::endl;
+                curreq.parse(curcon);
+                Multiform(curreq, formdat);
+                URlform(curreq, formdat);
+                sys::cout << "Send answer" << sys::endl;
+                sendResponse(curcon, formdat);
+                
+            }
+            catch (libhttppp::HTTPException& e) {
+                if (e.getErrorType() != libhttppp::HTTPException::Note) {
+                    libhttppp::HttpResponse curres;
+                    curres.setState(HTTP500);
+                    curres.setVersion(HTTPVERSION(2.0));
+                    curres.setContentLength(0);
+                    curres.send(curcon, e.what(), strlen(e.what()));
+                }
+            }
         }catch(libhttppp::HTTPException &e){
             sys::cerr <<  e.what() << sys::endl;
             throw e;
         }
     }
 private:
-    
+    void Multiform(libhttppp::HttpRequest& curreq, libhtmlpp::HtmlString& condat) {
+        libhttppp::HttpForm curform;
+        curform.parse(&curreq);
+        if (curform.getBoundary()) {
+            condat << "Boundary: " << curform.getBoundary() << "<br>";
+            for (libhttppp::HttpForm::MultipartFormData* curformdat = curform.getMultipartFormData(); curformdat; curformdat = curformdat->nextMultipartFormData()) {
+                condat << "Content-Disposition: <br>";
+                libhttppp::HttpForm::MultipartFormData::ContentDisposition* curctdisp = curformdat->getContentDisposition();
+                if (curctdisp->getDisposition())
+                    condat << "Disposition: " << curctdisp->getDisposition() << "<br>";
+                if (curctdisp->getName())
+                    condat << "Name: " << curctdisp->getName() << "<br>";
+                if (curctdisp->getFilename())
+                    condat << "Filename: " << curctdisp->getFilename() << "<br>";
+                condat << "Multiform Section Data<br>"
+                    << "<div style=\"border: thin solid black\">";
+                if (curformdat->getContentType())
+                    condat << "ContentType: " << curformdat->getContentType() << "<br>\r\n";
+                condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
+                for (size_t datapos = 0; datapos < curformdat->getDataSize(); datapos++) {
+                    condat.push_back(curformdat->getData()[datapos]);
+                    if (curformdat->getData()[datapos] == '\n')
+                        condat << "<br>";
+                }
+                condat << "\r\n<br></div>";
+            }
+        }
+    };
+
+    void URlform(libhttppp::HttpRequest& curreq, libhtmlpp::HtmlString& condat) {
+        libhttppp::HttpForm curform;
+        curform.parse(&curreq);
+        if (curform.getUrlcodedFormData()) {
+            for (libhttppp::HttpForm::UrlcodedFormData* cururlform = curform.getUrlcodedFormData(); cururlform;
+                cururlform = cururlform->nextUrlcodedFormData()) {
+                condat << "<span>"
+                    << "Key: " << cururlform->getKey()
+                    << " Value: " << cururlform->getValue()
+                    << "</span><br/>";
+            }
+        }
+    };
+
+    void sendResponse(sys::net::con* curcon, libhtmlpp::HtmlString formdat) {
+        libhttppp::HttpResponse curres;
+        libhtmlpp::HtmlString condat;
+        curres.setState(HTTP200);
+        curres.setVersion(HTTPVERSION(1.1));
+        curres.setContentType("text/html");
+        condat << "<!DOCTYPE HTML>"
+            << " <html>"
+            << "  <head>"
+            << "    <title>FormTest</title>"
+            << "    <meta content=\"\">"
+            << "    <meta charset=\"utf-8\">"
+            << "    <style></style>"
+            << "  </head>"
+            << "<body>"
+
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Get Request</h2>"
+            << "<form action=\"/\" method=\"get\">"
+            << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
+            << "Last name:<br>  <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
+            << "<button type=\"submit\">Submit</button>"
+            << "</form>"
+            << "</div><br/>"
+
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Post Request</h2>"
+            << "<form action=\"/\" method=\"post\">"
+            << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
+            << "Last name:<br> <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
+            << "<button type=\"submit\">Submit</button>"
+            << "</form>"
+            << "</div></br>"
+
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Post Multiform Request</h2>"
+            << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
+            << "First name:<br> <input type=\"text\" name=\"firstname\" value=\"test\"><br>"
+            << "Last name:<br> <input type=\"text\" name=\"lastname\" value=\"test\"><br>"
+            << "<button type=\"submit\">Submit</button>"
+            << "</form>"
+            << "</div></br>"
+
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Post Multiform File upload</h2>"
+            << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
+            << "File name:<br><input name=\"datei\" type=\"file\"><br>"
+            << "<button type=\"submit\">Submit</button>"
+            << "</form>"
+            << "</div></br>"
+
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Post Multiform mutiple File upload</h2>"
+            << "<form action=\"/\" method=\"post\" enctype=\"multipart/form-data\" >"
+            << "File name:<br><input name=\"datei\" type=\"file\" multiple><br>"
+            << "<button type=\"submit\">Submit</button>"
+            << "</form>"
+            << "</div></br>"
+
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Encoding Test</h2>"
+            << "<form action=\"/\" method=\"post\">"
+            << "First name:<br> <input type=\"text\" name=\"encoding\" value=\"&=\" readonly><br>"
+            << "<button type=\"submit\">Submit</button>"
+            << "</form>"
+            << "</div></br>"
+            << "<div style=\"border: thin solid black\">"
+            << "<h2>Output</h2>"
+            << formdat.c_str()
+            << "</div></body></html>";
+        curres.send(curcon, condat.c_str(), condat.length());
+    };
 };
 
 

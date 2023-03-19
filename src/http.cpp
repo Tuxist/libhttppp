@@ -404,12 +404,10 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             
             delete[] header;
             
-            curconnection->resizeRecvQueue(headersize);
-            
             if(_RequestType==POSTREQUEST){
                 size_t csize=getDataSizet("content-length");
                 size_t rsize=curconnection->getRecvSize()-headersize;
-                if(csize<=rsize){
+                if(csize==rsize){
                     size_t dlocksize=curconnection->getRecvSize();
                     sys::net::con::condata *dblock=nullptr;
                     size_t cdlocksize=0;
@@ -428,6 +426,9 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     throw excep;
                 }
             }
+
+            curconnection->resizeRecvQueue(headersize);
+
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;

@@ -56,8 +56,7 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "linux_clang_x64" ],
-      "wslPath": "${defaultWSLPath}",
-      "variables": []
+      "wslPath": "Debian"
     },
     {
       "name": "WSL-Clang-Release",
@@ -70,8 +69,7 @@
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "linux_clang_x64" ],
-      "wslPath": "${defaultWSLPath}",
-      "variables": []
+      "wslPath": "Debian"
     }
   ]
 }
