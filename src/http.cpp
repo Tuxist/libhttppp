@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "config.h"
 
@@ -210,7 +211,7 @@ libhttppp::HttpResponse::HttpResponse(){
   setVersion(HTTPVERSION(2.0));
   _ContentType=nullptr;
   _ContentLength=nullptr;
-  _Connection=setData("Connection");
+  _Connection=setData("connection");
   *_Connection<<"keep-alive";
 }
 
@@ -375,6 +376,9 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                             char *key=new char[keylen+1];
                             scopy(header+startkeypos,header+(startkeypos+keylen),key);
                             key[keylen]='\0';
+                            for (int it = 0; it < keylen; ++it) {
+                                key[i] = tolower(key[i]);
+                            }
                             size_t valuelen=(pos-delimeter)-2;
                             if(pos > 0 && valuelen <= headersize){
                                 char *value=new char[valuelen+1];
@@ -398,7 +402,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             curconnection->resizeRecvQueue(headersize);
             
             if(_RequestType==POSTREQUEST){
-                size_t csize=getDataSizet("Content-Length");
+                size_t csize=getDataSizet("content-length");
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 if(csize<=rsize){
                     size_t dlocksize=curconnection->getRecvSize();
@@ -467,14 +471,14 @@ libhttppp::HttpForm::~HttpForm(){
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   int rtype = request->getRequestType();
-  _ContentType = request->getData("Content-Type");
+  _ContentType = request->getData("content-type");
   switch(rtype){
     case GETREQUEST:{
       _parseUrlDecode(request);
       break;
     }
     case POSTREQUEST:{
-      if(request->getData("Content-Type") && 
+      if(request->getData("content-type") && 
          strncmp(request->getData("Content-Type"),"multipart/form-data",18)==0){
          _parseMulitpart(request);
       }else{
@@ -560,7 +564,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
 }
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
-    _parseBoundary(request->getData("Content-Type"));
+    _parseBoundary(request->getData("content-type"));
     char *realboundary = new char[_BoundarySize+3];
     scopy(_Boundary,_Boundary+(_BoundarySize+1),realboundary+2);
     realboundary[0]='-';
@@ -682,7 +686,7 @@ void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t section
 //   }
   
   curmultipartformdata->_parseContentDisposition(
-    curmultipartformdata->getContent("Content-Disposition")
+    curmultipartformdata->getContent("content-disposition")
   );
 }
 
@@ -833,7 +837,7 @@ const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key)
 }
 
 const char  *libhttppp::HttpForm::MultipartFormData::getContentType(){
-  return getContent("Content-Type");
+  return getContent("content-type");
 }
 
 libhttppp::HttpForm::MultipartFormData *libhttppp::HttpForm::MultipartFormData::nextMultipartFormData(){
@@ -1110,17 +1114,11 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
 
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
-  if(!curreq->getData("cookie") && !curreq->getData("Cookie"))
+  if(!curreq->getData("cookie"))
     return;
 
-  sys::array<char> cdat;  
-
-  if(curreq->getData("cookie"))
-  	cdat = curreq->getData("cookie");
-  else
-	cdat = curreq->getData("Cookie");
-
-  
+  sys::array<char> cdat;
+  cdat = curreq->getData("cookie");
 
   int delimeter=-1;
   int keyendpos=-1;
@@ -1185,12 +1183,12 @@ libhttppp::HttpAuth::~HttpAuth(){
 
 
 void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
-  const char *authstr=curreq->getData("Authorization");
+  const char *authstr=curreq->getData("áuthorization");
   if(!authstr)
     return;
-  if(ncompare(authstr,strlen(authstr),"Basic",5)==0)
+  if(ncompare(authstr,strlen(authstr),"basic",5)==0)
     _Authtype=BASICAUTH;
-  else if(ncompare(authstr,strlen(authstr),"Digest",6)==0)
+  else if(ncompare(authstr,strlen(authstr),"digest",6)==0)
     _Authtype=DIGESTAUTH;
   switch(_Authtype){
     case BASICAUTH:{
@@ -1230,7 +1228,7 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
 }
 
 void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
-  HttpHeader::HeaderData *dat=curresp->setData("WWW-Authenticate",nullptr);
+  HttpHeader::HeaderData *dat=curresp->setData("www-authenticate",nullptr);
   switch(_Authtype){
     case BASICAUTH:{
       if(_Realm){
