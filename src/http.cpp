@@ -540,7 +540,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   const char* boundary="boundary=";
   size_t bdpos=0;
   for(size_t cpos=0; cpos<strlen(contenttype); cpos++){
-    if(bdpos==(strlen(loundary)-1)){
+    if(bdpos==(strlen(boundary)-1)){
       break;
     }else if(contenttype[cpos]==boundary[bdpos]){
       if(ctstartpos==0)
