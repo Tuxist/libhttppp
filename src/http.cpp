@@ -385,6 +385,11 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 size_t vstart=delimeter+2;
                                 scopy(header+vstart,header+(vstart+valuelen),value);
                                 value[valuelen]='\0';
+
+                                for (int it = 0; it < valuelen; ++it) {
+                                    value[i] = tolower(value[i]);
+                                }
+
                                 *setData(key)<<value;
                                 delete[] value;
                             }
