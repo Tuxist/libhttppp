@@ -405,6 +405,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                 size_t rsize=curconnection->getRecvSize()-headersize;
                 sys::cout << csize << ": " << rsize << sys::endl;
                 if(csize==rsize){
+                    curconnection->resizeRecvQueue(headersize);
                     size_t dlocksize=curconnection->getRecvSize();
                     sys::net::con::condata *dblock=nullptr;
                     size_t cdlocksize=0;
@@ -422,10 +423,9 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     excep[HTTPException::Note] << "Request incomplete";
                     throw excep;
                 }
+            } else {
+                curconnection->resizeRecvQueue(headersize);
             }
-
-            curconnection->resizeRecvQueue(headersize);
-
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
