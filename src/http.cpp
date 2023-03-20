@@ -52,15 +52,15 @@ libhttppp::HttpHeader::HeaderData& libhttppp::HttpHeader::HeaderData::operator<<
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(size_t value){
-  char buf[255];
-  snprintf(buf,255,"%ld",value);
+  char buf[512];
+  snprintf(buf,512,"%zu",value);
   *this<<buf;
   return *this;
 }
 
 libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<(int value){
-  char buf[255];
-  snprintf(buf,255,"%d",value);
+  char buf[512];
+  snprintf(buf,512,"%d",value);
   *this<<buf;
   return *this;
 }
@@ -388,20 +388,16 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     startkeypos=lrow+2;
                 }
             }
-            
-            header.clear();
-            
-            
 
             if(_RequestType==POSTREQUEST){
                 sys::cout << (getDataSizet("content-length") + header.length()) << sys::endl;
-                if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvSize()){
-                    size_t dlocksize=curconnection->getRecvSize();
+                if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvLength()){
+                    size_t dlocksize=curconnection->getRecvLength();
                     sys::net::con::condata *dblock=nullptr;
                     size_t cdlocksize=0;
                     for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextcondata()){
-                        dlocksize-=dblock->getDataSize();
-                        cdlocksize+=dblock->getDataSize();
+                        dlocksize-=dblock->getDataLength();
+                        cdlocksize+=dblock->getDataLength();
                         if(getDataSizet("content-length")>=cdlocksize){
                             break;
                         }
