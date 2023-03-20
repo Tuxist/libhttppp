@@ -335,7 +335,6 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             for(int cpos=pos; cpos<header.length(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
                     _RequestURL = header.substr(pos,cpos-pos);
-                    _RequestURL.push_back('\0');
                     ++pos;
                     break;
                 }
@@ -344,7 +343,6 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             for(int cpos=pos; cpos<header.length(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
                     _Version = header.substr(pos,cpos-pos);
-                    _Version.push_back('\0');
                     ++pos;
                     found=true;
                     break;
@@ -369,7 +367,6 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                         if(keylen>0 && keylen <= header.length()){
                             sys::array<char> key;
                             key=header.substr(startkeypos,keylen);
-                            key[keylen]='\0';
                             for (size_t it = 0; it < keylen; ++it) {
                                 key[it] = (char)tolower(key[it]);
                             }
@@ -378,7 +375,6 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 sys::array<char> value;
                                 size_t vstart=delimeter+2;
                                 value=header.substr(vstart,valuelen);
-                                value[valuelen]='\0';
                                 for (size_t it = 0; it < valuelen; ++it) {
                                     value[it] = (char)tolower(value[it]);
                                 }
@@ -395,6 +391,8 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             
             header.clear();
             
+            
+
             if(_RequestType==POSTREQUEST){
                 sys::cout << (getDataSizet("content-length") + header.length()) << sys::endl;
                 if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvSize()){
@@ -410,15 +408,14 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     }
                     _Request.clear();
                     curconnection->copyValue(curconnection->getRecvData(), header.length(), dblock, dlocksize, _Request);
-                    curconnection->resizeRecvQueue(_Request.length());
+                    curconnection->resizeRecvQueue((header.length()+_Request.length()));
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
                     throw excep;
                 }
+            } else {
+                curconnection->resizeRecvQueue(header.length());
             }
-
-            curconnection->resizeRecvQueue(header.length());
-
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
