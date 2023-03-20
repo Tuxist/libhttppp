@@ -110,15 +110,13 @@ namespace libhttppp {
     int            getRequestType();
     const char    *getRequestURL();
     const char    *getRequest();
-    size_t         getRequestSize();
+    size_t         getRequestLength();
   private:
-    char          *_Request;
-    size_t         _RequestSize;
-    int            _RequestType;
+    sys::array<char> _Request;
+    int              _RequestType;
     
-    char           _RequestURL[255];
-    char           _Version[255];
-    size_t         _VersionLen;
+    sys::array<char> _RequestURL;
+    sys::array<char> _Version;
     
     HttpHeader      *_HttpHeader;
     sys::net::con   *_Connection;

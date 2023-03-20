@@ -288,9 +288,7 @@ libhttppp::HttpResponse::~HttpResponse(){
 }
 
 libhttppp::HttpRequest::HttpRequest(){
-  _Request=nullptr;
   _RequestType=0;
-  _RequestSize=0;
 }
 
 void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
@@ -321,8 +319,8 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             endpos+=4;  
             
             
-            char *header;
-            size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,&header);
+            sys::array<char> header;
+            size_t headersize=curconnection->copyValue(startblock,startpos,endblock,endpos,header);
             
             bool found=false;
             int pos=0;
@@ -336,7 +334,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
 
             for(int cpos=pos; cpos<headersize; ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    scopy(header+pos,header+cpos,_RequestURL);
+                    _RequestURL = header.substr(pos,cpos-pos);
                     _RequestURL[cpos-pos]='\0';
                     ++pos;
                     break;
@@ -345,7 +343,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
 
             for(int cpos=pos; cpos<headersize; ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    scopy(header+pos,header+cpos,_Version);
+                    _Version = header.substr(pos,cpos-pos);
                     _Version[cpos-pos]='\0';
                     ++pos;
                     found=true;
@@ -369,27 +367,24 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     if(delimeter>lrow && delimeter!=0){
                         size_t keylen=delimeter-startkeypos;
                         if(keylen>0 && keylen <=headersize){
-                            char *key=new char[keylen+1];
-                            scopy(header+startkeypos,header+(startkeypos+keylen),key);
+                            sys::array<char> key;
+                            key=header.substr(startkeypos,keylen);
                             key[keylen]='\0';
                             for (size_t it = 0; it < keylen; ++it) {
                                 key[it] = (char)tolower(key[it]);
                             }
                             size_t valuelen=(pos-delimeter)-2;
                             if(pos > 0 && valuelen <= headersize){
-                                char *value=new char[valuelen+1];
+                                sys::array<char> value;
                                 size_t vstart=delimeter+2;
-                                scopy(header+vstart,header+(vstart+valuelen),value);
+                                value=header.substr(vstart,valuelen);
                                 value[valuelen]='\0';
-
                                 for (size_t it = 0; it < valuelen; ++it) {
                                     value[it] = (char)tolower(value[it]);
                                 }
 
-                                *setData(key)<<value;
-                                delete[] value;
+                                *setData(key.c_str())<<value.c_str();
                             }
-                            delete[] key;
                         }
                     }
                     delimeter=0;
@@ -398,34 +393,32 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                 }
             }
             
-            delete[] header;
+            header.clear();
             
             if(_RequestType==POSTREQUEST){
-                size_t csize=getDataSizet("content-length");
-                size_t rsize=curconnection->getRecvSize()-headersize;
-                sys::cout << csize << ": " << rsize << sys::endl;
-                if(csize==rsize){
-                    curconnection->resizeRecvQueue(headersize);
+                sys::cout << (getDataSizet("content-length") + headersize) << sys::endl;
+                if((getDataSizet("content-length")+headersize) <= curconnection->getRecvSize()){
                     size_t dlocksize=curconnection->getRecvSize();
                     sys::net::con::condata *dblock=nullptr;
                     size_t cdlocksize=0;
                     for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextcondata()){
                         dlocksize-=dblock->getDataSize();
                         cdlocksize+=dblock->getDataSize();
-                        if(csize>=cdlocksize){
+                        if(getDataSizet("content-length")>=cdlocksize){
                             break;
                         }
                     }
-                    size_t rcsize=curconnection->copyValue(curconnection->getRecvData(),0,dblock,dlocksize,&_Request);
-                    curconnection->resizeRecvQueue(rsize);
-                    _RequestSize=rcsize;
+                    _Request.clear();
+                    curconnection->copyValue(curconnection->getRecvData(),headersize, dblock, dlocksize, _Request);
+                    curconnection->resizeRecvQueue(_Request.length());
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
                     throw excep;
                 }
-            } else {
-                curconnection->resizeRecvQueue(headersize);
             }
+
+            curconnection->resizeRecvQueue(headersize);
+
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
@@ -443,19 +436,18 @@ int libhttppp::HttpRequest::getRequestType(){
 }
 
 const char* libhttppp::HttpRequest::getRequestURL(){
-  return _RequestURL;
+  return _RequestURL.c_str();
 }
 
 const char* libhttppp::HttpRequest::getRequest(){
-  return _Request;  
+  return _Request.c_str();  
 }
 
-size_t libhttppp::HttpRequest::getRequestSize(){
-  return _RequestSize;  
+size_t libhttppp::HttpRequest::getRequestLength() {
+    return _Request.length();
 }
 
 libhttppp::HttpRequest::~HttpRequest(){
-  delete[] _Request;
 }
 
 libhttppp::HttpForm::HttpForm(){
@@ -576,7 +568,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
     realboundary[1]='-';
     size_t realboundarylen=_BoundarySize+2;
     const char *req=request->getRequest();
-    size_t reqsize=request->getRequestSize();
+    size_t reqsize=request->getRequestLength();
     size_t realboundarypos=0;
     unsigned int datalength = 0;
     const char *datastart=nullptr;
@@ -938,7 +930,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   HTTPException httpexception;
   char *formdat=nullptr;
   if(request->getRequestType()==POSTREQUEST){
-      size_t rsize=request->getRequestSize();
+      size_t rsize=request->getRequestLength();
       formdat = new char[rsize+1];
       scopy(request->getRequest(),request->getRequest()+rsize,formdat);
       formdat[rsize]='\0';
