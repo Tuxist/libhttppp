@@ -404,13 +404,13 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     }
                     _Request.clear();
                     curconnection->copyValue(curconnection->getRecvData(), header.length(), dblock, dlocksize, _Request);
-                    curconnection->resizeRecvQueue((header.length()+_Request.length()));
+                    curconnection->resizeRecvQueue((curconnection->getRecvLength()-(header.length()+_Request.length())));
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
                     throw excep;
                 }
             } else {
-                curconnection->resizeRecvQueue(header.length());
+                curconnection->resizeRecvQueue((curconnection->getRecvLength()-header.length()));
             }
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
