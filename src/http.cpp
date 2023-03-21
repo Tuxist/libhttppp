@@ -281,7 +281,7 @@ void libhttppp::HttpResponse::send(sys::net::con* curconnection,const char* data
   curconnection->addSendQueue(header.c_str(), headersize);
   if(datalen>0)
     curconnection->addSendQueue(data,datalen);
-  curconnection->sendReady(true);
+  curconnection->sending(true);
 }
 
 libhttppp::HttpResponse::~HttpResponse(){
