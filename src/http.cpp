@@ -415,7 +415,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 edblocksize -= edblock->getDataLength();
                                 continue;
                             } else {
-                                edblock = sdblock->nextcondata();
+                                edblock = edblock->nextcondata();
                                 break;
                             }
                         }
