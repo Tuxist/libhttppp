@@ -436,7 +436,7 @@ PARSEHEADER:
             throw excep;
         }
 
-        if (curconnection->getReadLength() != 0)
+        if (curconnection->getRecvLength() != 0)
             goto PARSEHEADER;
 
     }catch(HTTPException &e){
