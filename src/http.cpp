@@ -398,18 +398,26 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
 
                     for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
                         if (sdblock->getDataLength() >= sdblocksize) {
-                            if (sdblocksize != 0)
+                            if (sdblocksize != 0) {
                                 sdblocksize -= sdblock->getDataLength();
-                            continue;
+                                continue;
+                            } else {
+                                sdblock = sdblock->nextcondata();
+                                break;
+                            }
                         }
                         break;
                     }
 
                     for(edblock=curconnection->getRecvData(); edblock; edblock=edblock->nextcondata()){
                         if (edblock->getDataLength() >= edblocksize) {
-                            if (edblocksize != 0)
+                            if (edblocksize != 0){
                                 edblocksize -= edblock->getDataLength();
-                            continue;
+                                continue;
+                            } else {
+                                edblock = sdblock->nextcondata();
+                                break;
+                            }
                         }
                         break;
                     }
