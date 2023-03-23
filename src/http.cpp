@@ -411,7 +411,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     }
 
                     _Request.clear();
-                    curconnection->copyValue(sdblock,sdblocksize,dblock, dlocksize, _Request);
+                    curconnection->copyValue(sdblock,sdblocksize,edblock, edblocksize, _Request);
                     curconnection->resizeRecvQueue((header.length()+_Request.length()));
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
