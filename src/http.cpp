@@ -398,27 +398,25 @@ PARSEHEADER:
                     size_t edblocksize = getDataSizet("content-length"), sdblocksize = header.length();
 
                     for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
-                        if (sdblock->getDataLength() >= sdblocksize) {
+                        if (sdblock->getDataLength() > sdblocksize) {
                             if (sdblocksize != 0) {
                                 sdblocksize -= sdblock->getDataLength();
                                 continue;
-                            } else {
-                                sdblock = sdblock->nextcondata();
-                                break;
-                            }
+                            } 
+                        }else if(sdblocksize==0){
+                            sdblock = sdblock->nextcondata();
                         }
                         break;
                     }
 
                     for(edblock=curconnection->getRecvData(); edblock; edblock=edblock->nextcondata()){
-                        if (edblock->getDataLength() >= edblocksize) {
+                        if (edblock->getDataLength() > edblocksize) {
                             if (edblocksize != 0){
                                 edblocksize -= edblock->getDataLength();
                                 continue;
-                            } else {
-                                edblock = edblock->nextcondata();
-                                break;
                             }
+                        } else if(edblocksize==0){
+                            edblock = edblock->nextcondata();
                         }
                         break;
                     }
@@ -440,6 +438,7 @@ PARSEHEADER:
 
         if (curconnection->getReadLength() != 0)
             goto PARSEHEADER;
+
     }catch(HTTPException &e){
         if (e.getErrorType() != libhttppp::HTTPException::Note) {
             curconnection->cleanRecvData();           
