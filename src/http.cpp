@@ -295,7 +295,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
     HTTPException excep;
     if(!curconnection)
         return;
-PARSEHEADER:
+
     try{
         sys::net::con::condata *curdat=curconnection->getRecvData();
         if(curdat){
@@ -435,9 +435,6 @@ PARSEHEADER:
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
         }
-
-        if (curconnection->getRecvLength() != 0)
-            goto PARSEHEADER;
 
     }catch(HTTPException &e){
         if (e.getErrorType() != libhttppp::HTTPException::Note) {
