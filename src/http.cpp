@@ -431,6 +431,11 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             } else {
                 curconnection->resizeRecvQueue(header.length());
             }
+
+            if (curconnection->RecvLength()!=0) {
+                excep[HTTPException::Note] << "RequestAgain";
+            }
+
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
