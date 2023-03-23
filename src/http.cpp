@@ -394,16 +394,8 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                 sys::cout << (getDataSizet("content-length") + header.length()) << sys::endl;
                 if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvLength()){
 
-                    sys::net::con::condata *edblock=nullptr,*sdblock=nullptr;
+                    sys::net::con::condata *edblock,*sdblock;
                     size_t edblocksize = getDataSizet("content-length"), sdblocksize = header.length();
-
-                    for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
-                        if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
-                            sdblocksize -= sdblock->getDataLength();
-                            continue;
-                        }
-                        break;
-                    }
 
                     for(edblock=curconnection->getRecvData(); edblock; edblock=edblock->nextcondata()){
                         if (edblocksize !=0 && edblock->getDataLength() <= edblocksize) {
@@ -414,7 +406,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     }
 
                     _Request.clear();
-                    curconnection->resizeRecvQueue(curconnection->copyValue(sdblock, sdblocksize, 
+                    curconnection->resizeRecvQueue(curconnection->copyValue(curconnection->getRecvData(), header.length(),
                                                     edblock, edblocksize, _Request));
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
