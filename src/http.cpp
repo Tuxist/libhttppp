@@ -404,6 +404,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 continue;
                             } 
                         }else if(sdblocksize==0){
+                            sdblocksize -= sdblock->getDataLength();
                             sdblock = sdblock->nextcondata();
                         }
                         break;
@@ -416,6 +417,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                                 continue;
                             }
                         } else if(edblocksize==0){
+                            edblocksize -= edblock->getDataLength();
                             edblock = edblock->nextcondata();
                         }
                         break;
