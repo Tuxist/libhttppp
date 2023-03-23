@@ -437,6 +437,7 @@ PARSEHEADER:
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
         }
+
         if (curconnection->getReadLength() != 0)
             goto PARSEHEADER;
     }catch(HTTPException &e){
