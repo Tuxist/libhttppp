@@ -392,19 +392,27 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
             if(_RequestType==POSTREQUEST){
                 sys::cout << (getDataSizet("content-length") + header.length()) << sys::endl;
                 if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvLength()){
-                    size_t dlocksize=curconnection->getRecvLength();
-                    sys::net::con::condata *dblock=nullptr;
-                    size_t cdlocksize=0;
-                    for(dblock=curconnection->getRecvData(); dblock; dblock=dblock->nextcondata()){
-                        dlocksize-=dblock->getDataLength();
-                        cdlocksize+=dblock->getDataLength();
-                        if(getDataSizet("content-length")>=cdlocksize){
+
+                    sys::net::con::condata *edblock=nullptr,*sdblock=nullptr;
+                    size_t edlocksize = getDataSizet("content-length"), sdblocksize = header.length();
+
+                    for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
+                        if (sdblock->getDataLength() >= header.length())
+                            sdblocksize -= sdblock->getDataLength();
+                        else
+                            break;
+                    }
+
+                    for(edblock=curconnection->getRecvData(); edblock; edblock=edblock->nextcondata()){
+                        if (edblock->getDataLength() >= getDataSizet("content-length")) {
+                            edblocksize -= edblock->getDataLength();
+                        else
                             break;
                         }
                     }
+
                     _Request.clear();
-                    curconnection->copyValue(curconnection->getRecvData(),(curconnection->getRecvLength()-header.length()), 
-                        dblock, dlocksize, _Request);
+                    curconnection->copyValue(sdblock,sdblocksize,dblock, dlocksize, _Request);
                     curconnection->resizeRecvQueue((header.length()+_Request.length()));
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
