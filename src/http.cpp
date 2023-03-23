@@ -403,7 +403,8 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                         }
                     }
                     _Request.clear();
-                    curconnection->copyValue(curconnection->getRecvData(), header.length(), dblock, dlocksize, _Request);
+                    curconnection->copyValue(curconnection->getRecvData(),(curconnection->getRecvLength()-header.length()), 
+                        dblock, dlocksize, _Request);
                     curconnection->resizeRecvQueue((header.length()+_Request.length()));
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
