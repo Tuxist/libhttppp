@@ -404,11 +404,10 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                     }
 
                     for(edblock=curconnection->getRecvData(); edblock; edblock=edblock->nextcondata()){
-                        if (edblock->getDataLength() >= edblocksize) {
+                        if (edblock->getDataLength() >= edblocksize) 
                             edblocksize -= edblock->getDataLength();
                         else
                             break;
-                        }
                     }
 
                     _Request.clear();
