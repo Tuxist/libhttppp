@@ -394,7 +394,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                 if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvLength()){
 
                     sys::net::con::condata *edblock=nullptr,*sdblock=nullptr;
-                    size_t edlocksize = getDataSizet("content-length"), sdblocksize = header.length();
+                    size_t edblocksize = getDataSizet("content-length"), sdblocksize = header.length();
 
                     for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
                         if (sdblock->getDataLength() >= sdblocksize)
