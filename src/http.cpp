@@ -432,7 +432,7 @@ void libhttppp::HttpRequest::parse(sys::net::con* curconnection){
                 curconnection->resizeRecvQueue(header.length());
             }
 
-            if (curconnection->RecvLength()!=0) {
+            if (curconnection->getRecvLength()!=0) {
                 excep[HTTPException::Note] << "RequestAgain";
             }
 
