@@ -1142,10 +1142,13 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   for (size_t cpos = 0; cpos < cdat.length(); cpos++) {
       if (cdat[cpos] == ' ') {
           ++startpos;
-      }else if (cdat[cpos] == '=') {
-		  keyendpos = cpos;
-	  }else if (cdat[cpos] == ';' || cpos == (cdat.length() - 1)) {
-		  delimeter = cpos;
+      }
+      else if (cdat[cpos] == '=') {
+          keyendpos = cpos;
+      }else if (cdat[cpos] == ';'){
+          delimeter = cpos;
+      }else if (cpos == (cdat.length() - 1)) {
+		  delimeter = cpos+1;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
@@ -1158,7 +1161,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
 
 		  keyendpos = -1;
 		  delimeter = -1;
-          startpos = cpos+1;
+          startpos = cpos;
 	  }
   }
 }
