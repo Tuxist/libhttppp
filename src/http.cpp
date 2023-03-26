@@ -1146,7 +1146,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
       else if (cdat[cpos] == '=') {
           keyendpos = cpos;
       }else if (cdat[cpos] == ';'){
-          delimeter = cpos;
+          delimeter = cpos-1;
       }else if (cpos == (cdat.length() - 1)) {
 		  delimeter = cpos+1;
 	  }
@@ -1155,12 +1155,10 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
 
           sys::cout << keyendpos - startpos << sys::endl;
 
-          curcookie->_Key = cdat.substr(startpos, keyendpos-startpos);
+          curcookie->_Key = cdat.substr(startpos, (keyendpos-1)-startpos);
 
 		  curcookie->_Value = cdat.substr((keyendpos+1),delimeter-(keyendpos+1));
 
-		  keyendpos = -1;
-		  delimeter = -1;
           startpos = cpos;
 	  }
   }
