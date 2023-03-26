@@ -1146,9 +1146,9 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
       else if (cdat[cpos] == '=') {
           keyendpos = cpos;
       }else if (cdat[cpos] == ';'){
-          delimeter = cpos-1;
+          delimeter = cpos;
       }else if (cpos == (cdat.length() - 1)) {
-		  delimeter = cpos;
+		  delimeter = cpos+1;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
