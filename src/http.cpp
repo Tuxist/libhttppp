@@ -1158,7 +1158,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
 
 		  keyendpos = -1;
 		  delimeter = -1;
-          startpos = cpos;
+          startpos = cpos+1;
 	  }
   }
 }
