@@ -1153,7 +1153,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
           curcookie->_Key = cdat.substr(startpos, keyendpos-startpos);
-		  curcookie->_Value = cdat.substr((keyendpos+1),delimeter-(keyendpos+1));
+		  curcookie->_Value = cdat.substr((keyendpos+1),delimeter-keyendpos);
           keyendpos = -1;
           delimeter = -1;
           startpos = cpos+1;
