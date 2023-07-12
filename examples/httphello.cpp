@@ -27,25 +27,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string.h>
 
-#include <systempp/sysconsole.h>
-#include <systempp/syseventapi.h>
+#include <iostream>
+#include <netplus/eventapi.h>
 
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public sys::net::event {
+class Controller : public netplus::event {
 public:
-    Controller(sys::net::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::net::con *curcon){
+    void RequestEvent(netplus::con *curcon){
         try{
             libhttppp::HttpResponse curres;
             const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
             curres.setContentType("text/html");
             curres.send(curcon,hello,strlen(hello));
         }catch(libhttppp::HTTPException &e){
-            sys::cerr << e.what() << sys::endl;
+            std::cerr << e.what() << std::endl;
             throw e;
         }
     }
@@ -60,7 +60,7 @@ public:
       Controller controller(getServerSocket());
       controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
-      sys::cout << e.what() << sys::endl;
+      std::cout << e.what() << std::endl;
     }
   };
 private:

@@ -25,18 +25,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <unistd.h>
 
 #include <http.h>
 #include <httpd.h>
 #include <exception.h>
 
-#include <systempp/sysconsole.h>
-#include <systempp/sysinfo.h>
-#include <systempp/sysutils.h>
-#include <systempp/syseventapi.h>
-#include <systempp/systime.h>
+#include <netplus/eventapi.h>
+
 
 #include "htmlpp/exception.h"
 #include "htmlpp/html.h"
@@ -44,9 +45,10 @@
 #include "header_png.h"
 #include "favicon_ico.h"
 
-// #ifndef Windows
-// #include <sys/utsname.h>
-// #endif // !Windows
+#ifndef Windows
+#include <sys/utsname.h>
+#include <sys/resource.h>
+#endif // !Windows
 
 class HtmlTable{
 public:
@@ -137,54 +139,31 @@ public:
         << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br/>";
         TimeInfo();
         KernelInfo();
-        CPUInfo();
-        SysInfo();
         _Index << "</div></div></body></html>";
     }
     
     void TimeInfo() {
-        sys::time mytime;
-//         mytime.getHWTime();
+        std::time_t t = std::time(0);
+        std::tm* mytime = std::localtime(&t);
         _Index << "<h2>CPUInfo:</h2>";
-        _Index << "<span>Time:" << (unsigned long)mytime.getHour() << ":" 
-                                << (unsigned long)mytime.getMinute() << ":"
-                                << (unsigned long)mytime.getSeconds() << "</span>"
-               << "<span>Date:" << (unsigned long)mytime.getDay() << "."
-                                << (unsigned long)mytime.getMounth() << "."
-                                << (unsigned long)mytime.getYear() << "</span>";
+        _Index << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
+                                << (unsigned long)mytime->tm_min << ":"
+                                << (unsigned long)mytime->tm_sec << "</span>"
+               << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
+                                << (unsigned long)mytime->tm_mon << "."
+                                << (unsigned long)mytime->tm_year << "</span>";
     }
     
     void KernelInfo(){
-//         #ifndef Windows
-//         struct utsname usysinfo;
-//         uname(&usysinfo);
-//         HtmlTable htmltable;
-//         htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
-//         htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
-//         htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
-//         _Index << "<h2>KernelInfo:</h2>" << htmltable.getTable();
-//         #endif
-    }
-    
-    void CPUInfo(){
-        sys::CpuInfo cpuinfo;
-        _Index << "<h2>CPUInfo:</h2>";
-        HtmlTable cputable;
-        cputable.createRow() << "<td>Vendor</td><td>" << cpuinfo.getVendor() << "</td>";
-        cputable.createRow() << "<td>Cores</td><td>" << cpuinfo.getCores()<<"</td>";
-        cputable.createRow() << "<td>Running on Thread</td><td>"<< cpuinfo.getActualThread()<<"</td>";
-        cputable.createRow() << "<td>Threads</td><td>" << cpuinfo.getThreads()<<"</td>";
-        _Index << cputable.getTable();
-    }
-    
-    void SysInfo(){
-/*        libhttppp::SysInfo sysinfo;
-        _Index << "<h2>SysInfo:</h2>";
-        HtmlTable cputable;
-        cputable.createRow() << "<td>Total Ram</td><td>" << sysinfo.getTotalRam()<<"</td>";
-        cputable.createRow() << "<td>Free Ram</td><td>" << sysinfo.getFreeRam()<<"</td>";
-        cputable.createRow() << "<td>Buffered Ram</td><td>" <<sysinfo.getBufferRam()<<"</td>";
-        _Index << cputable.getTable();  */ 
+        #ifndef Windows
+        struct utsname usysinfo;
+        uname(&usysinfo);
+        HtmlTable htmltable;
+        htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
+        htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
+        htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
+        _Index << "<h2>KernelInfo:</h2>" << htmltable.getTable();
+        #endif
     }
     
     const char *getIndexPage(){
@@ -199,13 +178,13 @@ private:
     libhtmlpp::HtmlString  _Index;
 };
 
-class Controller : public sys::net::event {
+class Controller : public netplus::event {
 public:
-    Controller(sys::net::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : event(serversocket){
         
     };
     
-    void IndexController(sys::net::con *curcon){
+    void IndexController(netplus::con *curcon){
         try{
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
@@ -213,16 +192,16 @@ public:
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));
-            sys::cout << cururl << sys::endl;
-            if(ncompare(cururl, strlen(cururl),"/",1)==0){
+            std::cout << cururl << std::endl;
+            if(strncmp(cururl,"/",strlen(cururl))==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
                 curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
-            }else if(ncompare(cururl,strlen(cururl),"/images/header.png",18)==0){
+            }else if(strncmp(cururl,"/images/header.png",16)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
-            }else if(ncompare(cururl,strlen(cururl),"/favicon.ico ",12)==0){
+            }else if(strncmp(cururl,"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
                 curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
@@ -235,11 +214,11 @@ public:
         }
     }
     
-    void RequestEvent(sys::net::con *curcon){
+    void RequestEvent(netplus::con *curcon){
         try{
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
-            sys::cerr << e.what() <<sys::endl;
+            std::cerr << e.what() <<std::endl;
             throw e;
         }
     }
@@ -262,7 +241,7 @@ int main(int argc, char** argv){
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
-        sys::cerr << e.what() <<sys::endl;
+        std::cerr << e.what() <<std::endl;
         if(e.getErrorType()==libhttppp::HTTPException::Note 
             || libhttppp::HTTPException::Warning)
             return 0;

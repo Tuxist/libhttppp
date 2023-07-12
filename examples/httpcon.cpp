@@ -25,8 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <systempp/sysconsole.h>
-#include <systempp/syseventapi.h>
+#include <iostream>
+#include <netplus/eventapi.h>
 
 #include "htmlpp/html.h"
 
@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include "httpd.h"
 
-void sendResponse(sys::net::con *curcon,libhttppp::HttpRequest *curreq) {
+void sendResponse(netplus::con *curcon,libhttppp::HttpRequest *curreq) {
      libhttppp::HttpResponse curres;
      curres.setState(HTTP200);
      curres.setVersion(HTTPVERSION(1.1));
@@ -60,20 +60,20 @@ void sendResponse(sys::net::con *curcon,libhttppp::HttpRequest *curreq) {
      curres.send(curcon,condat.c_str(),condat.size());
 };
 
-class Controller : public sys::net::event {
+class Controller : public netplus::event {
 public:
-    Controller(sys::net::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::net::con *curcon){
+    void RequestEvent(netplus::con *curcon){
         try{
-            sys::cout << "Parse Request" << sys::endl;
+            std::cout << "Parse Request" << std::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            sys::cout << "Send answer" << sys::endl;
+            std::cout << "Send answer" << std::endl;
             sendResponse(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            sys::cerr << e.what() << sys::endl;
+            std::cerr << e.what() << std::endl;
             throw e;
         }
     }
@@ -90,7 +90,7 @@ public:
       Controller controller(getServerSocket());
       controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
-      sys::cout << e.what() << sys::endl;
+      std::cout << e.what() << std::endl;
     }
   };
 private:

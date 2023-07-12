@@ -25,13 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <string.h>
+#include <cstring>
+#include <iostream>
 
-#include <systempp/sysconsole.h>
-#include <systempp/sysutils.h>
-#include <string.h>
-
-#include <systempp/syseventapi.h>
+#include <netplus/eventapi.h>
 
 #include "htmlpp/html.h"
 
@@ -40,15 +37,15 @@
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public sys::net::event {
+class Controller : public netplus::event {
 public:
-    Controller(sys::net::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : event(serversocket){
         
     };
     
-    void RequestEvent(sys::net::con *curcon){
+    void RequestEvent(netplus::con *curcon){
         try{
-            sys::cout << "Parse Request\n" << sys::endl;
+            std::cout << "Parse Request\n" << std::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
             const char *cururl=curreq.getRequestURL();
@@ -102,9 +99,9 @@ public:
                     curres.setState(HTTP401);
                     curres.setVersion(HTTPVERSION(1.1));
                     curres.setContentType(nullptr);
-                    if(ncompare(cururl,strlen(cururl),"/httpbasicauth",13)==0){
+                    if(strncmp(cururl,"/httpbasicauth",13)==0){
                         httpauth.setAuthType(BASICAUTH);
-                    }else if(ncompare(cururl,strlen(cururl),"/httpdigestauth",14)==0){
+                    }else if(strncmp(cururl,"/httpdigestauth",14)==0){
                         httpauth.setAuthType(DIGESTAUTH);
                     }
                     httpauth.setRealm("httpauthtest");
@@ -120,7 +117,7 @@ public:
                 curres.send(curcon,nullptr,0);
             }                
         }catch(libhttppp::HTTPException &e){
-            sys::cerr << e.what() << sys::endl;
+            std::cerr << e.what() << std::endl;
             throw e;
         }
     }
@@ -138,7 +135,7 @@ public:
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            sys::cout << e.what() << sys::endl;
+            std::cout << e.what() << std::endl;
         }
     };
 private:

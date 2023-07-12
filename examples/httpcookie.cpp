@@ -25,11 +25,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
 
-#include <systempp/sysconsole.h>
-#include <systempp/syseventapi.h>
-#include <systempp/sysutils.h>
+#include <iostream>
+#include <netplus/eventapi.h>
 
 #include "htmlpp/html.h"
 
@@ -41,7 +41,7 @@
 
 class CookieTest {
 public:
-    CookieTest(sys::net::con *curcon,libhttppp::HttpRequest *curreq){
+    CookieTest(netplus::con *curcon,libhttppp::HttpRequest *curreq){
         _Curcon=curcon;
         _Curreq=curreq;
         
@@ -69,7 +69,7 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(ncompare(key,strlen(key),cururlform->getKey(),strlen(key))==0)
+                if(strcmp(key,cururlform->getKey())==0)
                     return cururlform->getValue();
                 }
         }
@@ -82,12 +82,9 @@ public:
         if(curform.getUrlcodedFormData()){
             for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
                 cururlform=cururlform->nextUrlcodedFormData()){
-                if(ncompare(key,strlen(key),cururlform->getKey(),
-                    strlen(cururlform->getKey()))==0){
+                if(strcmp(key,cururlform->getKey())==0){
                         char ktmp[255];
-                        scopy(cururlform->getValue(),cururlform->getValue()+
-                                         strlen(cururlform->getValue()),
-                                         ktmp);
+                        memcpy(ktmp,cururlform->getValue(),strlen(cururlform->getValue())+1);
                         return atoi(ktmp);
                     }
                 }
@@ -128,25 +125,25 @@ private:
     libhtmlpp::HtmlString  _HTMLDat;
     libhttppp::HttpCookie   _Cookie;
     libhttppp::HttpResponse _Curres;
-    sys::net::con          *_Curcon;
+    netplus::con          *_Curcon;
     libhttppp::HttpRequest *_Curreq;
 };
 
-class Controller : public sys::net::event {
+class Controller : public netplus::event {
 public:
-    Controller(sys::net::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::net::con *curcon){
+    void RequestEvent(netplus::con *curcon){
 
         try{
-            sys::cout << "Parse Request" << sys::endl;
+            std::cout << "Parse Request" << std::endl;
             libhttppp::HttpRequest curreq;
             curreq.parse(curcon);
-            sys::cout << "Send answer" << sys::endl;
+            std::cout << "Send answer" << std::endl;
             CookieTest(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
-            sys::cerr << e.what() << sys::endl;
+            std::cerr<< e.what() << std::endl;
             throw e;
         }
     }
@@ -164,7 +161,7 @@ public:
             Controller controller(getServerSocket());
             controller.runEventloop();
         }catch(libhttppp::HTTPException &e){
-            sys::cerr << e.what() << sys::endl;
+            std::cerr<< e.what() << std::endl;
         }
     };
 private:

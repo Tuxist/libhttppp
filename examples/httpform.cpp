@@ -27,8 +27,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <string.h>
 
-#include <systempp/sysconsole.h>
-#include <systempp/syseventapi.h>
+#include <iostream>
+#include <netplus/eventapi.h>
 
 #include <htmlpp/html.h>
 
@@ -38,20 +38,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "httpd.h"
 
 
-class Controller : public sys::net::event {
+class Controller : public netplus::event {
 public:
-    Controller(sys::net::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : event(serversocket){
         
     };
-    void RequestEvent(sys::net::con *curcon){
+    void RequestEvent(netplus::con *curcon){
             libhttppp::HttpRequest curreq;
             libhtmlpp::HtmlString formdat;
             try {
-                sys::cout << "Parse Request" << sys::endl;
+                std::cout << "Parse Request" << std::endl;
                 curreq.parse(curcon);
                 Multiform(curreq, formdat);
                 URlform(curreq, formdat);
-                sys::cout << "Send answer" << sys::endl;
+                std::cout << "Send answer" << std::endl;
                 sendResponse(curcon, formdat);
                 
             }
@@ -109,7 +109,7 @@ private:
         }
     };
 
-    void sendResponse(sys::net::con* curcon, libhtmlpp::HtmlString formdat) {
+    void sendResponse(netplus::con* curcon, libhtmlpp::HtmlString formdat) {
         libhttppp::HttpResponse curres;
         libhtmlpp::HtmlString condat;
         curres.setState(HTTP200);
@@ -192,7 +192,7 @@ public:
       Controller controller(getServerSocket());
       controller.runEventloop();
     }catch(libhttppp::HTTPException &e){
-      sys::cerr << e.what() << sys::endl;
+      std::cerr << e.what() << std::endl;
     }
   };
 private:
