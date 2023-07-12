@@ -25,8 +25,6 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/sysexception.h>
-
 /*
  * Error Statas
  * Note: Notice only for Information
@@ -35,21 +33,26 @@
  * Critical: Some happend that will shutdown your Apllication
  */
 
+#include <string>
+
 #pragma once
 
 namespace libhttppp {
     
-    class HTTPException : sys::SystemException{
+    class HTTPException {
     public:
         HTTPException();
         HTTPException(const HTTPException &exp);
         virtual ~HTTPException();
         int getErrorType();
         const char* what();
-        HTTPException& asign(const char *src);
+        HTTPException& append(const char *src);
         HTTPException& operator[](int errtype);
         HTTPException& operator<<(const char *src);
         HTTPException& operator<<(int src);
         enum Type {Note,Warning,Error,Critical};
+    private:
+        std::string _Msg;
+        int         _curCType;
     };
 }

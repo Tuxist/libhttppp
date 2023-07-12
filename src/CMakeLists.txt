@@ -7,12 +7,10 @@ set(libhttpSrcs
   exception.cpp
   http.cpp
   httpd.cpp
-#  https.cpp
 )
 
 include_directories(
     ${systempp_INCLUDE_DIR}
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 add_library(httppp        SHARED ${libhttpSrcs} )
@@ -23,8 +21,8 @@ add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)
 
-target_link_libraries(httppp ${OPENSSL_LIBRARIES} systempp) 
-target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} systempp )    
+target_link_libraries(httppp ${OPENSSL_LIBRARIES} netplus)
+target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} netplus )
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 

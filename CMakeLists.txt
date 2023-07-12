@@ -8,7 +8,8 @@ set (BLOCKSIZE 16384 CACHE STRING "Block size from Network Packages")
 
 include(CheckIncludeFileCXX)
 
-find_package(systempp REQUIRED)
+find_package(libnetplus REQUIRED)
+find_package(libcryptplus REQUIRED)
 
 SET(CMAKE_CXX_FLAGS "-fPIC -Wall ")
 

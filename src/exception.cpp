@@ -27,39 +27,43 @@
 
 #include "exception.h"
 
-libhttppp::HTTPException::HTTPException() : sys::SystemException(){
+libhttppp::HTTPException::HTTPException() {
+    _curCType=HTTPException::Note;
 };
 
-libhttppp::HTTPException::HTTPException(const HTTPException &exp) : sys::SystemException(exp){
+libhttppp::HTTPException::HTTPException(const HTTPException &exp){
+    _curCType=exp._curCType;
+    _Msg=exp._Msg;
 }
 
 libhttppp::HTTPException::~HTTPException(){
 }
 
 int libhttppp::HTTPException::getErrorType(){
-    return curCType; 
+    return _curCType;
 }
 
 const char* libhttppp::HTTPException::what(){
-    return sys::SystemException::what();
+    return _Msg.c_str();
 }
 
-libhttppp::HTTPException& libhttppp::HTTPException::asign(const char *src){
-    sys::SystemException::asign(src);
+libhttppp::HTTPException& libhttppp::HTTPException::append(const char *src){
+    _Msg+=src;
     return *this;   
 }
 
 libhttppp::HTTPException& libhttppp::HTTPException::operator[](int errtype){
-    curCType=errtype;
+    _curCType=errtype;
     return *this;
 }
 
 libhttppp::HTTPException& libhttppp::HTTPException::operator<<(const char *src){
-    return asign(src);   
+    return append(src);
 };
 
 libhttppp::HTTPException& libhttppp::HTTPException::operator<<(int src){
-    sys::SystemException::operator<<(src);
-    return *this;
+    char buffer[255];
+    snprintf(buffer,255,"%d",src);
+    return append(buffer);
 }
 

@@ -25,8 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <ctype.h>
 
 #include "config.h"
@@ -35,9 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 
-#include <systempp/sysutils.h>
-#include <systempp/sysconsole.h>
-#include <systempp/syscrypt.h>
+#include <cryptplus/crypt.h>
 
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
