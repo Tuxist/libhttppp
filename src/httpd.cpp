@@ -25,15 +25,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/syscmd.h>
-#include <systempp/sysfile.h>
+#include <fstream>
+
+#include <netplus/socket.h>
+#include <cmdplus/cmdplus.h>
 
 #include "httpd.h"
 
 #define MAXDEFAULTCONN 1024
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
-    HTTPDCmdController= &sys::CmdController::getInstance();
+    HTTPDCmdController= &cmdplus::CmdController::getInstance();
     /*Register Parameters*/
     HTTPDCmdController->registerCmd("help", 'h', false, (const char*) nullptr, "Helpmenu");
     HTTPDCmdController->registerCmd("httpaddr",'a', true,(const char*) nullptr,"Address to listen");
@@ -87,11 +89,15 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
             
             auto readFile = [] (const char *file,unsigned char **out,size_t &outlen){
                 size_t read=0,readed=0;
-                sys::file myfile(file);
-                outlen = myfile.getsize();
+                std::ifstream myfile(file);
+                myfile.seekg(std::ios_base::end);
+                outlen=myfile.tellg();
+                myfile.seekg(std::ios_base::beg);
                 *out = new unsigned char[outlen];
                 do{
-                    read=myfile.read(*out+readed,(outlen-readed));
+                    myfile.read((char*)*out+readed,(outlen-readed));
+                    readed = myfile.tellg();
+
                 }while(read<0);
             };
             
@@ -101,15 +107,15 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
             readFile(sslcertpath,&cert,certlen);
             readFile(sslkeypath,&key,keylen);
             
-            _ServerSocket = new sys::net::ssl(httpaddr, port, maxconnections,-1,cert,certlen,key,keylen);            
+            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,cert,certlen,key,keylen);
         }else{
             #ifndef Windows
             if (portset == true)
-                _ServerSocket = new sys::net::tcp(httpaddr, port, maxconnections,-1);
+                _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections,-1);
             else
-                _ServerSocket = new sys::net::tcp(httpaddr, maxconnections,-1);
+                _ServerSocket = new netplus::tcp(httpaddr, maxconnections,-1);
             #else
-            _ServerSocket = new sys::net::tcp(httpaddr, port, maxconnections);
+            _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
             #endif 
         }
     }catch (HTTPException &e) {
@@ -117,7 +123,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     }
 }
 
-sys::net::socket *libhttppp::HttpD::getServerSocket(){
+netplus::socket *libhttppp::HttpD::getServerSocket(){
   return _ServerSocket;
 }
 

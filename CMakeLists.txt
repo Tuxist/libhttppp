@@ -10,6 +10,7 @@ include(CheckIncludeFileCXX)
 
 find_package(libnetplus REQUIRED)
 find_package(libcryptplus REQUIRED)
+find_package(libcmdplus REQUIRED)
 
 SET(CMAKE_CXX_FLAGS "-fPIC -Wall ")
 

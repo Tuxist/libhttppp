@@ -25,15 +25,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
-#include <systempp/syssocket.h>
-#include "systempp/syseventapi.h"
+#include <netplus/socket.h>
+#include <netplus/eventapi.h>
 
 #include "exception.h"
 
 #pragma once
 
-namespace sys {
-    class ServerSocket;
+namespace cmdplus {
     class CmdController;    
 }
 
@@ -42,13 +41,13 @@ namespace libhttppp {
     public:
         HttpD(int argc, char** argv);
         ~HttpD();
-        sys::net::socket           *getServerSocket();
+        netplus::socket            *getServerSocket();
     protected:
         void                        FileServer();
-        sys::CmdController *HTTPDCmdController;
+        cmdplus::CmdController     *HTTPDCmdController;
     private:
         bool                        _fileServer;
-        sys::net::socket           *_ServerSocket;
+        netplus::socket            *_ServerSocket;
         HTTPException               _httpexception;
     };
 };

@@ -28,8 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h>
 #include <sys/types.h>
 
-#include <systempp/sysarray.h>
-#include <systempp/syseventapi.h>
+#include <string>
+#include <netplus/eventapi.h>
 
 #include "config.h"
 
@@ -50,9 +50,9 @@ namespace libhttppp {
       HeaderData(const char *key);
       ~HeaderData();
     private:
-      sys::array<char> _Key;
-      sys::array<char> _Value;
-      HeaderData      *_nextHeaderData;
+      std::string  _Key;
+      std::string  _Value;
+      HeaderData   *_nextHeaderData;
       friend class HttpHeader;
     };
     
@@ -89,12 +89,12 @@ namespace libhttppp {
     void   setContentLength(size_t len);
     void   setConnection(const char *type);
     void   setVersion(const char* version);
-    void   send(sys::net::con *curconnection,const char* data);
-    void   send(sys::net::con *curconnection,const char* data, unsigned long datalen); //only use as server
-    size_t printHeader(sys::array<char> &buffer);
+    void   send(netplus::con *curconnection,const char* data);
+    void   send(netplus::con *curconnection,const char* data, unsigned long datalen); //only use as server
+    size_t printHeader(std::string &buffer);
   private:
-    sys::array<char> _State;
-    sys::array<char> _Version;
+    std::string      _State;
+    std::string      _Version;
     HeaderData      *_Connection;
     HeaderData      *_ContentType;
     HeaderData      *_ContentLength;
@@ -105,21 +105,21 @@ namespace libhttppp {
   public:
     HttpRequest();
     ~HttpRequest();
-    void           parse(sys::net::con *curconnection); //only use as server
+    void           parse(netplus::con *curconnection); //only use as server
     size_t         printHeader(char **buffer);
     int            getRequestType();
     const char    *getRequestURL();
     const char    *getRequest();
     size_t         getRequestLength();
   private:
-    sys::array<char> _Request;
-    int              _RequestType;
+    std::string    _Request;
+    int            _RequestType;
     
-    sys::array<char> _RequestURL;
-    sys::array<char> _Version;
+    std::string    _RequestURL;
+    std::string    _Version;
     
-    HttpHeader      *_HttpHeader;
-    sys::net::con   *_Connection;
+    HttpHeader     *_HttpHeader;
+    netplus::con   *_Connection;
   };
   
   class HttpForm {
@@ -244,8 +244,8 @@ namespace libhttppp {
     private:
       CookieData();
       ~CookieData();
-      sys::array<char> _Key;
-      sys::array<char> _Value;
+      std::string _Key;
+      std::string _Value;
       CookieData *_nextCookieData;
 
       friend class HttpCookie;
