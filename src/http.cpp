@@ -47,7 +47,7 @@ libhttppp::HttpHeader::HttpHeader(){
 libhttppp::HttpHeader::HeaderData& libhttppp::HttpHeader::HeaderData::operator<<(const char* value) {
     if (!value)
         return *this;
-    _Value.append(value);
+    _Value=value;
     return *this;
 }
 
@@ -191,7 +191,6 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     }
     _nextHeaderData=nullptr;
     _Key = key;
-    _Value=nullptr;
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
@@ -326,14 +325,14 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             bool found=false;
             int pos=0;
 
-            for(int cpos=pos; cpos< header.length(); ++cpos){
+            for(size_t cpos=pos; cpos< header.length(); ++cpos){
                 if(header[cpos]==' '){
                     pos=++cpos;
                     break;
                 }
             }
 
-            for(int cpos=pos; cpos<header.length(); ++cpos){
+            for(size_t cpos=pos; cpos<header.length(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
                     _RequestURL = header.substr(pos,cpos-pos);
                     ++pos;
@@ -341,7 +340,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                 }
             }
 
-            for(int cpos=pos; cpos<header.length(); ++cpos){
+            for(size_t cpos=pos; cpos<header.length(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
                     _Version = header.substr(pos,cpos-pos);
                     ++pos;
@@ -975,13 +974,11 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
             char *urldecdValue=nullptr;
             char *urldecdKey=nullptr;
             memcpy(key,formdat+fdatstpos,keyendpos);
-            if(formdat+vlstpos){
-                value=new char[(fdatpos-vlstpos)+1];
-                memcpy(value,formdat+vlstpos,(fdatpos-vlstpos));
-                key[(keyendpos-fdatstpos)]='\0';
-                value[(fdatpos-vlstpos)]='\0';
-                urlDecode(value,strlen(value),&urldecdValue);
-            }            
+            value=new char[(fdatpos-vlstpos)+1];
+            memcpy(value,formdat+vlstpos,(fdatpos-vlstpos));
+            key[(keyendpos-fdatstpos)]='\0';
+            value[(fdatpos-vlstpos)]='\0';
+            urlDecode(value,strlen(value),&urldecdValue);
             urlDecode(key,strlen(key),&urldecdKey);
             UrlcodedFormData *newenrty;
             newenrty=addUrlcodedFormData();
