@@ -102,22 +102,23 @@ public:
         return *_lastRow;
     }
     
-    const char *getTable(){
-        _Buffer.clear();
+    void getTable(libhtmlpp::HtmlString &table){
+        _Table.clear();
         if(_Id!=NULL)
-            _Buffer << "<table id=\"" << _Id << "\">";
+            _Table << "<table id=\"" << _Id << "\">";
         else
-            _Buffer << "<table>";
+            _Table << "<table>";
         for(Row *curow=_firstRow; curow; curow=curow->_nextRow){
-            _Buffer << "<tr>";
-            _Buffer += curow->_Data;
-            _Buffer << "</tr>";
+            _Table << "<tr>";
+            _Table += curow->_Data;
+            _Table << "</tr>";
         }
-        _Buffer << "</table>";
-        return _Buffer.c_str();
+        _Table << "</table>";
+        table+=_Table;
     }
+
 private:
-    libhtmlpp::HtmlString _Buffer;
+    libhtmlpp::HtmlString _Table;
     const char           *_Id;
     Row                  *_firstRow;
     Row                  *_lastRow;
@@ -162,12 +163,13 @@ public:
         htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
         htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
         htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
-        _Index << "<h2>KernelInfo:</h2>" << htmltable.getTable();
+        _Index << "<h2>KernelInfo:</h2>";
+        htmltable.getTable(_Index);
         #endif
     }
     
-    const char *getIndexPage(){
-        return _Index.c_str();
+    libhtmlpp::HtmlString *getIndexPage(){
+        return &_Index;
     }
     
     size_t getIndexPageSize(){
@@ -196,7 +198,9 @@ public:
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 curres.setContentType("text/html");
                 IndexPage idx;
-                curres.send(curcon,idx.getIndexPage(),idx.getIndexPageSize());
+                std::string html;
+                ((idx.getIndexPage())->parse())->printHtmlElement(html);
+                curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/images/header.png",16)==0){
                 curres.setContentType("image/png");
                 curres.setContentLength(header_png_size);

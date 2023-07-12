@@ -60,7 +60,10 @@ public:
         setCookieForm();
         parseCookie();
         _HTMLDat  << "</body></html>";
-        _Curres.send(_Curcon,_HTMLDat.c_str(),_HTMLDat.size());
+
+        std::string html;
+        (_HTMLDat.parse())->printHtmlElement(html);
+        _Curres.send(_Curcon,html.c_str(),html.length());
     };
     
     const char *getData(const char *key){

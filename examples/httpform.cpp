@@ -176,10 +176,12 @@ private:
             << "</form>"
             << "</div></br>"
             << "<div style=\"border: thin solid black\">"
-            << "<h2>Output</h2>"
-            << formdat.c_str()
-            << "</div></body></html>";
-        curres.send(curcon, condat.c_str(), condat.length());
+            << "<h2>Output</h2>";
+        condat+=formdat;
+        condat << "</div></body></html>";
+        std::string html;
+        (condat.parse())->printHtmlElement(html);
+        curres.send(curcon, html.c_str(), html.length());
     };
 };
 

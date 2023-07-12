@@ -57,7 +57,9 @@ void sendResponse(netplus::con *curcon,libhttppp::HttpRequest *curreq) {
                << "<br/>";
      }
      condat  << "</body></html>";
-     curres.send(curcon,condat.c_str(),condat.size());
+     std::string html;
+     (condat.parse())->printHtmlElement(html);
+     curres.send(curcon,html.c_str(),html.length());
 };
 
 class Controller : public netplus::event {

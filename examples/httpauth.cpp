@@ -67,7 +67,9 @@ public:
                 << "<li><a href=\"/httpbasicauth\"> Basicauth </<a></li>"
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
-                curres.send(curcon,condat.c_str(),condat.size());
+                std::string html;
+                (condat.parse())->printHtmlElement(html);
+                curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0 ||
                 strncmp(cururl,"/httpdigestauth",strlen(cururl))==0){
                 libhttppp::HttpAuth httpauth;
@@ -92,7 +94,9 @@ public:
                 curres.setState(HTTP200);
                 curres.setVersion(HTTPVERSION(1.1));
                 curres.setContentType("text/html");
-                curres.send(curcon,condat.c_str(),condat.size());
+                std::string html;
+                (condat.parse())->printHtmlElement(html);
+                curres.send(curcon,html.c_str(),html.length());
                 return;
                 }else{
                     libhttppp::HttpResponse curres;
