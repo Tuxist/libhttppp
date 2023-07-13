@@ -26,6 +26,7 @@
  *******************************************************************************/
 
 #include <iostream>
+#include <sstream>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -76,8 +77,8 @@ public:
         };
         
     private:
-        libhtmlpp::HtmlString  _Data;
-        int                    _Size;
+        std::string  _Data;
+        int          _Size;
         Row(){
             _Size=0;
             _nextRow=nullptr;
@@ -102,7 +103,7 @@ public:
         return *_lastRow;
     }
     
-    void getTable(libhtmlpp::HtmlString &table){
+    void getTable(std::string &table){
         _Table.clear();
         if(_Id!=NULL)
             _Table << "<table id=\"" << _Id << "\">";
@@ -110,15 +111,15 @@ public:
             _Table << "<table>";
         for(Row *curow=_firstRow; curow; curow=curow->_nextRow){
             _Table << "<tr>";
-            _Table += curow->_Data;
+            _Table << curow->_Data;
             _Table << "</tr>";
         }
         _Table << "</table>";
-        table+=_Table;
+        table+=_Table.str();
     }
 
 private:
-    libhtmlpp::HtmlString _Table;
+    std::stringstream     _Table;
     const char           *_Id;
     Row                  *_firstRow;
     Row                  *_lastRow;
@@ -164,20 +165,18 @@ public:
         htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
         htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
         _Index << "<h2>KernelInfo:</h2>";
-        htmltable.getTable(_Index);
+        std::string table;
+        htmltable.getTable(table);
+        _Index << table;
         #endif
     }
     
-    libhtmlpp::HtmlString *getIndexPage(){
-        return &_Index;
-    }
-    
-    size_t getIndexPageSize(){
-        return _Index.size();
+    void getIndexPage(std::string &index){
+        index=_Index.str();
     }
     
 private:
-    libhtmlpp::HtmlString  _Index;
+    std::stringstream  _Index;
 };
 
 class Controller : public netplus::event {
@@ -199,7 +198,10 @@ public:
                 curres.setContentType("text/html");
                 IndexPage idx;
                 std::string html;
-                ((idx.getIndexPage())->parse())->printHtmlElement(html);
+                libhtmlpp::HtmlPage index;
+                idx.getIndexPage(html);
+                index.loadString(html);
+                index.printHtml(html);
                 curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/images/header.png",16)==0){
                 curres.setContentType("image/png");
@@ -214,7 +216,7 @@ public:
                 curres.send(curcon,NULL,0);
             }
         }catch(libhttppp::HTTPException &e){
-            throw e;
+            std::cerr << e.what() << std::endl;
         }
     }
     
