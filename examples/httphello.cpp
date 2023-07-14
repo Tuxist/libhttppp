@@ -46,7 +46,6 @@ public:
             curres.send(curcon,hello,strlen(hello));
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
-            throw e;
         }
     }
 private:

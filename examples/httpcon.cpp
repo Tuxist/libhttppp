@@ -76,7 +76,6 @@ public:
             sendResponse(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
-            throw e;
         }
     }
 private:
