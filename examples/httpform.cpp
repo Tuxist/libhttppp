@@ -180,7 +180,7 @@ private:
         condat+=formdat;
         condat << "</div></body></html>";
         std::string html;
-        (condat.parse())->printHtmlElement(html);
+        libhtmlpp::print(condat.parse(),nullptr,html);
         curres.send(curcon, html.c_str(), html.length());
     };
 };

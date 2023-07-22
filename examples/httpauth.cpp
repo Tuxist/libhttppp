@@ -68,7 +68,7 @@ public:
                 << "<li><a href=\"/httpdigestauth\"> Digestauth </<a></li>";
                 condat  << "</ul></body></html>";
                 std::string html;
-                (condat.parse())->printHtmlElement(html);
+                libhtmlpp::print(condat.parse(),nullptr,html);
                 curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0 ||
                 strncmp(cururl,"/httpdigestauth",strlen(cururl))==0){
@@ -95,7 +95,7 @@ public:
                 curres.setVersion(HTTPVERSION(1.1));
                 curres.setContentType("text/html");
                 std::string html;
-                (condat.parse())->printHtmlElement(html);
+                libhtmlpp::print(condat.parse(),nullptr,html);
                 curres.send(curcon,html.c_str(),html.length());
                 return;
                 }else{

@@ -37,7 +37,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 
 #include <cryptplus/cryptplus.h>
+
 #include <netplus/connection.h>
+#include <netplus/exception.h>
 
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
