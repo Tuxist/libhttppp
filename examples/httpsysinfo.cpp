@@ -135,10 +135,10 @@ class HtmlContent{
 class IndexPage{
 public:
     IndexPage(){
-        _Index << "<!DOCTYPE html><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
+        _Index << "<!DOCTYPE html><html lang=\"en\" ><head><title>sysinfo</title> </head><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
         << "<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">"
-        << "<div id=\"headerimage\"><img src=\"images/header.png\"/></div>"
-        << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br/>";
+        << "<div id=\"headerimage\"><img alt=\"headerimage\" src=\"images/header.png\"></div>"
+        << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br>";
         TimeInfo();
         KernelInfo();
         _Index << "</div></div></body></html>";
@@ -147,13 +147,13 @@ public:
     void TimeInfo() {
         std::time_t t = std::time(0);
         std::tm* mytime = std::localtime(&t);
-        _Index << "<h2>CPUInfo:</h2>";
-        _Index << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
-                                << (unsigned long)mytime->tm_min << ":"
-                                << (unsigned long)mytime->tm_sec << "</span>"
-               << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
+        _Index << "<h2>Date & Time:</h2>";
+        _Index << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
                                 << (unsigned long)mytime->tm_mon << "."
-                                << (unsigned long)mytime->tm_year << "</span>";
+                                << (unsigned long)mytime->tm_year << " </span>"
+                                << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
+                                << (unsigned long)mytime->tm_min << ":"
+                                << (unsigned long)mytime->tm_sec << "</span>";
     }
     
     void KernelInfo(){

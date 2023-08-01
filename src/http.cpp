@@ -976,11 +976,13 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
             char *urldecdValue=nullptr;
             char *urldecdKey=nullptr;
             memcpy(key,formdat+fdatstpos,keyendpos);
-            value=new char[(fdatpos-vlstpos)+1];
-            memcpy(value,formdat+vlstpos,(fdatpos-vlstpos));
-            key[(keyendpos-fdatstpos)]='\0';
-            value[(fdatpos-vlstpos)]='\0';
-            urlDecode(value,strlen(value),&urldecdValue);
+            if(formdat+vlstpos){
+                value=new char[(fdatpos-vlstpos)+1];
+                memcpy(value,formdat+vlstpos,(fdatpos-vlstpos));
+                key[(keyendpos-fdatstpos)]='\0';
+                value[(fdatpos-vlstpos)]='\0';
+                urlDecode(value,strlen(value),&urldecdValue);
+            }
             urlDecode(key,strlen(key),&urldecdKey);
             UrlcodedFormData *newenrty;
             newenrty=addUrlcodedFormData();
