@@ -49,7 +49,7 @@ libhttppp::HttpHeader::HttpHeader(){
 libhttppp::HttpHeader::HeaderData& libhttppp::HttpHeader::HeaderData::operator<<(const char* value) {
     if (!value)
         return *this;
-    _Value=value;
+    _Value.append(value);
     return *this;
 }
 
