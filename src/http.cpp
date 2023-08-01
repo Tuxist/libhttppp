@@ -1083,7 +1083,7 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
     HTTPException httpexception;
     if(!key || !value){
         httpexception[HTTPException::Note] << "no key or value set in cookie!";
-        return;
+        throw httpexception;
     }
     HttpHeader::HeaderData *dat=curresp->setData("set-cookie");
     *dat << key << "=" << value;
