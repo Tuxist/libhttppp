@@ -992,31 +992,28 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
 }
 
 void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
-  if(_Key)
-    delete[] _Key;
-  _Key=new char [strlen(key)+1];
-  memcpy(_Key,key,strlen(key));
-  _Key[strlen(key)]='\0';  
+   if(!key){
+	HTTPException httpexception;
+	httpexception[HTTPException::Error] << "no urldecoded key set";
+	throw httpexception;
+   }
+   _Key=key;
 }
 
 void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
-  if(_Value)
-    delete[] _Value;
   if(!value){
-      _Value=nullptr;
+      _Value.clear();
       return;
   }
-  _Value=new char [strlen(value)+1];
-  memcpy(_Value,value,strlen(value));
-  _Value[strlen(value)]='\0'; 
+  _Value=value; 
 }
 
 const char *libhttppp::HttpForm::UrlcodedFormData::getKey(){
-  return _Key;
+  return _Key.c_str();
 }
 
 const char *libhttppp::HttpForm::UrlcodedFormData::getValue(){
-  return _Value;
+  return _Value.c_str();
 }
 
 libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::UrlcodedFormData::nextUrlcodedFormData(){
@@ -1024,14 +1021,10 @@ libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::UrlcodedFormData::n
 }
 
 libhttppp::HttpForm::UrlcodedFormData::UrlcodedFormData(){
-  _Key=nullptr;
-  _Value=nullptr;
   _nextUrlcodedFormData=nullptr;
 }
 
 libhttppp::HttpForm::UrlcodedFormData::~UrlcodedFormData(){
-  delete[] _Key;
-  delete[] _Value;
   delete _nextUrlcodedFormData;
 }
 

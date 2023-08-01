@@ -193,8 +193,8 @@ namespace libhttppp {
     private:
       UrlcodedFormData();
       ~UrlcodedFormData();
-      char              *_Key;
-      char              *_Value;
+      std::string        _Key;
+      std::string        _Value;
       UrlcodedFormData  *_nextUrlcodedFormData;
       friend class HttpForm;
     };
