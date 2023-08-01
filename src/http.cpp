@@ -936,12 +936,10 @@ void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(con
 
 void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   HTTPException httpexception;
-  char *formdat=nullptr;
+  std::string formdat;
   if(request->getRequestType()==POSTREQUEST){
       size_t rsize=request->getRequestLength();
-      formdat = new char[rsize+1];
-      memcpy(formdat,request->getRequest(),rsize);
-      formdat[rsize]='\0';
+      formdat.append(request->getRequest(),rsize);
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequestURL();
       size_t rurlsize=strlen(rurl);
@@ -956,42 +954,33 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
       if(rdelimter==-1){
         return;
       }
-      size_t rsize=rurlsize-rdelimter;
-      formdat = new char[rsize+1];
-      memcpy(formdat,rurl+rdelimter,rsize);
-      formdat[rsize]='\0';
+      formdat.append(rurl+rdelimter,rurlsize-rdelimter);
   }else{
     httpexception[HTTPException::Error] << "HttpForm unknown Requestype";
     throw httpexception;
   }
   size_t fdatstpos=0;
   size_t keyendpos=0;
-  for(size_t fdatpos=0; fdatpos<strlen(formdat)+1; fdatpos++){
+  for(size_t fdatpos=0; fdatpos<formdat.length(); fdatpos++){
     switch(formdat[fdatpos]){
         case '&': case '\0':{
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
-            char *key=new char[(keyendpos-fdatstpos)+1];
+            std::string key;
             size_t vlstpos=keyendpos+1;
-            char *value=nullptr;
+            std::string value;
             char *urldecdValue=nullptr;
             char *urldecdKey=nullptr;
-            memcpy(key,formdat+fdatstpos,keyendpos);
-            if(formdat+vlstpos){
-                value=new char[(fdatpos-vlstpos)+1];
-                memcpy(value,formdat+vlstpos,(fdatpos-vlstpos));
-                key[(keyendpos-fdatstpos)]='\0';
-                value[(fdatpos-vlstpos)]='\0';
-                urlDecode(value,strlen(value),&urldecdValue);
+            key=formdat.substr(fdatstpos,keyendpos-fdatstpos);
+            if(vlstpos<=formdat.length()){
+                value=formdat.substr(vlstpos,(fdatpos-vlstpos));
+                urlDecode(value.c_str(),value.length(),&urldecdValue);
             }
-            urlDecode(key,strlen(key),&urldecdKey);
+            urlDecode(key.c_str(),key.length(),&urldecdKey);
             UrlcodedFormData *newenrty;
             newenrty=addUrlcodedFormData();
             newenrty->setKey(urldecdKey);
             newenrty->setValue(urldecdValue);
-            delete[] key;
-            delete[] urldecdKey;
-            delete[] value;
-            delete[] urldecdValue;
+
           }
           fdatstpos=fdatpos+1;
         };
@@ -1000,7 +989,6 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
         };
     }
   }
-  delete[] formdat;
 }
 
 void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
