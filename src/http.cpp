@@ -961,7 +961,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   }
   size_t fdatstpos=0;
   size_t keyendpos=0;
-  for(size_t fdatpos=0; fdatpos<formdat.length(); fdatpos++){
+  for(size_t fdatpos=0; fdatpos<=formdat.length(); fdatpos++){
     switch(formdat[fdatpos]){
         case '&': case '\0':{
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
