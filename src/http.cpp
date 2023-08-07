@@ -108,9 +108,7 @@ int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **p
     const char *val=getData(key,pos);
     if(strlen(val)<255)
         return 0;
-    char buf[255];
-    memcpy(buf,val,strlen(val)+1);
-    return atoi(buf);
+    return atoi(val);
 }
 
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key){
