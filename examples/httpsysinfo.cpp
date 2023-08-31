@@ -157,20 +157,25 @@ public:
             sysdiv->appendChild(html.parse());
     }
     
-    // void KernelInfo(){
-    //     #ifndef Windows
-    //     struct utsname usysinfo;
-    //     uname(&usysinfo);
-    //     HtmlTable htmltable;
-    //     htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
-    //     htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
-    //     htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
-    //     _Index << "<h2>KernelInfo:</h2>";
-    //     std::string table;
-    //     htmltable.getTable(table);
-    //     _Index << table;
-    //     #endif
-    // }
+    void KernelInfo(libhtmlpp::HtmlElement &index){
+        #ifndef Windows
+        struct utsname usysinfo;
+        uname(&usysinfo);
+        HtmlTable htmltable;
+        htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
+        htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
+        htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
+        libhtmlpp::HtmlString html;
+        html << "<h2>KernelInfo:</h2>";
+        std::string table;
+        htmltable.getTable(table);
+        html << table;
+        libhtmlpp::HtmlElement *sysdiv=nullptr;
+        sysdiv=index.getElementbyID("sysinfo");
+        if(sysdiv)
+            sysdiv->appendChild(html.parse());
+        #endif
+    }
 
 };
 
@@ -195,7 +200,8 @@ public:
                 libhtmlpp::HtmlPage page;
                 libhtmlpp::HtmlElement *index=page.loadString(INDEXPAGE)->parse();
                 Sysinfo sys;
-                sys.TimeInfo(*index);
+                sys.TimeInfo(*libhtmlpp::getRootNode(index));
+                sys.KernelInfo(*libhtmlpp::getRootNode(index));
                 libhtmlpp::print(index,nullptr,html);
                 curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/images/header.png",18)==0){
