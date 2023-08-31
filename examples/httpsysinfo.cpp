@@ -51,6 +51,12 @@
 #include <sys/resource.h>
 #endif // !Windows
 
+#define INDEXPAGE "<!DOCTYPE html><html lang=\"en\" ><head><title>sysinfo</title></head><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">\
+<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">\
+<div id=\"headerimage\"><img alt=\"headerimage\" src=\"images/header.png\"></div>\
+<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span class=\"sysheader\">System Info:</span><br>\
+</div></div></body></html>"
+
 class HtmlTable{
 public:
     HtmlTable(const char *id=NULL){
@@ -132,51 +138,40 @@ class HtmlContent{
 };
 
 
-class IndexPage{
+class Sysinfo{
 public:
-    IndexPage(){
-        _Index << "<!DOCTYPE html><html lang=\"en\" ><head><title>sysinfo</title> </head><body style=\"color:rgb(239, 240, 241); background:rgb(79, 83, 88);\">"
-        << "<div id=\"mainbar\" style=\"border-radius: 38px; background:rgb(35, 38, 41); width:1280px; margin:0px auto;\">"
-        << "<div id=\"headerimage\"><img alt=\"headerimage\" src=\"images/header.png\"></div>"
-        << "<div id=\"sysinfo\" style=\"padding:40px 20px;\"><span>System Info:</span><br>";
-        TimeInfo();
-        KernelInfo();
-        _Index << "</div></div></body></html>";
-    }
-    
-    void TimeInfo() {
+    void TimeInfo(libhtmlpp::HtmlElement &index) {
         std::time_t t = std::time(0);
         std::tm* mytime = std::localtime(&t);
-        _Index << "<h2>Date & Time:</h2>";
-        _Index << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
-                                << (unsigned long)mytime->tm_mon << "."
-                                << (unsigned long)mytime->tm_year << " </span>"
-                                << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
-                                << (unsigned long)mytime->tm_min << ":"
-                                << (unsigned long)mytime->tm_sec << "</span>";
+        libhtmlpp::HtmlString html;
+        html << "<span>Date & Time:</span>";
+        html << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
+                              << (unsigned long)mytime->tm_mon << "."
+                              << (unsigned long)mytime->tm_year << " </span>"
+                              << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
+                              << (unsigned long)mytime->tm_min << ":"
+                              << (unsigned long)mytime->tm_sec << "</span>";
+        libhtmlpp::HtmlElement *sysdiv=nullptr;
+        sysdiv=index.getElementbyID("sysinfo");
+        if(sysdiv)
+            sysdiv->appendChild(html.parse());
     }
     
-    void KernelInfo(){
-        #ifndef Windows
-        struct utsname usysinfo;
-        uname(&usysinfo);
-        HtmlTable htmltable;
-        htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
-        htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
-        htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
-        _Index << "<h2>KernelInfo:</h2>";
-        std::string table;
-        htmltable.getTable(table);
-        _Index << table;
-        #endif
-    }
-    
-    void getIndexPage(std::string &index){
-        index=_Index.str();
-    }
-    
-private:
-    std::stringstream  _Index;
+    // void KernelInfo(){
+    //     #ifndef Windows
+    //     struct utsname usysinfo;
+    //     uname(&usysinfo);
+    //     HtmlTable htmltable;
+    //     htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
+    //     htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
+    //     htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
+    //     _Index << "<h2>KernelInfo:</h2>";
+    //     std::string table;
+    //     htmltable.getTable(table);
+    //     _Index << table;
+    //     #endif
+    // }
+
 };
 
 class Controller : public netplus::event {
@@ -196,20 +191,18 @@ public:
             std::cout << cururl << std::endl;
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 curres.setContentType("text/html");
-                IndexPage idx;
                 std::string html;
-                libhtmlpp::HtmlPage index;
-                idx.getIndexPage(html);
-                index.loadString(html);
-                index.printHtml(html);
+                libhtmlpp::HtmlPage page;
+                libhtmlpp::HtmlElement *index=page.loadString(INDEXPAGE)->parse();
+                Sysinfo sys;
+                sys.TimeInfo(*index);
+                libhtmlpp::print(index,nullptr,html);
                 curres.send(curcon,html.c_str(),html.length());
-            }else if(strncmp(cururl,"/images/header.png",16)==0){
+            }else if(strncmp(cururl,"/images/header.png",18)==0){
                 curres.setContentType("image/png");
-                curres.setContentLength(header_png_size);
                 curres.send(curcon,(const char*)header_png,header_png_size);
             }else if(strncmp(cururl,"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
-                curres.setContentLength(favicon_ico_size);
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
             }else{
                 curres.setState(HTTP404);
