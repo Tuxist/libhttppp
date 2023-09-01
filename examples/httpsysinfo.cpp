@@ -57,100 +57,21 @@
 <div id=\"sysinfo\" style=\"padding:40px 20px;\"><span class=\"sysheader\">System Info:</span><br>\
 </div></div></body></html>"
 
-class HtmlTable{
-public:
-    HtmlTable(const char *id=NULL){
-        _firstRow=nullptr;
-        _lastRow=nullptr;
-        _Id=id;
-    }
-    
-    ~HtmlTable(){
-        delete _firstRow;
-    }
-    
-    class Row {
-    public:
-        Row &operator<<(const char *value){
-            _Data+=value;
-            return *this;
-        };
-        
-        Row &operator<<(int value){
-            char buf[255];
-            snprintf(buf,255,"%d",value);
-            return *this << buf;
-        };
-        
-    private:
-        std::string  _Data;
-        int          _Size;
-        Row(){
-            _Size=0;
-            _nextRow=nullptr;
-        };
-        ~Row(){
-            delete _nextRow;
-        };
-        Row *_nextRow;
-        friend class HtmlTable;
-    };
-    
-    
-    
-    Row &createRow(){
-        if(_firstRow!=nullptr){
-            _lastRow->_nextRow=new Row;
-            _lastRow=_lastRow->_nextRow;
-        }else{
-            _firstRow=new Row;
-            _lastRow=_firstRow;
-        }
-        return *_lastRow;
-    }
-    
-    void getTable(std::string &table){
-        _Table.clear();
-        if(_Id!=NULL)
-            _Table << "<table id=\"" << _Id << "\">";
-        else
-            _Table << "<table>";
-        for(Row *curow=_firstRow; curow; curow=curow->_nextRow){
-            _Table << "<tr>";
-            _Table << curow->_Data;
-            _Table << "</tr>";
-        }
-        _Table << "</table>";
-        table+=_Table.str();
-    }
-
-private:
-    std::stringstream     _Table;
-    const char           *_Id;
-    Row                  *_firstRow;
-    Row                  *_lastRow;
-};
-
-class HtmlContent{
-    void generateHeader(){
-        
-    }
-};
-
-
 class Sysinfo{
 public:
     void TimeInfo(libhtmlpp::HtmlElement &index) {
         std::time_t t = std::time(0);
         std::tm* mytime = std::localtime(&t);
         libhtmlpp::HtmlString html;
-        html << "<span>Date & Time:</span>";
-        html << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
+        html << "<div>"
+             << "<span>Date & Time:</span>"
+             << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
                               << (unsigned long)mytime->tm_mon << "."
                               << (unsigned long)mytime->tm_year << " </span>"
                               << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
                               << (unsigned long)mytime->tm_min << ":"
-                              << (unsigned long)mytime->tm_sec << "</span>";
+                              << (unsigned long)mytime->tm_sec << "</span>"
+            << "</div>";
         libhtmlpp::HtmlElement *sysdiv=nullptr;
         sysdiv=index.getElementbyID("sysinfo");
         if(sysdiv)
@@ -161,19 +82,22 @@ public:
         #ifndef Windows
         struct utsname usysinfo;
         uname(&usysinfo);
-        HtmlTable htmltable;
-        htmltable.createRow() << "<td>Operating system</td><td>" << usysinfo.sysname <<"</td>";
-        htmltable.createRow() << "<td>Release Version</td><td>" << usysinfo.release <<"</td>";
-        htmltable.createRow() << "<td>Hardware</td><td>" << usysinfo.machine <<"</td>";
+        libhtmlpp::HtmlTable htmltable;
+        htmltable << libhtmlpp::HtmlTable::Row() << "Operating system:" << usysinfo.sysname;
+        htmltable << libhtmlpp::HtmlTable::Row() << "Release Version :" << usysinfo.release;
+        htmltable << libhtmlpp::HtmlTable::Row() << "Hardware        :" << usysinfo.machine;
         libhtmlpp::HtmlString html;
-        html << "<h2>KernelInfo:</h2>";
-        std::string table;
-        htmltable.getTable(table);
-        html << table;
+        html << "<div><span>KernelInfo:</span> </div> ";
+        libhtmlpp::HtmlElement *table=new libhtmlpp::HtmlElement("table");
+        htmltable.insert(table);
+
         libhtmlpp::HtmlElement *sysdiv=nullptr;
         sysdiv=index.getElementbyID("sysinfo");
-        if(sysdiv)
-            sysdiv->appendChild(html.parse());
+        if(sysdiv){
+            libhtmlpp::HtmlElement *div=html.parse();
+            div->appendChild(table);
+            sysdiv->appendChild(div);
+        }
         #endif
     }
 
