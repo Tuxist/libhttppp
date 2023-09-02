@@ -57,6 +57,9 @@
 <div id=\"sysinfo\" style=\"padding:40px 20px;\"><span class=\"sysheader\">System Info:</span><br>\
 </div></div></body></html>"
 
+libhtmlpp::HtmlPage     SysPage;
+libhtmlpp::HtmlElement *RootNode;
+
 class Sysinfo{
 public:
     void TimeInfo(libhtmlpp::HtmlElement &index) {
@@ -121,12 +124,12 @@ public:
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 curres.setContentType("text/html");
                 std::string html;
-                libhtmlpp::HtmlPage page;
-                libhtmlpp::HtmlElement *index=page.loadString(INDEXPAGE)->parse();
+                libhtmlpp::HtmlElement index;
+		index=*RootNode;
                 Sysinfo sys;
-                sys.TimeInfo(*libhtmlpp::getRootNode(index));
-                sys.KernelInfo(*libhtmlpp::getRootNode(index));
-                libhtmlpp::print(index,nullptr,html);
+                sys.TimeInfo(index);
+                sys.KernelInfo(index);
+                libhtmlpp::print(&index,nullptr,html);
                 curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/images/header.png",18)==0){
                 curres.setContentType("image/png");
@@ -166,6 +169,7 @@ public:
 
 int main(int argc, char** argv){
     try{
+        RootNode=SysPage.loadString(INDEXPAGE);
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
