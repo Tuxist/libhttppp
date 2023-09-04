@@ -8,4 +8,4 @@ INPUT                  = @doxy_main_page@ \
 FILE_PATTERNS          = *.h \
                          *.cpp
 RECURSIVE              = YES
-USE_MDFILE_AS_MAINPAGE = @doxy_main_page@
+USE_MDFILE_AS_MAINPAGE = README.md

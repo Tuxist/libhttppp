@@ -63,17 +63,17 @@ libhtmlpp::HtmlElement *RootNode;
 class Sysinfo{
 public:
     void TimeInfo(libhtmlpp::HtmlElement &index) {
-        std::time_t t = std::time(0);
-        std::tm* mytime = std::localtime(&t);
+        time_t t = time(0);
+        tm* mytime = localtime(&t);
         libhtmlpp::HtmlString html;
         html << "<div>"
-             << "<span>Date & Time:</span>"
-             << "<span>Date:" << (unsigned long)mytime->tm_mday << "."
-                              << (unsigned long)mytime->tm_mon << "."
-                              << (unsigned long)mytime->tm_year << " </span>"
-                              << "<span>Time:" << (unsigned long)mytime->tm_hour << ":"
-                              << (unsigned long)mytime->tm_min << ":"
-                              << (unsigned long)mytime->tm_sec << "</span>"
+             << "<span>Date & Time:</span><br/>"
+             << "<span>Date:" << mytime->tm_mday << "."
+                              << mytime->tm_mon << "."
+                              << mytime->tm_year << " </span>"
+                              << "<span>Time:" << mytime->tm_hour << ":"
+                              << mytime->tm_min << ":"
+                              << mytime->tm_sec << "</span>"
             << "</div>";
         libhtmlpp::HtmlElement *sysdiv=nullptr;
         sysdiv=index.getElementbyID("sysinfo");
@@ -85,22 +85,35 @@ public:
         #ifndef Windows
         struct utsname usysinfo;
         uname(&usysinfo);
+        /*create htmltable widget*/
         libhtmlpp::HtmlTable htmltable;
+
+        /*create table rows*/
         htmltable << libhtmlpp::HtmlTable::Row() << "Operating system:" << usysinfo.sysname;
         htmltable << libhtmlpp::HtmlTable::Row() << "Release Version :" << usysinfo.release;
         htmltable << libhtmlpp::HtmlTable::Row() << "Hardware        :" << usysinfo.machine;
-        libhtmlpp::HtmlString html;
-        html << "<div><span>KernelInfo:</span> </div> ";
-        libhtmlpp::HtmlElement *table=new libhtmlpp::HtmlElement("table");
-        htmltable.insert(table);
 
-        libhtmlpp::HtmlElement *sysdiv=nullptr;
-        sysdiv=index.getElementbyID("sysinfo");
-        if(sysdiv){
-            libhtmlpp::HtmlElement *div=html.parse();
-            div->appendChild(table);
+        libhtmlpp::HtmlElement table;
+        /*convert htmltable to dom HtmlElement*/
+        htmltable.insert(&table);
+        /*set css class for the table*/
+        table.setAttribute("class","kinfo");
+
+        /*HtmlString Accepts Html Raw input*/
+        libhtmlpp::HtmlString html;
+        html << "<div><span>KernelInfo:</span> <br/> </div> ";
+        /*convert Htmlstring to Html Dom element*/
+        libhtmlpp::HtmlElement *div=html.parse();
+
+        /*append table to dom element div*/
+        div->appendChild(&table);
+
+        /* search HtmlElement with id sysinfo */
+        libhtmlpp::HtmlElement *sysdiv=index.getElementbyID("sysinfo");
+        if(sysdiv)
+            /*append table to dom element sysdiv*/
             sysdiv->appendChild(div);
-        }
+
         #endif
     }
 
@@ -125,7 +138,7 @@ public:
                 curres.setContentType("text/html");
                 std::string html;
                 libhtmlpp::HtmlElement index;
-		index=*RootNode;
+                index=RootNode;
                 Sysinfo sys;
                 sys.TimeInfo(index);
                 sys.KernelInfo(index);
@@ -139,22 +152,23 @@ public:
                 curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
             }else{
                 curres.setState(HTTP404);
-                curres.send(curcon,NULL,0);
+                curres.send(curcon,nullptr,0);
             }
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
         }
     }
-    
+    /*virtual method from event will call for every incomming Request*/
     void RequestEvent(netplus::con *curcon){
         try{
+            /*self implemented controller see above*/
             IndexController(curcon);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() <<std::endl;
         }
     }
 private:
-    
+
 };
 
 
@@ -169,7 +183,14 @@ public:
 
 int main(int argc, char** argv){
     try{
+        /*loads Macro INDEXPAGE into class HtmlPage for parsing and
+         *return the first element from indexpage normaly <!DOCTYPE html>
+         */
         RootNode=SysPage.loadString(INDEXPAGE);
+        /*parse cmd for port , bind address and etc ...
+         *after that mainloop will started so you
+         * to send interuppt signal if you want running the code afterwards
+         */
         HttpConD(argc,argv);
         return 0;
     }catch(libhttppp::HTTPException &e){
