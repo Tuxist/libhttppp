@@ -283,6 +283,11 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   curconnection->sending(true);
 }
 
+void libhttppp::HttpResponse::parse(netplus::con* curconnection){
+
+}
+
+
 libhttppp::HttpResponse::~HttpResponse(){
 }
 
@@ -453,6 +458,30 @@ const char* libhttppp::HttpRequest::getRequest(){
 size_t libhttppp::HttpRequest::getRequestLength() {
     return _Request.length();
 }
+
+void libhttppp::HttpRequest::setRequestData(const char* data, size_t len){
+  _Request.clear();
+  _Request.resize(len);
+  _Request.insert(0,data);
+}
+
+void libhttppp::HttpRequest::setRequestType(int req){
+  if(req == POSTREQUEST || req == GETREQUEST){
+    _RequestType=req;
+    return;
+  }
+   HTTPException excep;
+   excep[HTTPException::Error] << "setRequestType: " << "Unknown Request will not set !";
+   throw excep;
+}
+
+void libhttppp::HttpRequest::setRequestURL(const char* url){
+  if(url)
+    _RequestURL=url;
+  else
+    _RequestURL.clear();
+}
+
 
 libhttppp::HttpRequest::~HttpRequest(){
 }

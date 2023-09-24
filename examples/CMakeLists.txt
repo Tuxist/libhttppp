@@ -23,3 +23,6 @@ if(BUILD_EXAMPLES AND ${htmlpp_FOUND})
     add_executable (httphello httphello.cpp)
     target_link_libraries(httphello httppp-static htmlpp-static)
 endif()
+
+add_executable (httpclient httpclient.cpp)
+target_link_libraries(httpclient httppp-static)

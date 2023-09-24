@@ -84,14 +84,21 @@ namespace libhttppp {
   public:
     HttpResponse();
     ~HttpResponse();
+
     void   setState(const char *httpstate);
     void   setContentType(const char *type);
     void   setContentLength(size_t len);
     void   setConnection(const char *type);
     void   setVersion(const char* version);
+
+    size_t printHeader(std::string &buffer);
+
+    /*server methods*/
     void   send(netplus::con *curconnection,const char* data);
     void   send(netplus::con *curconnection,const char* data, unsigned long datalen); //only use as server
-    size_t printHeader(std::string &buffer);
+
+    /*client method*/
+    void   parse(netplus::con *curconnection);
   private:
     std::string      _State;
     std::string      _Version;
@@ -105,12 +112,19 @@ namespace libhttppp {
   public:
     HttpRequest();
     ~HttpRequest();
+    /*server methods*/
     void           parse(netplus::con *curconnection); //only use as server
     size_t         printHeader(char **buffer);
     int            getRequestType();
     const char    *getRequestURL();
     const char    *getRequest();
     size_t         getRequestLength();
+    /*Client methods*/
+    void           setRequestType(int req);
+    void           setRequestURL(const char *url);
+    /*only for post Reuquesttype*/
+    void           setRequestData(const char *data,size_t len);
+
   private:
     std::string    _Request;
     int            _RequestType;
