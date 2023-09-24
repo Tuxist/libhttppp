@@ -25,7 +25,24 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <netplus/socket.h>
+#include <netplus/exception.h>
+
 #include "http.h"
 
 int main(int argc, char** argv){
+    try{
+        netplus::tcp srvsock(argv[1],atoi(argv[2]),1,0);
+        netplus::socket *cltsock=srvsock.connect();
+
+        libhttppp::HttpRequest req;
+
+        req.setRequestType(GETREQUEST);
+        req.setRequestURL(argv[3]);
+        req.setRequestVersion(HTTPVERSION(1.1));
+        req.send(cltsock,&srvsock);
+
+    }catch(netplus::NetException &exp){
+        throw exp.what();
+    }
 }

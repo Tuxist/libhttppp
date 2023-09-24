@@ -283,7 +283,7 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   curconnection->sending(true);
 }
 
-void libhttppp::HttpResponse::parse(netplus::con* curconnection){
+void libhttppp::HttpResponse::parse(const char *data,size_t len){
 
 }
 
@@ -347,7 +347,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
             for(size_t cpos=pos; cpos<header.length(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    _Version = header.substr(pos,cpos-pos);
+                    _RequestVersion = header.substr(pos,cpos-pos);
                     ++pos;
                     found=true;
                     break;
@@ -443,6 +443,26 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
     }
 }
 
+void libhttppp::HttpRequest::printHeader(std::string &buffer){
+  if(_RequestType==GETREQUEST)
+    buffer="GET ";
+  else if(_RequestType==POSTREQUEST)
+    buffer="POST ";
+
+  buffer.append(_RequestURL);
+  buffer.append(" ");
+  buffer.append(_RequestVersion);
+  buffer.append("\r\n");
+  for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){
+        buffer.append(getKey(curdat));
+        buffer.append(": ");
+        if(getValue(curdat))
+            buffer.append(getValue(curdat));
+        buffer.append("\r\n");
+  }
+}
+
+
 int libhttppp::HttpRequest::getRequestType(){
   return _RequestType;
 }
@@ -452,11 +472,15 @@ const char* libhttppp::HttpRequest::getRequestURL(){
 }
 
 const char* libhttppp::HttpRequest::getRequest(){
-  return _Request.c_str();  
+  return _Request.c_str();
 }
 
 size_t libhttppp::HttpRequest::getRequestLength() {
     return _Request.length();
+}
+
+const char * libhttppp::HttpRequest::getRequestVersion(){
+  return _RequestVersion.c_str();
 }
 
 void libhttppp::HttpRequest::setRequestData(const char* data, size_t len){
@@ -464,6 +488,35 @@ void libhttppp::HttpRequest::setRequestData(const char* data, size_t len){
   _Request.resize(len);
   _Request.insert(0,data);
 }
+
+void libhttppp::HttpRequest::setRequestVersion(const char* version){
+  if(version)
+    _RequestVersion=version;
+  else
+    _RequestVersion.clear();
+}
+
+
+void libhttppp::HttpRequest::send(netplus::socket* src,netplus::socket* dest){
+  std::string header;
+  printHeader(header);
+
+  try {
+    src->sendData(dest,(void*)header.c_str(),header.length());
+
+    size_t send=0;
+
+    while(send<_Request.length()){
+      send+=src->sendData(dest,(void*)_Request.substr(send,_Request.length()-send).c_str(),
+                          _Request.length()-send);
+    }
+  }catch(netplus::NetException &e){
+    HTTPException excep;
+    excep[HTTPException::Error] << "RequestSend Socket Error: " << e.what();
+    throw excep;
+  }
+}
+
 
 void libhttppp::HttpRequest::setRequestType(int req){
   if(req == POSTREQUEST || req == GETREQUEST){
