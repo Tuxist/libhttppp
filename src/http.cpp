@@ -382,9 +382,13 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
     }
     ++pos;
   }
+
+  _ContentLength=setData("content-length",getData("content-length"));
+  _ContentType=setData("content-type",getData("content-type"));
+  _Connection=setData("connection",getData("connection"));
+
   return ++pos;
 }
-
 
 libhttppp::HttpResponse::~HttpResponse(){
 }
