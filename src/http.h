@@ -91,6 +91,13 @@ namespace libhttppp {
     void   setConnection(const char *type);
     void   setVersion(const char* version);
 
+    /*client methods*/
+    const char *getState();
+    const char *getContentType();
+    size_t      getContentLength();
+    const char *getConnection();
+    const char *getVersion();
+
     size_t printHeader(std::string &buffer);
 
     /*server methods*/
@@ -98,7 +105,7 @@ namespace libhttppp {
     void   send(netplus::con *curconnection,const char* data, unsigned long datalen); //only use as server
 
     /*client method*/
-    void   parse(const char *data,size_t len);
+    size_t   parse(const char *in,size_t inlen);
   private:
     std::string      _State;
     std::string      _Version;

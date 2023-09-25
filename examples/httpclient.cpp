@@ -25,10 +25,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <iostream>
+
 #include <netplus/socket.h>
 #include <netplus/exception.h>
 
 #include "http.h"
+#include "exception.h"
 
 int main(int argc, char** argv){
     try{
@@ -36,13 +39,33 @@ int main(int argc, char** argv){
         netplus::socket *cltsock=srvsock.connect();
 
         libhttppp::HttpRequest req;
+        try{
+            req.setRequestType(GETREQUEST);
+            req.setRequestURL(argv[3]);
+            req.setRequestVersion(HTTPVERSION(1.1));
+            *req.setData("Connection") << "closed";
+            *req.setData("Host") << argv[1];
+            req.send(cltsock,&srvsock);
+        }catch(libhttppp::HTTPException &e){
+            std::cerr << e.what() << std::endl;
+            return -1;
+        }
 
-        req.setRequestType(GETREQUEST);
-        req.setRequestURL(argv[3]);
-        req.setRequestVersion(HTTPVERSION(1.1));
-        req.send(cltsock,&srvsock);
+        char data[512];
+        int len=cltsock->recvData(&srvsock,data,512);
 
+        libhttppp::HttpResponse res;
+
+        size_t hsize=res.parse(data,len);
+
+        std::cout << res.<<std::endl;
+
+        std::string html;
+        html.resize(len-hsize);
+        html.assign(data+hsize,len-hsize);
+        std::cout << html << std::endl;
     }catch(netplus::NetException &exp){
-        throw exp.what();
+        std::cerr << exp.what() <<std::endl;
+        return -1;
     }
 }

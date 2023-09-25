@@ -84,12 +84,18 @@ const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
 }
 
 const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
-  for(HeaderData *curdat=_firstHeaderData; curdat; curdat=curdat->_nextHeaderData){
+  HeaderData *curdat;
+  if(!pos)
+    curdat =_firstHeaderData;
+  else
+    curdat = *pos;
+  while(curdat){
     if(curdat->_Key==key){
         if(pos!=nullptr)
             *pos=curdat;
         return curdat->_Value.c_str();
     }
+    curdat=curdat->_nextHeaderData;
   }
   return nullptr;
 }
@@ -235,8 +241,8 @@ void libhttppp::HttpResponse::setContentType(const char* type){
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  _ContentLength=setData("connection",_ContentType);
-  *_ContentLength<<type;
+  _Connection=setData("connection",_Connection);
+  *_Connection<<type;
 }
 
 void libhttppp::HttpResponse::setVersion(const char* version){
@@ -249,6 +255,17 @@ void libhttppp::HttpResponse::setVersion(const char* version){
   _Version=version;
 }
 
+const char * libhttppp::HttpResponse::getState(){
+  return _State.c_str();
+}
+
+size_t libhttppp::HttpResponse::getContentLength(){
+  return getDataSizet("content-length",&_ContentLength);
+}
+
+const char * libhttppp::HttpResponse::getContentType(){
+  return getData("content-type",&_ContentType);
+}
 
 void libhttppp::HttpResponse::send(netplus::con* curconnection, const char* data){
   send(curconnection,data,strlen(data));
@@ -283,8 +300,80 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   curconnection->sending(true);
 }
 
-void libhttppp::HttpResponse::parse(const char *data,size_t len){
+size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
+  if(inlen <9){
+      HTTPException excep;
+      throw excep[HTTPException::Error] << "HttpResponse header too small aborting!";
+  }
 
+  int v=5;
+
+  if(memcmp(data,"HTTP/",5)==0){
+    while(v<inlen){
+      if(data[v]==' ')
+        break;
+      ++v;
+    }
+  }
+
+  std::copy(data,data+v,std::begin(_Version));
+
+  size_t ve=v;
+
+  while(ve<inlen){
+    if(data[ve]=='\r' || data[ve]=='\n')
+       break;
+    ++ve;
+  };
+
+  std::copy(data+v,data+ve,std::begin(_State));
+
+  while(ve<inlen){
+     if(data[ve]!='\r' || data[ve]!='\n')
+       break;
+    ++ve;
+  }
+
+  size_t lrow=0,delimeter=0,startkeypos=0,pos=ve;
+  while(pos< inlen){
+    if(delimeter==0 && data[pos]==':'){
+      delimeter=pos;
+    }
+    if( (data[pos]=='\r' && data[pos+2]=='\r') ||
+        (data[pos]!='\n' && data[pos+1]=='\n') ){
+        break;
+    }
+    if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n') ){
+      if(delimeter>lrow && delimeter!=0){
+        size_t keylen=delimeter-startkeypos;
+        if(keylen>0 && keylen <= inlen){
+          std::string key;
+          key.resize(keylen);
+          std::copy(data+startkeypos,data+delimeter,std::begin(key));
+          for (size_t it = 0; it < keylen; ++it) {
+            key[it] = (char)tolower(key[it]);
+          }
+          size_t valuelen=(pos-delimeter)-2;
+          if(pos > 0 && valuelen <= inlen){
+            std::string value;
+            value.resize(valuelen);
+            size_t vstart=delimeter+2;
+            std::copy(data+vstart,data+(pos-2),std::begin(value));
+            for (size_t it = 0; it < valuelen; ++it) {
+              value[it] = (char)tolower(value[it]);
+            }
+
+            *setData(key.c_str())<<value.c_str();
+          }
+        }
+      }
+      delimeter=0;
+      lrow=pos;
+      startkeypos=lrow+2;
+    }
+    ++pos;
+  }
+  return pos;
 }
 
 
@@ -460,6 +549,7 @@ void libhttppp::HttpRequest::printHeader(std::string &buffer){
             buffer.append(getValue(curdat));
         buffer.append("\r\n");
   }
+  buffer.append("\r\n");
 }
 
 
