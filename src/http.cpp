@@ -91,7 +91,7 @@ const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderDat
     curdat = *pos;
   while(curdat){
     if(curdat->_Key==key){
-        if(pos!=nullptr)
+        if(!*pos)
             *pos=curdat;
         return curdat->_Value.c_str();
     }
@@ -107,7 +107,9 @@ size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderDat
         httpexception[HTTPException::Note] << "getDataSizet key: " << key << " not found !";
         throw httpexception;
     }
-    return atoi(val);
+    size_t ret;
+    sscanf(val,"%zu",&ret);
+    return ret;
 }
 
 int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
@@ -134,7 +136,7 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     httpexception[HTTPException::Error] << "no headerdata key set can't do this";
     throw httpexception;
   }
-  if(pos){   
+  if(pos){
     pos->_Key = key;
     return pos;
   }else{
