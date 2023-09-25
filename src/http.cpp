@@ -85,7 +85,7 @@ const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
 
 const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
   HeaderData *curdat;
-  if(!pos)
+  if(!pos || !*pos)
     curdat =_firstHeaderData;
   else
     curdat = *pos;
@@ -345,10 +345,10 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
       delimeter=pos;
     }
     if( (data[pos]=='\r' && data[pos+2]=='\r') ){
-      pos+=2;
+      pos+=3;
       break;
     }else if((data[pos]=='\n' && data[pos+1]=='\n')){
-      ++pos;
+      pos+=2;
       break;
     }
     if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n') ){
@@ -381,7 +381,7 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
     }
     ++pos;
   }
-  return pos;
+  return ++pos;
 }
 
 
