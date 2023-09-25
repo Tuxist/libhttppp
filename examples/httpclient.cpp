@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
 #include <iostream>
+#include <signal.h>
 
 #include <netplus/socket.h>
 #include <netplus/exception.h>
@@ -34,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "exception.h"
 
 int main(int argc, char** argv){
+    signal(SIGPIPE, SIG_IGN);
     try{
         netplus::tcp srvsock(argv[1],atoi(argv[2]),1,0);
         netplus::socket *cltsock=srvsock.connect();
@@ -43,38 +45,45 @@ int main(int argc, char** argv){
             req.setRequestType(GETREQUEST);
             req.setRequestURL(argv[3]);
             req.setRequestVersion(HTTPVERSION(1.1));
-            *req.setData("Connection") << "closed";
-            *req.setData("Host") << argv[1];
+            *req.setData("connection") << "keep-alive";
+            *req.setData("host") << argv[1] << ":" << argv[2];
+            *req.setData("user-agent") << "libhttppp (0.1)";
             req.send(cltsock,&srvsock);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
             return -1;
         }
 
-        char data[512];
-        int len=cltsock->recvData(&srvsock,data,512);
+        char data[16384];
+        int len=cltsock->recvData(&srvsock,data,16384);
 
-        libhttppp::HttpResponse res;
         std::string html;
         try {
+          libhttppp::HttpResponse res;
           size_t hsize=res.parse(data,len);
           size_t amount = len-hsize;
 
           if(amount>0)
             html.assign(data+hsize,amount);
 
-          std::cout << res.getContentLength() << std::endl;
+          if(res.getContentLength()==std::string::npos)
+            return 0;
 
           while(amount < res.getContentLength()){
-            size_t recv=cltsock->recvData(&srvsock,data,512);
-            amount+=recv;
-            html.append(data,recv);
+            try{
+                size_t recv=cltsock->recvData(&srvsock,data,16384);
+                amount+=recv;
+                html.append(data,recv);
+            }catch(netplus::NetException &e){
+                std::cerr << e.what() << std::endl;
+            }
           }
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
         };
         if(!html.empty())
           std::cout << html << std::endl;
+        delete cltsock;
     }catch(netplus::NetException &exp){
         std::cerr << exp.what() <<std::endl;
         return -1;

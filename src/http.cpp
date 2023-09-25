@@ -113,8 +113,6 @@ size_t libhttppp::HttpHeader::getDataSizet(HttpHeader::HeaderData *pos){
 
 int libhttppp::HttpHeader::getDataInt(HttpHeader::HeaderData *pos){
     const char *val=getData(pos);
-    if(strlen(val)<255)
-        return 0;
     return atoi(val);
 }
 
@@ -127,20 +125,6 @@ libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* ke
     _lastHeaderData=_lastHeaderData->_nextHeaderData;
   }
   return _lastHeaderData;
-}
-
-libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::setData(const char* key,libhttppp::HttpHeader::HeaderData *pos){
-  HTTPException httpexception;
-  if(!key){
-    httpexception[HTTPException::Error] << "no headerdata key set can't do this";
-    throw httpexception;
-  }
-  if(pos){
-    pos->_Key = key;
-    return pos;
-  }else{
-    return setData(key);
-  }
 }
 
 void libhttppp::HttpHeader::deldata(const char* key){
@@ -192,11 +176,11 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 
 libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     HTTPException excep;
+    _nextHeaderData=nullptr;
     if(!key){
         excep[HTTPException::Error] << "no headerdata key set can't do this";
         throw excep;
     }
-    _nextHeaderData=nullptr;
     _Key = key;
 }
 
@@ -232,17 +216,20 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
-  _ContentLength=setData("content-length",_ContentLength);
+  if(!getData("content-length"))
+      _ContentLength=setData("content-length");
   *_ContentLength<<len;
 }
 
 void libhttppp::HttpResponse::setContentType(const char* type){
-  _ContentType=setData("content-type",_ContentType);
+  if(!getData("content-type"))
+    _ContentType=setData("content-type");
   *_ContentType<<type;
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  _Connection=setData("connection",_Connection);
+  if(!getData("connection"))
+    _Connection=setData("connection");
   *_Connection<<type;
 }
 
@@ -300,8 +287,6 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
     curconnection->addSendQueue(data,datalen);
   curconnection->sending(true);
 }
-
-#include <iostream>
 
 size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   if(inlen <9){
@@ -373,7 +358,6 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
             for (size_t it = 0; it < valuelen; ++it) {
               value[it] = (char)tolower(value[it]);
             }
-            std::cout << key << ":" << value << std::endl;
             *setData(key.c_str())<<value.c_str();
           }
         }
@@ -663,8 +647,11 @@ libhttppp::HttpForm::~HttpForm(){
 
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
+  HttpHeader::HeaderData *ctype=request->getData("content-type");
+  if(!ctype)
+    return;
   int rtype = request->getRequestType();
-  _ContentType = request->getData(request->getData("content-type"));
+  _ContentType = request->getData(ctype);
   switch(rtype){
     case GETREQUEST:{
       _parseUrlDecode(request);
@@ -1296,7 +1283,8 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   HttpHeader::HeaderData *hc = curreq->getData("cookie");
-  if(!curreq->getData(hc))
+
+  if(!hc)
     return;
 
   std::string cdat;
@@ -1363,7 +1351,10 @@ libhttppp::HttpAuth::~HttpAuth(){
 
 
 void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
-  const char *authstr=curreq->getData(curreq->getData("authorization"));
+  HttpHeader::HeaderData *hau=curreq->getData("authorization");
+  if(!hau)
+    return;
+  const char *authstr=curreq->getData(hau);
   if(!authstr)
     return;
   if(strcmp(authstr,"basic")==0)
@@ -1408,7 +1399,7 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
 }
 
 void libhttppp::HttpAuth::setAuth(libhttppp::HttpResponse* curresp){
-  HttpHeader::HeaderData *dat=curresp->setData("www-authenticate",nullptr);
+  HttpHeader::HeaderData *dat=curresp->setData("www-authenticate");
   switch(_Authtype){
     case BASICAUTH:{
       if(_Realm){

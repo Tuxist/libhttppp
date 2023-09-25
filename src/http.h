@@ -48,7 +48,7 @@ namespace libhttppp {
       HeaderData &operator<<(int value);
     protected:
       HeaderData(const char *key);
-      virtual ~HeaderData();
+      ~HeaderData();
     private:
       std::string  _Key;
       std::string  _Value;
@@ -63,7 +63,6 @@ namespace libhttppp {
     const char *getValue(HeaderData *pos);
     
     HeaderData *setData(const char *key);
-    HeaderData *setData(const char* key,HeaderData *pos);
     
     HeaderData *getData(const char *key);
 
