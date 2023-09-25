@@ -68,7 +68,8 @@ int main(int argc, char** argv){
             amount+=recv;
             html.append(data,recv);
           }
-        }catch(...){
+        }catch(libhttppp::HTTPException &e){
+            std::cerr << e.what() << std::endl;
         };
         if(!html.empty())
           std::cout << html << std::endl;
