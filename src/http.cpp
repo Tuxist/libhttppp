@@ -107,9 +107,7 @@ size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderDat
         httpexception[HTTPException::Note] << "getDataSizet key: " << key << " not found !";
         throw httpexception;
     }
-    size_t ret;
-    sscanf(val,"%zu",&ret);
-    return ret;
+    return atoi(val);
 }
 
 int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
