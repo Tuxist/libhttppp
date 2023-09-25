@@ -65,9 +65,11 @@ namespace libhttppp {
     HeaderData *setData(const char *key);
     HeaderData *setData(const char* key,HeaderData *pos);
     
-    const char *getData(const char *key,HeaderData **pos=nullptr);
-    size_t      getDataSizet(const char *key,HeaderData **pos=nullptr);
-    int         getDataInt(const char *key,HeaderData **pos=nullptr);
+    HeaderData *getData(const char *key);
+
+    const char *getData(HeaderData *pos);
+    size_t      getDataSizet(HeaderData *pos);
+    int         getDataInt(HeaderData *pos);
     void        deldata(const char *key);
     void        deldata(HeaderData *pos);
     
@@ -142,6 +144,7 @@ namespace libhttppp {
     std::string    _RequestVersion;
     
     HttpHeader     *_HttpHeader;
+
     netplus::con   *_Connection;
   };
   

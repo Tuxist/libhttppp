@@ -83,35 +83,36 @@ const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
   return pos->_Value.c_str();
 }
 
-const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderData **pos){
-  HeaderData *curdat;
-  if(!pos || !*pos)
-    curdat =_firstHeaderData;
-  else
-    curdat = *pos;
+libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::getData(const char* key){
+  HeaderData *curdat =_firstHeaderData;
   while(curdat){
     if(curdat->_Key==key){
-        if(pos && !*pos)
-            *pos=curdat;
-        return curdat->_Value.c_str();
+        return curdat;
     }
     curdat=curdat->_nextHeaderData;
   }
   return nullptr;
 }
 
-size_t libhttppp::HttpHeader::getDataSizet(const char *key,HttpHeader::HeaderData **pos){
-    HTTPException httpexception;
-    const char *val=getData(key,pos);
-    if(!val){
-        httpexception[HTTPException::Note] << "getDataSizet key: " << key << " not found !";
-        throw httpexception;
-    }
-    return atoi(val);
+const char* libhttppp::HttpHeader::getData(HttpHeader::HeaderData *pos){
+  if(!pos){
+      HTTPException httpexception;
+      httpexception[HTTPException::Note] << "getData no valid pointer set !";
+      throw httpexception;
+  }
+  return pos->_Value.c_str();
 }
 
-int libhttppp::HttpHeader::getDataInt(const char *key,HttpHeader::HeaderData **pos){
-    const char *val=getData(key,pos);
+size_t libhttppp::HttpHeader::getDataSizet(HttpHeader::HeaderData *pos){
+    HTTPException httpexception;
+    const char *val=getData(pos);
+    size_t ret;
+    sscanf(val,"%zu",&ret);
+    return ret;
+}
+
+int libhttppp::HttpHeader::getDataInt(HttpHeader::HeaderData *pos){
+    const char *val=getData(pos);
     if(strlen(val)<255)
         return 0;
     return atoi(val);
@@ -260,11 +261,11 @@ const char * libhttppp::HttpResponse::getState(){
 }
 
 size_t libhttppp::HttpResponse::getContentLength(){
-  return getDataSizet("content-length",&_ContentLength);
+  return getDataSizet(_ContentLength);
 }
 
 const char * libhttppp::HttpResponse::getContentType(){
-  return getData("content-type",&_ContentType);
+  return getData(_ContentType);
 }
 
 void libhttppp::HttpResponse::send(netplus::con* curconnection, const char* data){
@@ -491,10 +492,12 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                 }
             }
 
+            HttpHeader::HeaderData *contentlen=getData("content-length");
+
             if(_RequestType==POSTREQUEST){
-                if((getDataSizet("content-length")+ header.length()) <= curconnection->getRecvLength()){
+                if((getDataSizet(contentlen)+ header.length()) <= curconnection->getRecvLength()){
                     netplus::con::condata *edblock,*sdblock;
-                    size_t edblocksize = getDataSizet("content-length")+header.length(), sdblocksize = header.length();
+                    size_t edblocksize = getDataSizet(contentlen)+header.length(), sdblocksize = header.length();
 
                     for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
                         if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
@@ -514,7 +517,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
                     _Request.clear();
                     curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _Request);
-                    curconnection->resizeRecvQueue(getDataSizet("content-length") + header.length());
+                    curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.length());
                 }else{
                     excep[HTTPException::Note] << "Request incomplete";
                     throw excep;
@@ -655,15 +658,15 @@ libhttppp::HttpForm::~HttpForm(){
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   int rtype = request->getRequestType();
-  _ContentType = request->getData("content-type");
+  _ContentType = request->getData(request->getData("content-type"));
   switch(rtype){
     case GETREQUEST:{
       _parseUrlDecode(request);
       break;
     }
     case POSTREQUEST:{
-      if(request->getData("content-type") && 
-         strncmp(request->getData("content-type"),"multipart/form-data",18)==0){
+      if(_ContentType &&
+         strncmp(_ContentType,"multipart/form-data",18)==0){
          _parseMulitpart(request);
       }else{
          _parseUrlDecode(request);
@@ -748,7 +751,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
 }
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
-    _parseBoundary(request->getData("content-type"));
+    _parseBoundary(_ContentType);
     char *realboundary = new char[_BoundarySize+3];
     memcpy(realboundary+2,_Boundary,_BoundarySize+1);
     realboundary[0]='-';
@@ -1286,11 +1289,12 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
 
 
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
-  if(!curreq->getData("cookie"))
+  HttpHeader::HeaderData *hc = curreq->getData("cookie");
+  if(!curreq->getData(hc))
     return;
 
   std::string cdat;
-  cdat = curreq->getData("cookie");
+  cdat = curreq->getData(hc);
 
   int delimeter=-1;
   int keyendpos=-1;
@@ -1353,7 +1357,7 @@ libhttppp::HttpAuth::~HttpAuth(){
 
 
 void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
-  const char *authstr=curreq->getData("authorization");
+  const char *authstr=curreq->getData(curreq->getData("authorization"));
   if(!authstr)
     return;
   if(strcmp(authstr,"basic")==0)
