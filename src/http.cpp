@@ -369,9 +369,12 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
     ++pos;
   }
 
-  _ContentLength=getData("content-length");
-  _ContentType=getData("content-type");
-  _Connection=getData("connection");
+  if(getData("content-length"))
+    _ContentLength=getData("content-length");
+  if(getData("content-type"))
+    _ContentType=getData("content-type");
+  if(getData("connection"))
+    _Connection=getData("connection");
 
   return ++pos;
 }
