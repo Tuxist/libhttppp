@@ -91,7 +91,7 @@ const char* libhttppp::HttpHeader::getData(const char* key,HttpHeader::HeaderDat
     curdat = *pos;
   while(curdat){
     if(curdat->_Key==key){
-        if(!*pos)
+        if(pos && !*pos)
             *pos=curdat;
         return curdat->_Value.c_str();
     }
