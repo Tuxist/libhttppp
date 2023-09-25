@@ -55,20 +55,21 @@ int main(int argc, char** argv){
         int len=cltsock->recvData(&srvsock,data,512);
 
         libhttppp::HttpResponse res;
-
-        size_t hsize=res.parse(data,len);
-        size_t amount = len-hsize;
         std::string html;
-        html.assign(data+hsize,amount);
+        try {
+          size_t hsize=res.parse(data,len);
+          size_t amount = len-hsize;
 
+          if(amount>0)
+            html.assign(data+hsize,amount);
 
-
-        while(amount < res.getContentLength()){
-          size_t recv=cltsock->recvData(&srvsock,data,512);
-          amount+=recv;
-          html.append(data,recv);
-        }
-
+          while(amount < res.getContentLength()){
+            size_t recv=cltsock->recvData(&srvsock,data,512);
+            amount+=recv;
+            html.append(data,recv);
+          }
+        }catch(...){
+        };
         if(!html.empty())
           std::cout << html << std::endl;
     }catch(netplus::NetException &exp){
