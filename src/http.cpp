@@ -306,7 +306,7 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
       throw excep[HTTPException::Error] << "HttpResponse header too small aborting!";
   }
 
-  int v=5;
+  size_t v=5;
 
   if(memcmp(data,"HTTP/",5)==0){
     while(v<inlen){
@@ -314,17 +314,22 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
         break;
       ++v;
     }
+  }else{
+      HTTPException excep;
+      throw excep[HTTPException::Error] << "HttpResponse no Version Tag found !";
   }
 
   std::copy(data,data+v,std::begin(_Version));
 
-  size_t ve=v;
+  size_t ve=++v;
 
   while(ve<inlen){
     if(data[ve]=='\r' || data[ve]=='\n')
        break;
     ++ve;
   };
+
+  --ve;
 
   std::copy(data+v,data+ve,std::begin(_State));
 
@@ -339,9 +344,12 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
     if(delimeter==0 && data[pos]==':'){
       delimeter=pos;
     }
-    if( (data[pos]=='\r' && data[pos+2]=='\r') ||
-        (data[pos]!='\n' && data[pos+1]=='\n') ){
-        break;
+    if( (data[pos]=='\r' && data[pos+2]=='\r') ){
+      pos+=2;
+      break;
+    }else if((data[pos]=='\n' && data[pos+1]=='\n')){
+      ++pos;
+      break;
     }
     if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n') ){
       if(delimeter>lrow && delimeter!=0){
