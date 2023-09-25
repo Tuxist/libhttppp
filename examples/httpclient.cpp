@@ -58,7 +58,7 @@ int main(int argc, char** argv){
 
         size_t hsize=res.parse(data,len);
 
-        std::cout << res.<<std::endl;
+        std::cout << res.getState() <<std::endl;
 
         std::string html;
         html.resize(len-hsize);
