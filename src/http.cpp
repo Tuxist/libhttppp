@@ -208,7 +208,7 @@ libhttppp::HttpHeader::~HttpHeader(){
   delete _firstHeaderData;
 }
 
-libhttppp::HttpResponse::HttpResponse(){
+libhttppp::HttpResponse::HttpResponse() : HttpHeader(){
   setState(HTTP200);
   setVersion(HTTPVERSION(2.0));
   _ContentType=nullptr;
@@ -301,6 +301,8 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   curconnection->sending(true);
 }
 
+#include <iostream>
+
 size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   if(inlen <9){
       HTTPException excep;
@@ -367,11 +369,11 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
             std::string value;
             value.resize(valuelen);
             size_t vstart=delimeter+2;
-            std::copy(data+vstart,data+(pos-2),std::begin(value));
+            std::copy(data+vstart,data+pos,std::begin(value));
             for (size_t it = 0; it < valuelen; ++it) {
               value[it] = (char)tolower(value[it]);
             }
-
+            std::cout << key << ":" << value << std::endl;
             *setData(key.c_str())<<value.c_str();
           }
         }
@@ -383,9 +385,9 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
     ++pos;
   }
 
-  _ContentLength=setData("content-length",getData("content-length"));
-  _ContentType=setData("content-type",getData("content-type"));
-  _Connection=setData("connection",getData("connection"));
+  _ContentLength=getData("content-length");
+  _ContentType=getData("content-type");
+  _Connection=getData("connection");
 
   return ++pos;
 }

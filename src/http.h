@@ -48,7 +48,7 @@ namespace libhttppp {
       HeaderData &operator<<(int value);
     protected:
       HeaderData(const char *key);
-      ~HeaderData();
+      virtual ~HeaderData();
     private:
       std::string  _Key;
       std::string  _Value;
@@ -77,7 +77,7 @@ namespace libhttppp {
     size_t      getHeaderSize();
   protected:
     HttpHeader();
-    ~HttpHeader();
+    virtual ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
   };
@@ -87,6 +87,7 @@ namespace libhttppp {
     HttpResponse();
     ~HttpResponse();
 
+    /*server methods*/
     void   setState(const char *httpstate);
     void   setContentType(const char *type);
     void   setContentLength(size_t len);
@@ -142,8 +143,6 @@ namespace libhttppp {
     int            _RequestType;
     std::string    _RequestURL;
     std::string    _RequestVersion;
-    
-    HttpHeader     *_HttpHeader;
 
     netplus::con   *_Connection;
   };
