@@ -82,7 +82,7 @@ const char* libhttppp::HttpHeader::getKey(HttpHeader::HeaderData* pos){
 const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
   return pos->_Value.c_str();
 }
-
+#include <iostream>
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::getData(const char* key){
   HeaderData *curdat =_firstHeaderData;
   while(curdat){
@@ -332,13 +332,6 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
     if(delimeter==0 && data[pos]==':'){
       delimeter=pos;
     }
-    if( (data[pos]=='\r' && data[pos+2]=='\r') ){
-      pos+=3;
-      break;
-    }else if((data[pos]=='\n' && data[pos+1]=='\n')){
-      pos+=2;
-      break;
-    }
     if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n') ){
       if(delimeter>lrow && delimeter!=0){
         size_t keylen=delimeter-startkeypos;
@@ -349,22 +342,30 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
           for (size_t it = 0; it < keylen; ++it) {
             key[it] = (char)tolower(key[it]);
           }
-          size_t valuelen=(pos-delimeter)-2;
+          size_t valuelen=(pos-delimeter)-1;
           if(pos > 0 && valuelen <= inlen){
             std::string value;
             value.resize(valuelen);
-            size_t vstart=delimeter+2;
-            std::copy(data+vstart,data+pos,std::begin(value));
+            std::copy(data+(delimeter+1),data+pos,std::begin(value));
             for (size_t it = 0; it < valuelen; ++it) {
               value[it] = (char)tolower(value[it]);
             }
+            std::cout << key << value << std::endl;
             *setData(key.c_str())<<value.c_str();
+            delimeter=0;
           }
         }
       }
       delimeter=0;
       lrow=pos;
       startkeypos=lrow+2;
+      if(pos+3 < inlen && data[lrow] == '\n' && data[pos+2]=='\r'){
+        pos+=3;
+        break;
+      }else if(pos+2 < inlen && data[lrow] == '\n' && data[pos+1]=='\n'){
+        pos+=2;
+        break;
+      }
     }
     ++pos;
   }
@@ -376,7 +377,7 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   if(getData("connection"))
     _Connection=getData("connection");
 
-  return ++pos;
+  return pos;
 }
 
 libhttppp::HttpResponse::~HttpResponse(){

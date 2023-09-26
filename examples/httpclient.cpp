@@ -66,9 +66,6 @@ int main(int argc, char** argv){
           if(amount>0)
             html.assign(data+hsize,amount);
 
-          if(res.getContentLength()==std::string::npos)
-            return 0;
-
           while(amount < res.getContentLength()){
             try{
                 size_t recv=cltsock->recvData(&srvsock,data,16384);
