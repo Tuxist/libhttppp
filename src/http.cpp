@@ -228,7 +228,7 @@ void libhttppp::HttpResponse::setContentType(const char* type){
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  if(!_Connection))
+  if(!_Connection)
     _Connection=setData("connection");
   *_Connection<<type;
 }
