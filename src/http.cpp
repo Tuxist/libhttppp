@@ -355,16 +355,15 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
           }
         }
       }
+      if(pos+2 < inlen  && data[pos+2]=='\r'){
+        ++pos;
+        break;
+      }else if(pos+1 < inlen && data[pos+1]=='\n'){
+        break;
+      }
       delimeter=0;
       lrow=pos;
       startkeypos=lrow+2;
-      if(pos+3 < inlen && data[lrow] == '\n' && data[pos+2]=='\r'){
-        pos+=3;
-        break;
-      }else if(pos+2 < inlen && data[lrow] == '\n' && data[pos+1]=='\n'){
-        pos+=2;
-        break;
-      }
     }
     ++pos;
   }
@@ -376,7 +375,7 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   if(getData("connection"))
     _Connection=getData("connection");
 
-  return pos;
+  return ++pos;
 }
 
 libhttppp::HttpResponse::~HttpResponse(){
@@ -596,9 +595,7 @@ void libhttppp::HttpRequest::send(netplus::socket* src,netplus::socket* dest){
   printHeader(header);
 
   try {
-    src->sendData(dest,(void*)header.c_str(),header.length());
-
-    size_t send=0;
+    size_t send=src->sendData(dest,(void*)header.c_str(),header.length());
 
     while(send<_Request.length()){
       send+=src->sendData(dest,(void*)_Request.substr(send,_Request.length()-send).c_str(),

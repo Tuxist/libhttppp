@@ -47,7 +47,8 @@ int main(int argc, char** argv){
             req.setRequestVersion(HTTPVERSION(1.1));
             *req.setData("connection") << "keep-alive";
             *req.setData("host") << argv[1] << ":" << argv[2];
-            *req.setData("user-agent") << "libhttppp (0.1)";
+            *req.setData("Accept") << "text/html";
+            *req.setData("user-agent") << "libhttppp/1.0 (Alpha Version 0.1)";
             req.send(cltsock,&srvsock);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
@@ -66,7 +67,15 @@ int main(int argc, char** argv){
           if(amount>0)
             html.assign(data+hsize,amount);
 
-          while(amount < res.getContentLength()){
+          size_t rlen;
+
+          try{
+            rlen=res.getContentLength();
+          }catch(...) {
+            rlen=amount;
+          }
+
+          while(amount < rlen){
             try{
                 size_t recv=cltsock->recvData(&srvsock,data,16384);
                 amount+=recv;
