@@ -322,17 +322,16 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   std::copy(data+v,data+ve,std::begin(_State));
 
   while(ve<inlen){
-     if(data[ve]!='\r' || data[ve]!='\n')
+     if(data[ve]!='\n')
        break;
     ++ve;
   }
 
+  ++ve;
+
   size_t lrow=0,delimeter=0,startkeypos=0,pos=ve;
   while(pos< inlen){
-    if(delimeter==0 && data[pos]==':'){
-      delimeter=pos;
-    }
-    if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n') ){
+    if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n')) {
       if(delimeter>lrow && delimeter!=0){
         size_t keylen=delimeter-startkeypos;
         if(keylen>0 && keylen <= inlen){
@@ -346,34 +345,34 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
           if(pos > 0 && valuelen <= inlen){
             std::string value;
             value.resize(valuelen);
-            std::copy(data+(delimeter+1),data+pos,std::begin(value));
+            std::copy(data+(delimeter+1),data+(pos-1),std::begin(value));
             for (size_t it = 0; it < valuelen; ++it) {
               value[it] = (char)tolower(value[it]);
             }
             *setData(key.c_str())<<value.c_str();
-            delimeter=0;
           }
         }
-      }
-      if(pos+2 < inlen  && data[pos+2]=='\r'){
-        ++pos;
-        break;
-      }else if(pos+1 < inlen && data[pos+1]=='\n'){
-        break;
       }
       delimeter=0;
       lrow=pos;
       startkeypos=lrow+2;
     }
+    if(delimeter==0 && data[pos]==':'){
+      delimeter=pos;
+    }
+    if(data[pos]=='\r' && data[pos+3]=='\n'){
+        pos+=3;
+        break;
+      }else if(data[pos]=='\n' && data[pos+1]=='\n'){
+        ++pos;
+        break;
+    }
     ++pos;
   }
 
-  if(getData("content-length"))
-    _ContentLength=getData("content-length");
-  if(getData("content-type"))
-    _ContentType=getData("content-type");
-  if(getData("connection"))
-    _Connection=getData("connection");
+ _ContentLength=getData("content-length");
+ _Connection=getData("connection");
+ _ContentType=getData("content-type");
 
   return ++pos;
 }

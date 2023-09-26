@@ -111,6 +111,7 @@ namespace libhttppp {
   private:
     std::string      _State;
     std::string      _Version;
+    bool             _Chuncked;
     HeaderData      *_Connection;
     HeaderData      *_ContentType;
     HeaderData      *_ContentLength;
