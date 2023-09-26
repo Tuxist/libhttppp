@@ -288,6 +288,8 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   curconnection->sending(true);
 }
 
+#include <iostream>
+
 size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   if(inlen <9){
       HTTPException excep;
@@ -321,33 +323,46 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
 
   std::copy(data+v,data+ve,std::begin(_State));
 
-  while(ve<inlen){
-     if(data[ve]!='\n')
-       break;
-    ++ve;
-  }
-
   ++ve;
 
-  size_t lrow=0,delimeter=0,startkeypos=0,pos=ve;
-  while(pos< inlen){
-    if(data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n')) {
+  size_t helen=inlen;
+
+  for(size_t cur=ve; cur<inlen; ++cur){
+    if(cur+3 < inlen && memcmp(data+cur,"\r\n\r\n",4)==0 ){
+      helen=cur+4;
+      break;
+    }else if(cur+1 < inlen && memcmp(data+cur,"\n\n",2)==0){
+      helen=cur+2;
+      break;
+    }
+  }
+  /*parse the http header fields*/
+  size_t lrow=0,delimeter=0,startkeypos=0;
+
+  for(size_t pos=ve; pos< helen; ++pos){
+    if(delimeter==0 && data[pos]==':'){
+      delimeter=pos;
+    }
+    if( data[pos]=='\r' || (data[pos-1]!='\r' && data[pos]=='\n') ){
       if(delimeter>lrow && delimeter!=0){
         size_t keylen=delimeter-startkeypos;
-        if(keylen>0 && keylen <= inlen){
+        if(keylen>0 && keylen <= helen){
           std::string key;
           key.resize(keylen);
           std::copy(data+startkeypos,data+delimeter,std::begin(key));
           for (size_t it = 0; it < keylen; ++it) {
-            key[it] = (char)tolower(key[it]);
+            if(isalpha(key[it]))
+              key[it] = (char)tolower(key[it]);
           }
-          size_t valuelen=(pos-delimeter)-1;
-          if(pos > 0 && valuelen <= inlen){
+          size_t valuelen=pos-delimeter;
+          if(pos > 0 && valuelen <=helen){
             std::string value;
+            size_t vstart=++delimeter;
             value.resize(valuelen);
-            std::copy(data+(delimeter+1),data+(pos-1),std::begin(value));
+            std::copy(data+delimeter,data+pos,std::begin(value));
             for (size_t it = 0; it < valuelen; ++it) {
-              value[it] = (char)tolower(value[it]);
+              if(isalpha(value[it]))
+                value[it] = (char)tolower(value[it]);
             }
             *setData(key.c_str())<<value.c_str();
           }
@@ -356,25 +371,16 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
       delimeter=0;
       lrow=pos;
       startkeypos=lrow+2;
-    }
-    if(delimeter==0 && data[pos]==':'){
+    }else if(delimeter==0 && data[pos]==':'){
       delimeter=pos;
     }
-    if(data[pos]=='\r' && data[pos+3]=='\n'){
-        pos+=3;
-        break;
-      }else if(data[pos]=='\n' && data[pos+1]=='\n'){
-        ++pos;
-        break;
-    }
-    ++pos;
   }
 
  _ContentLength=getData("content-length");
  _Connection=getData("connection");
  _ContentType=getData("content-type");
 
-  return ++pos;
+  return helen;
 }
 
 libhttppp::HttpResponse::~HttpResponse(){

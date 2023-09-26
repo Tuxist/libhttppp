@@ -51,7 +51,6 @@ int main(int argc, char** argv){
       *req.setData("connection") << "keep-alive";
       *req.setData("host") << argv[1] << ":" << argv[2];
       *req.setData("accept") << "text/html";
-      *req.setData("scheme") << "http";
       *req.setData("user-agent") << "libhttppp/1.0 (Alpha Version 0.1)";
       req.send(cltsock,&srvsock);
     }catch(libhttppp::HTTPException &e){
@@ -60,11 +59,11 @@ int main(int argc, char** argv){
     }
 
     char data[16384];
-    int recv=cltsock->recvData(&srvsock,data,16384);
+    size_t recv=cltsock->recvData(&srvsock,data,16384);
 
     std::string html;
     libhttppp::HttpResponse res;
-    size_t amount = 0,rlen=0,len=recv;
+    size_t amount = 0,rlen=-1,len=recv;
 
     try {
       size_t hsize=res.parse(data,len);
@@ -73,20 +72,23 @@ int main(int argc, char** argv){
       if(amount>0)
         html.assign(data+hsize,amount);
 
-      size_t rlen;
       try{
-        rlen=res.getContentLength();
+         rlen=res.getContentLength();
+         html.resize(rlen);
       }catch(...){
-        rlen=0;
+         rlen=-1;
       }
     }catch(libhttppp::HTTPException &e){
       std::cerr << e.what() << std::endl;
     };
     while(amount<rlen){
         recv=cltsock->recvData(&srvsock,data,16384);
-        amount+=recv;
-        html.append(data,recv);
+        if(recv!=0){
+          amount+=recv;
+          html.append(data,recv);
+        }
     }
+
     delete cltsock;
     if(!html.empty())
       std::cout << html << std::endl;
