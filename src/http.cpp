@@ -216,19 +216,19 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
-  if(!getData("content-length"))
+  if(!_ContentLength)
       _ContentLength=setData("content-length");
   *_ContentLength<<len;
 }
 
 void libhttppp::HttpResponse::setContentType(const char* type){
-  if(!getData("content-type"))
+  if(!_ContentType)
     _ContentType=setData("content-type");
   *_ContentType<<type;
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
-  if(!getData("connection"))
+  if(!_Connection))
     _Connection=setData("connection");
   *_Connection<<type;
 }
