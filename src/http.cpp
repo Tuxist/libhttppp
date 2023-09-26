@@ -350,7 +350,6 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
             for (size_t it = 0; it < valuelen; ++it) {
               value[it] = (char)tolower(value[it]);
             }
-            std::cout << key << value << std::endl;
             *setData(key.c_str())<<value.c_str();
             delimeter=0;
           }
