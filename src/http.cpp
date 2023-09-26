@@ -82,7 +82,7 @@ const char* libhttppp::HttpHeader::getKey(HttpHeader::HeaderData* pos){
 const char* libhttppp::HttpHeader::getValue(HttpHeader::HeaderData* pos){
   return pos->_Value.c_str();
 }
-#include <iostream>
+
 libhttppp::HttpHeader::HeaderData *libhttppp::HttpHeader::getData(const char* key){
   HeaderData *curdat =_firstHeaderData;
   while(curdat){
