@@ -176,12 +176,12 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 
 libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     HTTPException excep;
-    _nextHeaderData=nullptr;
     if(!key){
         excep[HTTPException::Error] << "no headerdata key set can't do this";
         throw excep;
     }
     _Key = key;
+    _nextHeaderData=nullptr;
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
@@ -194,7 +194,7 @@ libhttppp::HttpHeader::~HttpHeader(){
 
 libhttppp::HttpResponse::HttpResponse() : HttpHeader(){
   setState(HTTP200);
-  setVersion(HTTPVERSION(2.0));
+  setVersion(HTTPVERSION(1.1));
   _ContentType=nullptr;
   _ContentLength=nullptr;
   _Connection=setData("connection");
@@ -357,7 +357,7 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
           size_t valuelen=pos-delimeter;
           if(pos > 0 && valuelen <=helen){
             std::string value;
-            size_t vstart=++delimeter;
+            ++delimeter;
             value.resize(valuelen);
             std::copy(data+delimeter,data+pos,std::begin(value));
             for (size_t it = 0; it < valuelen; ++it) {
@@ -383,7 +383,7 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   return helen;
 }
 
-libhttppp::HttpResponse::~HttpResponse(){
+libhttppp::HttpResponse::~HttpResponse() {
 }
 
 libhttppp::HttpRequest::HttpRequest(){

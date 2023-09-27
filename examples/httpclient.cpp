@@ -43,8 +43,8 @@ int main(int argc, char** argv){
     netplus::tcp srvsock(argv[1],atoi(argv[2]),1,0);
     cltsock=srvsock.connect();
 
-    libhttppp::HttpRequest req;
     try{
+      libhttppp::HttpRequest req;
       req.setRequestType(GETREQUEST);
       req.setRequestURL(argv[3]);
       req.setRequestVersion(HTTPVERSION(1.1));
@@ -63,7 +63,7 @@ int main(int argc, char** argv){
 
     std::string html;
     libhttppp::HttpResponse res;
-    size_t amount = 0,rlen=-1,len=recv;
+    size_t amount = 0,rlen=0,len=recv;
 
     try {
       size_t hsize=res.parse(data,len);
@@ -75,9 +75,7 @@ int main(int argc, char** argv){
       try{
          rlen=res.getContentLength();
          html.resize(rlen);
-      }catch(...){
-         rlen=-1;
-      }
+      }catch(...){}
     }catch(libhttppp::HTTPException &e){
       std::cerr << e.what() << std::endl;
     };
@@ -92,6 +90,7 @@ int main(int argc, char** argv){
     delete cltsock;
     if(!html.empty())
       std::cout << html << std::endl;
+    return 0;
   }catch(netplus::NetException &exp){
     delete cltsock;
     std::cerr << exp.what() <<std::endl;

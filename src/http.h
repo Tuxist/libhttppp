@@ -46,10 +46,9 @@ namespace libhttppp {
       HeaderData &operator<<(const char *value);
       HeaderData &operator<<(size_t value);
       HeaderData &operator<<(int value);
-    protected:
+    private:
       HeaderData(const char *key);
       ~HeaderData();
-    private:
       std::string  _Key;
       std::string  _Value;
       HeaderData   *_nextHeaderData;
@@ -76,7 +75,7 @@ namespace libhttppp {
     size_t      getHeaderSize();
   protected:
     HttpHeader();
-    virtual ~HttpHeader();
+    ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
   };
@@ -84,7 +83,7 @@ namespace libhttppp {
   class HttpResponse : public HttpHeader {
   public:
     HttpResponse();
-    ~HttpResponse();
+    virtual ~HttpResponse();
 
     /*server methods*/
     void   setState(const char *httpstate);
