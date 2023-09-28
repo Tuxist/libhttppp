@@ -75,7 +75,7 @@ namespace libhttppp {
     size_t      getHeaderSize();
   protected:
     HttpHeader();
-    ~HttpHeader();
+    virtual ~HttpHeader();
     HeaderData *_firstHeaderData;
     HeaderData *_lastHeaderData;
   };
@@ -83,7 +83,7 @@ namespace libhttppp {
   class HttpResponse : public HttpHeader {
   public:
     HttpResponse();
-    virtual ~HttpResponse();
+    ~HttpResponse();
 
     /*server methods*/
     void   setState(const char *httpstate);
@@ -91,6 +91,7 @@ namespace libhttppp {
     void   setContentLength(size_t len);
     void   setConnection(const char *type);
     void   setVersion(const char* version);
+    void   setTransferEncoding(const char *enc);
 
     /*client methods*/
     const char *getState();
@@ -98,6 +99,7 @@ namespace libhttppp {
     size_t      getContentLength();
     const char *getConnection();
     const char *getVersion();
+    const char *getTransferEncoding();
 
     size_t printHeader(std::string &buffer);
 
@@ -110,7 +112,7 @@ namespace libhttppp {
   private:
     std::string      _State;
     std::string      _Version;
-    bool             _Chuncked;
+    HeaderData      *_TransferEncoding;
     HeaderData      *_Connection;
     HeaderData      *_ContentType;
     HeaderData      *_ContentLength;

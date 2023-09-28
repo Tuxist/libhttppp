@@ -36,6 +36,47 @@
 
 #include <cstring>
 
+template<typename T = size_t>
+T Hex2Int(const char* const hexstr, bool* overflow=nullptr)
+{
+    if (!hexstr)
+        return false;
+    if (overflow)
+        *overflow = false;
+
+    auto between = [](char val, char c1, char c2) { return val >= c1 && val <= c2; };
+    size_t len = strlen(hexstr);
+    T result = 0;
+
+    for (size_t i = 0, offset = sizeof(T) << 3; i < len && (int)offset > 0; i++)
+    {
+        if (between(hexstr[i], '0', '9'))
+            result = result << 4 ^ (hexstr[i] - '0');
+        else if (between(tolower(hexstr[i]), 'a', 'f'))
+            result = result << 4 ^ (tolower(hexstr[i]) - ('a' - 10)); // Remove the decimal part;
+        offset -= 4;
+    }
+    if (((len + ((len % 2) != 0)) << 2) > (sizeof(T) << 3) && overflow)
+        *overflow = true;
+    return result;
+}
+
+size_t readchunk(const char *data,size_t datasize,size_t &pos){
+  size_t start=pos;
+  while( (pos < datasize || pos < 512)&& data[pos++]!='\r');
+  char value[512];
+
+  if(pos-start > 512){
+      return 0;
+  }
+
+  memcpy(value,data+start,pos-start);
+
+  ++pos;
+
+  return Hex2Int(value,nullptr);
+}
+
 int main(int argc, char** argv){
   signal(SIGPIPE, SIG_IGN);
   netplus::socket *cltsock=nullptr;
@@ -63,30 +104,42 @@ int main(int argc, char** argv){
 
     std::string html;
     libhttppp::HttpResponse res;
-    size_t amount = 0,rlen=0,len=recv;
+    size_t len=recv,chunklen=0,hsize=0;
+
+    int rlen=0;
 
     try {
-      size_t hsize=res.parse(data,len);
-      amount = len-hsize;
-
-      if(amount>0)
-        html.assign(data+hsize,amount);
-
-      try{
+      hsize=res.parse(data,len);
+      if(strcmp(res.getTransferEncoding(),"chunked")==0){
+          chunklen=readchunk(data,recv,--hsize);
+      }else{
          rlen=res.getContentLength();
          html.resize(rlen);
-      }catch(...){}
+      }
     }catch(libhttppp::HTTPException &e){
       std::cerr << e.what() << std::endl;
     };
-    while(amount<rlen){
-        recv=cltsock->recvData(&srvsock,data,16384);
-        if(recv!=0){
-          amount+=recv;
-          html.append(data,recv);
-        }
-    }
 
+    if(chunklen==0){
+        do{
+            html.append(data+hsize,recv-hsize);
+            rlen-=recv-hsize;
+            if(rlen>0){
+              recv=cltsock->recvData(&srvsock,data,16384);
+              hsize=0;
+            }
+        }while(rlen>0);
+    }else{
+        size_t cpos=hsize;
+        do{
+            html.append(data+cpos,chunklen);
+            cpos+=chunklen;
+            if(recv<chunklen){
+              recv=cltsock->recvData(&srvsock,data,16384);
+              cpos=0;
+            }
+        }while((chunklen=readchunk(data,recv,cpos))!=0);
+    }
     delete cltsock;
     if(!html.empty())
       std::cout << html << std::endl;

@@ -199,6 +199,7 @@ libhttppp::HttpResponse::HttpResponse() : HttpHeader(){
   _ContentLength=nullptr;
   _Connection=setData("connection");
   *_Connection<<"keep-alive";
+  _TransferEncoding=nullptr;
 }
 
 void libhttppp::HttpResponse::setState(const char* httpstate){
@@ -288,8 +289,6 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   curconnection->sending(true);
 }
 
-#include <iostream>
-
 size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
   if(inlen <9){
       HTTPException excep;
@@ -354,10 +353,13 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
             if(isalpha(key[it]))
               key[it] = (char)tolower(key[it]);
           }
+          ++delimeter;
+          while(data[delimeter]==' '){
+            ++delimeter;
+          };
           size_t valuelen=pos-delimeter;
           if(pos > 0 && valuelen <=helen){
             std::string value;
-            ++delimeter;
             value.resize(valuelen);
             std::copy(data+delimeter,data+pos,std::begin(value));
             for (size_t it = 0; it < valuelen; ++it) {
@@ -379,11 +381,24 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
  _ContentLength=getData("content-length");
  _Connection=getData("connection");
  _ContentType=getData("content-type");
+ _TransferEncoding=getData("transfer-encoding");
 
   return helen;
 }
 
+void libhttppp::HttpResponse::setTransferEncoding(const char* enc){
+  if(!_TransferEncoding)
+    _TransferEncoding=setData("transfer-encoding");
+  *_TransferEncoding << enc;
+}
+
+const char * libhttppp::HttpResponse::getTransferEncoding(){
+  return getData(_TransferEncoding);
+}
+
+
 libhttppp::HttpResponse::~HttpResponse() {
+
 }
 
 libhttppp::HttpRequest::HttpRequest(){
