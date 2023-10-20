@@ -40,6 +40,7 @@ namespace libhttppp {
     class HttpD {
     public:
         HttpD(int argc, char** argv);
+        HttpD(const char *httpaddr, int port,int maxconnections,const char *sslcertpath,const char *sslkeypath);
         ~HttpD();
         netplus::socket            *getServerSocket();
     protected:

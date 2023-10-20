@@ -123,6 +123,48 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     }
 }
 
+libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const char *sslcertpath,const char *sslkeypath){
+
+    try {
+        if (sslcertpath && sslkeypath) {
+
+            auto readFile = [] (const char *file,unsigned char **out,size_t &outlen){
+                size_t read=0,readed=0;
+                std::ifstream myfile(file);
+                myfile.seekg(std::ios_base::end);
+                outlen=myfile.tellg();
+                myfile.seekg(std::ios_base::beg);
+                *out = new unsigned char[outlen];
+                do{
+                    myfile.read((char*)*out+readed,(outlen-readed));
+                    readed = myfile.tellg();
+
+                }while(read<0);
+            };
+
+            unsigned char *cert,*key;
+            size_t certlen,keylen;
+
+            readFile(sslcertpath,&cert,certlen);
+            readFile(sslkeypath,&key,keylen);
+
+            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,cert,certlen,key,keylen);
+        }else{
+            #ifndef Windows
+            if (port != -1)
+                _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections,-1);
+            else
+                _ServerSocket = new netplus::tcp(httpaddr, maxconnections,-1);
+            #else
+            _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
+            #endif
+        }
+    }catch (HTTPException &e) {
+        throw e;
+    }
+}
+
+
 netplus::socket *libhttppp::HttpD::getServerSocket(){
   return _ServerSocket;
 }
