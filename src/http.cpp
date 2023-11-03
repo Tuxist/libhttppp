@@ -449,10 +449,17 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
             for(size_t cpos=pos; cpos<header.length(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    _RequestURL = header.substr(pos,cpos-pos);
+                    _Request = header.substr(pos,cpos-pos);
                     ++pos;
                     break;
                 }
+            }
+
+            if(!_Request.empty()){
+              size_t last =_Request.rfind('?');
+              if(last==std::string::npos)
+                  last=_Request.length();
+              _RequestURL=_Request.substr(0,last);
             }
 
             for(size_t cpos=pos; cpos<header.length(); ++cpos){
@@ -667,26 +674,15 @@ libhttppp::HttpForm::~HttpForm(){
 
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
-  HttpHeader::HeaderData *ctype=request->getData("content-type");
-  if(!ctype)
-    return;
-  int rtype = request->getRequestType();
-  _ContentType = request->getData(ctype);
-  switch(rtype){
-    case GETREQUEST:{
-      _parseUrlDecode(request);
-      break;
-    }
-    case POSTREQUEST:{
+  try{
+      HttpHeader::HeaderData *ctype=request->getData("content-type");
+      _ContentType = request->getData(ctype);
       if(_ContentType &&
-         strncmp(_ContentType,"multipart/form-data",18)==0){
-         _parseMulitpart(request);
-      }else{
-         _parseUrlDecode(request);
+          strncmp(_ContentType,"multipart/form-data",18)==0){
+          _parseMulitpart(request);
       }
-      break;
-    }
-  }
+  }catch(...){}
+  _parseUrlDecode(request);
 }
 
 const char *libhttppp::HttpForm::getContentType(){
@@ -1135,7 +1131,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
       size_t rsize=request->getRequestLength();
       formdat.append(request->getRequest(),rsize);
   }else if(request->getRequestType()==GETREQUEST){
-      const char *rurl=request->getRequestURL();
+      const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);
       ssize_t rdelimter=-1;
       for(size_t cpos=0; cpos<rurlsize; cpos++){
@@ -1145,10 +1141,9 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
           break;
         }
       }
-      if(rdelimter==-1){
-        return;
+      if(rdelimter!=-1){
+         formdat.append(rurl+rdelimter,rurlsize-rdelimter);
       }
-      formdat.append(rurl+rdelimter,rurlsize-rdelimter);
   }else{
     httpexception[HTTPException::Error] << "HttpForm unknown Requestype";
     throw httpexception;
