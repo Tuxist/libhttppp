@@ -51,7 +51,7 @@ void sendResponse(netplus::con *curcon,libhttppp::HttpRequest *curreq) {
              << "  </head>"
              << "<body>";
      if(curreq->isMobile())
-         condat << "<span>You are using a mobile Browser!</span>";
+         condat << "<span>You are using a mobile Browser!</span><br>";
      for(libhttppp::HttpHeader::HeaderData *preq = curreq->getfirstHeaderData(); preq; preq=curreq->nextHeaderData(preq)){
        condat  << curreq->getKey(preq) 
                << ": "
