@@ -605,7 +605,7 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
 
 bool libhttppp::HttpRequest::isMobile(){
   for(HttpHeader::HeaderData *curdat=_firstHeaderData; curdat; curdat=nextHeaderData(curdat)){
-      if(strcmp(getKey(curdat),"useragent")==0){
+      if(strcmp(getKey(curdat),"user-agent")==0){
           if(strstr(getValue(curdat),"mobi"))
             return true;
           break;
