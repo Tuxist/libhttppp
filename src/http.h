@@ -132,6 +132,9 @@ namespace libhttppp {
     size_t         getRequestLength();
     const char    *getRequestVersion();
 
+    /*mobilphone switch*/
+    bool isMobile();
+
     /*Client methods*/
     void           setRequestType(int req);
     void           setRequestURL(const char *url);

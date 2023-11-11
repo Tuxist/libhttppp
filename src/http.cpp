@@ -603,6 +603,17 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
   return _RequestVersion.c_str();
 }
 
+bool libhttppp::HttpRequest::isMobile(){
+  for(HttpHeader::HeaderData *curdat=_firstHeaderData; curdat; curdat=nextHeaderData(curdat)){
+      if(strcmp(getKey(curdat),"useragent")==0){
+          if(strstr(getValue(curdat),"mobi"))
+            return true;
+          break;
+      }
+  }
+  return false;
+}
+
 void libhttppp::HttpRequest::setRequestData(const char* data, size_t len){
   _Request.clear();
   _Request.resize(len);
