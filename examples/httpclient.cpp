@@ -106,13 +106,14 @@ int main(int argc, char** argv){
     std::string html;
     libhttppp::HttpResponse res;
     size_t len=recv,chunklen=0,hsize=0;
-
+    bool chunked=false;
     int rlen=0;
 
     try {
       hsize=res.parse(data,len);
       if(strcmp(res.getTransferEncoding(),"chunked")==0){
           chunklen=readchunk(data,recv,--hsize);
+          chunked=true;
       }else{
          rlen=res.getContentLength();
          html.resize(rlen);
@@ -121,26 +122,29 @@ int main(int argc, char** argv){
       std::cerr << e.what() << std::endl;
     };
 
-    if(chunklen==0){
-        do{
-            html.append(data+hsize,recv-hsize);
-            rlen-=recv-hsize;
-            if(rlen>0){
-              recv=srvsock->recvData(cltsock,data,16384);
-              hsize=0;
-            }
-        }while(rlen>0);
+    if(!chunked){
+      do{
+        html.append(data+hsize,recv-hsize);
+        rlen-=recv-hsize;
+        if(rlen>0){
+          recv=srvsock->recvData(cltsock,data,16384);
+          hsize=0;
+        }
+      }while(rlen>0);
     }else{
-        size_t cpos=hsize;
-        do{
-            html.append(data+cpos,chunklen);
-            cpos+=chunklen;
-            if(recv<chunklen){
-              recv=srvsock->recvData(cltsock,data,16384);
-              cpos=0;
-            }
-        }while((chunklen=readchunk(data,recv,cpos))!=0);
+      size_t cpos=hsize;
+      do{
+        if((cpos+chunklen)<recv){
+          html.append(data+cpos,chunklen);
+          break;
+        }else if(chunklen>recv){
+          html.append(data+cpos,recv-cpos);
+          chunklen-=(recv-cpos);
+          cpos=0;
+        }
+      }while((chunklen=readchunk(data,recv,cpos))>0);
     }
+
     delete cltsock;
     delete srvsock;
     if(!html.empty())
