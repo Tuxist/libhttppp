@@ -104,8 +104,8 @@ namespace libhttppp {
     size_t printHeader(std::string &buffer);
 
     /*server methods*/
-    void   send(netplus::con *curconnection,const char* data);
-    void   send(netplus::con *curconnection,const char* data, unsigned long datalen); //only use as server
+    void send(netplus::con *curconnection,const char* data);
+    void send(netplus::con* curconnection,const char* data, int datalen); //only use as server
 
     /*client method*/
     size_t   parse(const char *in,size_t inlen);
