@@ -288,10 +288,12 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
     curconnection->addSendQueue(data,datalen);
   curconnection->sending(true);
 }
-
+#include <iostream>
 size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
+  HTTPException excep;
+
   if(inlen <9){
-      HTTPException excep;
+
       throw excep[HTTPException::Error] << "HttpResponse header too small aborting!";
   }
 
@@ -304,7 +306,6 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
       ++v;
     }
   }else{
-      HTTPException excep;
       throw excep[HTTPException::Error] << "HttpResponse no Version Tag found !";
   }
 
@@ -326,15 +327,30 @@ size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
 
   size_t helen=inlen;
 
+  bool hend=false;
+
   for(size_t cur=ve; cur<inlen; ++cur){
-    if(cur+3 < inlen && memcmp(data+cur,"\r\n\r\n",4)==0 ){
-      helen=cur+4;
-      break;
-    }else if(cur+1 < inlen && memcmp(data+cur,"\n\n",2)==0){
-      helen=cur+2;
-      break;
+    switch(data[cur]){
+      case '\r':
+        break;
+      case '\n':
+        if(hend){
+          std::cerr << cur << std::endl;
+          helen=cur;
+          goto HEADERENDFOUND;
+        }
+        hend=true;
+        break;
+      default:
+        hend=false;
+        break;
     }
   }
+
+  throw excep[HTTPException::Error] << "HttpHeader end not found!";
+
+HEADERENDFOUND:
+
   /*parse the http header fields*/
   size_t lrow=0,delimeter=0,startkeypos=0;
 
