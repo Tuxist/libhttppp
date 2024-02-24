@@ -62,7 +62,7 @@ public:
         _HTMLDat  << "</body></html>";
 
         std::string html;
-        libhtmlpp::print(_HTMLDat.parse(),nullptr,html);
+        libhtmlpp::print(_HTMLDat.parse(),&html);
         _Curres.send(_Curcon,html.c_str(),html.length());
     };
     
