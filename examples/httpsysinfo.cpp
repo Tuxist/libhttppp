@@ -142,7 +142,7 @@ public:
                 Sysinfo sys;
                 sys.TimeInfo(index);
                 sys.KernelInfo(index);
-                libhtmlpp::print(&index,nullptr,html);
+                libhtmlpp::print(&index,&html);
                 curres.send(curcon,html.c_str(),html.length());
             }else if(strncmp(cururl,"/images/header.png",18)==0){
                 curres.setContentType("image/png");
