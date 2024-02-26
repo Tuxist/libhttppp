@@ -57,8 +57,12 @@ public:
         << "    <style></style>"
         << "  </head>"
         << "<body>";
-        setCookieForm();
-        parseCookie();
+        try{
+            setCookieForm();
+            parseCookie();
+        }catch(...){
+
+        }
         _HTMLDat  << "</body></html>";
 
         libhtmlpp::HtmlString html;
@@ -108,20 +112,20 @@ public:
         << "Version:<br> <input type=\"text\" name=\"version\" value=\"1\"><br>"
         << "<button type=\"submit\">Submit</button>"
         << "</form>";
-        
         _HTMLDat << "</div></br>";
-        _Cookie.setcookie(&_Curres,getData("key"),getData("value"),getData("comment"),getData("domain"),getDataInt("max-age"),getData("path"),false,getData("version"));
+        if(getData("key")!=nullptr)
+            _Cookie.setcookie(&_Curres,getData("key"),getData("value"),getData("comment"),getData("domain"),getDataInt("max-age"),getData("path"),false,getData("version"));
     };
     
-    void parseCookie() {   
+    void parseCookie() {
         _Cookie.parse(_Curreq);
         _HTMLDat  << "<div style=\"border: thin solid black\"><span>Httpcookie's</span></br>";
         for(libhttppp::HttpCookie::CookieData *curcookie=_Cookie.getfirstCookieData(); 
             curcookie; curcookie=curcookie->nextCookieData()){
             _HTMLDat  << "key: " << curcookie->getKey() << " ";
-        _HTMLDat  << "value: " << curcookie->getValue() << "</br>";
-            }
-            _HTMLDat << "</div></br>";
+            _HTMLDat  << "value: " << curcookie->getValue() << "</br>";
+        }
+        _HTMLDat << "</div></br>";
     };
     
 private:
@@ -138,7 +142,6 @@ public:
         
     };
     void RequestEvent(netplus::con *curcon){
-
         try{
             std::cout << "Parse Request" << std::endl;
             libhttppp::HttpRequest curreq;
