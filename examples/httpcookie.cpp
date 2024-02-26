@@ -61,9 +61,9 @@ public:
         parseCookie();
         _HTMLDat  << "</body></html>";
 
-        std::string html;
+        libhtmlpp::HtmlString html;
         libhtmlpp::print(_HTMLDat.parse(),html);
-        _Curres.send(_Curcon,html.c_str(),html.length());
+        _Curres.send(_Curcon,html.c_str(),html.size());
     };
     
     const char *getData(const char *key){

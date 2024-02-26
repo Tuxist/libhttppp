@@ -136,14 +136,14 @@ public:
             std::cout << cururl << std::endl;
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 curres.setContentType("text/html");
-                std::string html;
+                libhtmlpp::HtmlString html;
                 libhtmlpp::HtmlElement index;
                 index=RootNode;
                 Sysinfo sys;
                 sys.TimeInfo(index);
                 sys.KernelInfo(index);
                 libhtmlpp::print(&index,html);
-                curres.send(curcon,html.c_str(),html.length());
+                curres.send(curcon,html.c_str(),html.size());
             }else if(strncmp(cururl,"/images/header.png",18)==0){
                 curres.setContentType("image/png");
                 curres.send(curcon,(const char*)header_png,header_png_size);
