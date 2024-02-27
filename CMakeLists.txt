@@ -12,7 +12,7 @@ find_package(libnetplus REQUIRED)
 find_package(libcryptplus REQUIRED)
 find_package(libcmdplus REQUIRED)
 
-SET(CMAKE_CXX_FLAGS "-fPIC -Wall ")
+SET(CMAKE_CXX_FLAGS "-fPIC -Wall -fsanitize=address")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)
 
