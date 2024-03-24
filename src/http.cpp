@@ -427,7 +427,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
         return;
 
     try{
-        netplus::con::condata *curdat=curconnection->getRecvData();
+        netplus::con::condata *curdat=curconnection->getRecvFirst();
         if(curdat){
             netplus::con::condata *startblock;
             int startpos=0;
@@ -530,11 +530,11 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             HttpHeader::HeaderData *contentlen=getData("content-length");
 
             if(_RequestType==POSTREQUEST){
-                if((getDataSizet(contentlen)+ header.length()) <= curconnection->getRecvLength()){
+                if((getDataInt(contentlen)+ header.length()) <= curconnection->getRecvLength()){
                     netplus::con::condata *edblock,*sdblock;
                     size_t edblocksize = getDataSizet(contentlen)+header.length(), sdblocksize = header.length();
 
-                    for (sdblock = curconnection->getRecvData(); sdblock; sdblock = sdblock->nextcondata()) {
+                    for (sdblock = curconnection->getRecvFirst(); sdblock; sdblock = sdblock->nextcondata()) {
                         if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
                             sdblocksize -= sdblock->getDataLength();
                             continue;
@@ -542,7 +542,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                         break;
                     }
 
-                    for(edblock=curconnection->getRecvData(); edblock; edblock=edblock->nextcondata()){
+                    for(edblock=curconnection->getRecvFirst(); edblock; edblock=edblock->nextcondata()){
                         if (edblocksize !=0 && edblock->getDataLength() <= edblocksize) {
                             edblocksize -= edblock->getDataLength();
                             continue;
@@ -554,8 +554,10 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                     curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _Request);
                     curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.length());
                 }else{
-                    excep[HTTPException::Note] << "Request incomplete";
-                    throw excep;
+                    netplus::con::condata *edblock=curconnection->getRecvLast(),*sdblock=curconnection->getRecvFirst();
+                    _Request.clear();
+                    curconnection->copyValue(sdblock,header.length(), edblock, edblock->getDataLength(), _Request);
+                    curconnection->resizeRecvQueue( + header.length());
                 }
             } else {
                 curconnection->resizeRecvQueue(header.length());
