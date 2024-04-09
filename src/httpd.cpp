@@ -123,8 +123,8 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
             #endif 
         }
     }catch (netplus::NetException &e) {
-        netplus::NetException ee;
-        ee[netplus::NetException::Critical] << e.what();
+        HTTPException ee;
+        ee[HTTPException::Critical] << e.what();
         throw ee;
     }
 }
@@ -167,8 +167,8 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
             #endif
         }
     }catch (netplus::NetException &e) {
-        netplus::NetException ee;
-        ee[netplus::NetException::Critical] << e.what();
+        HTTPException ee;
+        ee[HTTPException::Critical] << e.what();
         throw ee;
     }
 }
