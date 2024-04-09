@@ -87,17 +87,26 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     try {
         if (sslcertpath && sslkeypath) {
             
+
             std::string cert,key;
 
             std::ifstream certfile(sslcertpath);
 
-            if(certfile.is_open())
-                certfile >> cert;
+            if(certfile.is_open()){
+                while(certfile.peek() != EOF){
+                    cert.push_back((char)certfile.get());
+                }
+                certfile.close();
+            }
 
             std::ifstream keyfile(sslkeypath);
 
-            if(keyfile.is_open())
-                keyfile >> key;
+            if(keyfile.is_open()){
+                while(keyfile.peek() != EOF){
+                    key.push_back((char)keyfile.get());
+                }
+                keyfile.close();
+            }
             
             _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.c_str(),
                                              cert.length(),(const unsigned char*)key.c_str(),key.length());
@@ -108,7 +117,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
             else
                 _ServerSocket = new netplus::tcp(httpaddr, maxconnections,-1);
             #else
-                _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
+            _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
             #endif 
         }
     }catch (HTTPException &e) {
@@ -125,13 +134,21 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
 
             std::ifstream certfile(sslcertpath);
 
-            if(certfile.is_open())
-                certfile >> cert;
+            if(certfile.is_open()){
+                while(certfile.peek() != EOF){
+                    cert.push_back((char)certfile.get());
+                }
+                certfile.close();
+            }
 
             std::ifstream keyfile(sslkeypath);
 
-            if(keyfile.is_open())
-                keyfile >> key;
+            if(keyfile.is_open()){
+                while(keyfile.peek() != EOF){
+                    key.push_back((char)keyfile.get());
+                }
+                keyfile.close();
+            }
 
             _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.c_str(),
                                              cert.length(),(const unsigned char*)key.c_str(),key.length());
