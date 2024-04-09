@@ -28,6 +28,8 @@
 #include <fstream>
 
 #include <netplus/socket.h>
+#include <netplus/exception.h>
+
 #include <cmdplus/cmdplus.h>
 
 #include "httpd.h"
@@ -120,8 +122,10 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
             _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
             #endif 
         }
-    }catch (HTTPException &e) {
-        throw e;
+    }catch (netplus::NetException &e) {
+        netplus::NetException ee;
+        ee[netplus::NetException::Critical] << e.what();
+        throw ee;
     }
 }
 
@@ -162,8 +166,10 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
             _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
             #endif
         }
-    }catch (HTTPException &e) {
-        throw e;
+    }catch (netplus::NetException &e) {
+        netplus::NetException ee;
+        ee[netplus::NetException::Critical] << e.what();
+        throw ee;
     }
 }
 
