@@ -87,27 +87,20 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     try {
         if (sslcertpath && sslkeypath) {
             
-            auto readFile = [] (const char *file,unsigned char **out,size_t &outlen){
-                size_t read=0,readed=0;
-                std::ifstream myfile(file);
-                myfile.seekg(std::ios_base::end);
-                outlen=myfile.tellg();
-                myfile.seekg(std::ios_base::beg);
-                *out = new unsigned char[outlen];
-                do{
-                    myfile.read((char*)*out+readed,(outlen-readed));
-                    readed = myfile.tellg();
+            std::string cert,key;
 
-                }while(read<0);
-            };
-            
-            unsigned char *cert,*key;
-            size_t certlen,keylen;
+            std::ifstream certfile(sslcertpath);
 
-            readFile(sslcertpath,&cert,certlen);
-            readFile(sslkeypath,&key,keylen);
+            if(certfile.is_open())
+                certfile >> cert;
+
+            std::ifstream keyfile(sslkeypath);
+
+            if(keyfile.is_open())
+                keyfile >> key;
             
-            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,cert,certlen,key,keylen);
+            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.c_str(),
+                                             cert.length(),(const unsigned char*)key.c_str(),key.length());
         }else{
             #ifndef Windows
             if (portset == true)
@@ -115,7 +108,7 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
             else
                 _ServerSocket = new netplus::tcp(httpaddr, maxconnections,-1);
             #else
-            _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
+                _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
             #endif 
         }
     }catch (HTTPException &e) {
