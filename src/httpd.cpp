@@ -25,7 +25,9 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <vector>
 #include <fstream>
+#include <iostream>
 
 #include <netplus/socket.h>
 #include <netplus/exception.h>
@@ -88,9 +90,19 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     
     try {
         if (sslcertpath && sslkeypath) {
-            
 
-            std::string cert,key;
+            std::vector<char> cert,key;
+
+            std::ifstream keyfile(sslkeypath);
+
+            if(keyfile.is_open()){
+                while(keyfile.peek() != EOF){
+                    key.push_back((char)keyfile.get());
+                }
+                keyfile.close();
+            }
+
+            key.push_back('\0');
 
             std::ifstream certfile(sslcertpath);
 
@@ -101,17 +113,10 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
                 certfile.close();
             }
 
-            std::ifstream keyfile(sslkeypath);
-
-            if(keyfile.is_open()){
-                while(keyfile.peek() != EOF){
-                    key.push_back((char)keyfile.get());
-                }
-                keyfile.close();
-            }
+            cert.push_back('\0');
             
-            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.c_str(),
-                                             cert.length(),(const unsigned char*)key.c_str(),key.length());
+            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.data(),
+                                             cert.size(),(const unsigned char*)key.data(),key.size());
         }else{
             #ifndef Windows
             if (portset == true)
@@ -134,16 +139,7 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
     try {
         if (sslcertpath && sslkeypath) {
 
-            std::string cert,key;
-
-            std::ifstream certfile(sslcertpath);
-
-            if(certfile.is_open()){
-                while(certfile.peek() != EOF){
-                    cert.push_back((char)certfile.get());
-                }
-                certfile.close();
-            }
+            std::vector<char> cert,key;
 
             std::ifstream keyfile(sslkeypath);
 
@@ -154,8 +150,21 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
                 keyfile.close();
             }
 
-            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.c_str(),
-                                             cert.length(),(const unsigned char*)key.c_str(),key.length());
+            key.push_back('\0');
+
+            std::ifstream certfile(sslcertpath);
+
+            if(certfile.is_open()){
+                while(certfile.peek() != EOF){
+                    cert.push_back((char)certfile.get());
+                }
+                certfile.close();
+            }
+
+            cert.push_back('\0');
+
+            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.data(),
+                                             cert.size(),(const unsigned char*)key.data(),key.size());
         }else{
             #ifndef Windows
             if (port != -1)
