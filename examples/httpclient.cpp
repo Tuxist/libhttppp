@@ -81,11 +81,10 @@ size_t readchunk(const char *data,size_t datasize,size_t &pos){
 
 int main(int argc, char** argv){
   signal(SIGPIPE, SIG_IGN);
-  netplus::socket *cltsock=nullptr;
-  netplus::tcp    *srvsock=nullptr;
+  netplus::tcp cltsock;
+  netplus::tcp srvsock(argv[1],atoi(argv[2]),1,0);
   try{
-    srvsock= new netplus::tcp(argv[1],atoi(argv[2]),1,0);
-    cltsock=srvsock->connect();
+    srvsock.connect(&cltsock);
 
     try{
       libhttppp::HttpRequest req;
@@ -96,14 +95,14 @@ int main(int argc, char** argv){
       *req.setData("host") << argv[1] << ":" << argv[2];
       *req.setData("accept") << "text/html";
       *req.setData("user-agent") << "libhttppp/1.0 (Alpha Version 0.1)";
-      req.send(cltsock,srvsock);
+      req.send(&cltsock,&srvsock);
     }catch(libhttppp::HTTPException &e){
       std::cerr << e.what() << std::endl;
       return -1;
     }
 
     char data[16384];
-    size_t recv=srvsock->recvData(cltsock,data,16384);
+    size_t recv=srvsock.recvData(&cltsock,data,16384);
 
     std::string html;
     libhttppp::HttpResponse res;
@@ -129,7 +128,7 @@ int main(int argc, char** argv){
         html.append(data+hsize,recv-hsize);
         rlen-=recv-hsize;
         if(rlen>0){
-          recv=srvsock->recvData(cltsock,data,16384);
+          recv=srvsock.recvData(&cltsock,data,16384);
           hsize=0;
         }
       }while(rlen>0);
@@ -146,14 +145,10 @@ int main(int argc, char** argv){
         }
       }while((chunklen=readchunk(data,recv,cpos))>0);
     }
-
-    delete cltsock;
-    delete srvsock;
     if(!html.empty())
       std::cout << html << std::endl;
     return 0;
   }catch(netplus::NetException &exp){
-    delete cltsock;
     std::cerr << exp.what() <<std::endl;
     return -1;
   }
