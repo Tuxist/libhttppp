@@ -37,6 +37,7 @@
 #include "httpd.h"
 
 #define MAXDEFAULTCONN 1024
+#define MBEDTLS_PSA_CRYPTO_CONFIG true
 
 libhttppp::HttpD::HttpD(int argc, char** argv){
     HTTPDCmdController= &cmdplus::CmdController::getInstance();
@@ -172,7 +173,7 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
             else
                 _ServerSocket = new netplus::tcp(httpaddr, maxconnections,-1);
             #else
-            _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
+                _ServerSocket = new netplus::tcp(httpaddr, port, maxconnections);
             #endif
         }
     }catch (netplus::NetException &e) {
