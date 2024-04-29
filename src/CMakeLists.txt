@@ -10,6 +10,7 @@ set(libhttpSrcs
 )
 
 include_directories(
+    ${MbedTLS_INCLUDE_DIRS}
     ${systempp_INCLUDE_DIR}
 )
 
@@ -21,8 +22,8 @@ add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)
 
-target_link_libraries(httppp ${OPENSSL_LIBRARIES} netplus cmdplus cryptplus)
-target_link_libraries(httppp-static ${OPENSSL_LIBRARIES} netplus cmdplus cryptplus)
+target_link_libraries(httppp MbedTLS::mbedcrypto netplus cmdplus)
+target_link_libraries(httppp-static MbedTLS::mbedcrypto netplus cmdplus)
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 

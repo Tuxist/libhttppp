@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 
-#include <cryptplus/cryptplus.h>
+#include <mbedtls/base64.h>
 
 #include <netplus/connection.h>
 #include <netplus/exception.h>
@@ -1408,11 +1408,11 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
   switch(_Authtype){
     case BASICAUTH:{
       size_t base64strsize=strlen(authstr+6);
-      char *base64str=new char[base64strsize+1];
+      unsigned char *base64str=new char unsigned[base64strsize+1];
       memcpy(base64str,authstr+6,strlen(authstr)-5);
-      cryptplus::base64 hbase64;
-      char *clearstr=new char[hbase64.Decodelen(base64str)];
-      size_t cleargetlen=hbase64.Decode(clearstr,base64str);
+      char *clearstr= new char[(base64strsize/4)*3];
+      size_t cleargetlen;
+      mbedtls_base64_decode((unsigned char*)clearstr,((base64strsize/4)*3),&cleargetlen,base64str,base64strsize);
       delete[] base64str;
       for(size_t clearpos=0; clearpos<cleargetlen; clearpos++){
          if(clearstr[clearpos]==':'){
