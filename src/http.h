@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h>
 #include <sys/types.h>
 
+#include <memory>
 #include <string>
 #include <netplus/eventapi.h>
 
@@ -105,7 +106,7 @@ namespace libhttppp {
 
     /*server methods*/
     void send(netplus::con *curconnection,const char* data);
-    void send(netplus::con* curconnection,const char* data, int datalen); //only use as server
+    void send(netplus::con *curconnection,const char* data, int datalen); //only use as server
 
     /*client method*/
     size_t   parse(const char *in,size_t inlen);
@@ -141,7 +142,7 @@ namespace libhttppp {
     void           setRequestVersion(const char *version);
     /*only for post Reuquesttype*/
     void           setRequestData(const char *data,size_t len);
-    void           send(netplus::socket& src,netplus::socket& dest);
+    void           send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
   private:
     std::string    _Request;
     int            _RequestType;

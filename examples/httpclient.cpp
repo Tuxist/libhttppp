@@ -81,10 +81,10 @@ size_t readchunk(const char *data,size_t datasize,size_t &pos){
 
 int main(int argc, char** argv){
   signal(SIGPIPE, SIG_IGN);
-  netplus::tcp cltsock;
-  netplus::tcp srvsock(argv[1],atoi(argv[2]),1,0);
+  std::shared_ptr<netplus::tcp> cltsock=std::make_shared<netplus::tcp>();
+  std::shared_ptr<netplus::tcp> srvsock=std::make_shared<netplus::tcp>(argv[1],atoi(argv[2]),1,0);
   try{
-    srvsock.connect(cltsock);
+    srvsock->connect(cltsock);
 
     try{
       libhttppp::HttpRequest req;
@@ -102,7 +102,7 @@ int main(int argc, char** argv){
     }
 
     char data[16384];
-    size_t recv=srvsock.recvData(cltsock,data,16384);
+    size_t recv=srvsock->recvData(cltsock,data,16384);
 
     std::string html;
     libhttppp::HttpResponse res;
@@ -128,7 +128,7 @@ int main(int argc, char** argv){
         html.append(data+hsize,recv-hsize);
         rlen-=recv-hsize;
         if(rlen>0){
-          recv=srvsock.recvData(cltsock,data,16384);
+          recv=srvsock->recvData(cltsock,data,16384);
           hsize=0;
         }
       }while(rlen>0);

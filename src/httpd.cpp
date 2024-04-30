@@ -83,15 +83,11 @@ libhttppp::HttpD::HttpD(int argc, char** argv){
     const char *sslcertpath = nullptr;
     if (HTTPDCmdController->getCmdbyKey("httpscert"))
         sslcertpath = HTTPDCmdController->getCmdbyKey("httpscert")->getValue();
-    else
-        sslcertpath = nullptr;
     
     /*get httpaddress from console paramter*/
     const char *sslkeypath = nullptr;
     if (HTTPDCmdController->getCmdbyKey("httpskey"))
         sslkeypath = HTTPDCmdController->getCmdbyKey("httpskey")->getValue();
-    else
-        sslkeypath = nullptr;
 
     try {
         if (sslcertpath && sslkeypath) {
