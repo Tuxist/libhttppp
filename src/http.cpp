@@ -646,15 +646,15 @@ void libhttppp::HttpRequest::setRequestVersion(const char* version){
 }
 
 
-void libhttppp::HttpRequest::send(netplus::socket* src,netplus::socket* dest){
+void libhttppp::HttpRequest::send(netplus::socket& src,netplus::socket& dest){
   std::string header;
   printHeader(header);
 
   try {
-    size_t send=dest->sendData(src,(void*)header.c_str(),header.length());
+    size_t send=dest.sendData(src,(void*)header.c_str(),header.length());
 
     while(send<_Request.length()){
-      send+=dest->sendData(src,(void*)_Request.substr(send,_Request.length()-send).c_str(),
+      send+=dest.sendData(src,(void*)_Request.substr(send,_Request.length()-send).c_str(),
                           _Request.length()-send);
     }
   }catch(netplus::NetException &e){

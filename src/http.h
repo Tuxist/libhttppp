@@ -141,7 +141,7 @@ namespace libhttppp {
     void           setRequestVersion(const char *version);
     /*only for post Reuquesttype*/
     void           setRequestData(const char *data,size_t len);
-    void           send(netplus::socket* src,netplus::socket* dest);
+    void           send(netplus::socket& src,netplus::socket& dest);
   private:
     std::string    _Request;
     int            _RequestType;
