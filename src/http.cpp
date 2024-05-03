@@ -25,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <ctype.h>
@@ -451,22 +452,22 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             endpos+=4;  
             
             
-            std::string header;
+            std::vector<char> header;
             curconnection->copyValue(startblock,startpos,endblock,endpos,header);
             
             bool found=false;
             int pos=0;
 
-            for(size_t cpos=pos; cpos< header.length(); ++cpos){
+            for(size_t cpos=pos; cpos< header.size(); ++cpos){
                 if(header[cpos]==' '){
                     pos=++cpos;
                     break;
                 }
             }
 
-            for(size_t cpos=pos; cpos<header.length(); ++cpos){
+            for(size_t cpos=pos; cpos<header.size(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    _Request = header.substr(pos,cpos-pos);
+                    std::copy(header.begin()+pos,header.begin()+cpos,_Request.begin());
                     ++pos;
                     break;
                 }
@@ -479,9 +480,9 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
               _RequestURL=_Request.substr(0,last);
             }
 
-            for(size_t cpos=pos; cpos<header.length(); ++cpos){
+            for(size_t cpos=pos; cpos<header.size(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    _RequestVersion = header.substr(pos,cpos-pos);
+                    std::copy(header.begin()+pos,header.begin()+cpos,_RequestVersion.begin());
                     ++pos;
                     found=true;
                     break;
@@ -496,24 +497,24 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             /*parse the http header fields*/
             size_t lrow=0,delimeter=0,startkeypos=0;
             
-            for(size_t pos=0; pos< header.length(); pos++){
+            for(size_t pos=0; pos< header.size(); pos++){
                 if(delimeter==0 && header[pos]==':'){
                     delimeter=pos; 
                 }
                 if(header[pos]=='\r'){
                     if(delimeter>lrow && delimeter!=0){
                         size_t keylen=delimeter-startkeypos;
-                        if(keylen>0 && keylen <= header.length()){
+                        if(keylen>0 && keylen <= header.size()){
                             std::string key;
-                            key=header.substr(startkeypos,keylen);
+                            std::copy(header.begin()+startkeypos,header.begin()+delimeter,key.begin());
                             for (size_t it = 0; it < keylen; ++it) {
                                 key[it] = (char)tolower(key[it]);
                             }
                             size_t valuelen=(pos-delimeter)-2;
-                            if(pos > 0 && valuelen <= header.length()){
+                            if(pos > 0 && valuelen <= header.size()){
                                 std::string value;
                                 size_t vstart=delimeter+2;
-                                value=header.substr(vstart,valuelen);
+                                std::copy(header.begin()+vstart,header.begin()+(delimeter-2),value.begin());
                                 for (size_t it = 0; it < valuelen; ++it) {
                                     value[it] = (char)tolower(value[it]);
                                 }
@@ -537,9 +538,9 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                     throw excep;
                 }
 
-                if((getDataInt(contentlen)+ header.length()) <= curconnection->getRecvLength()){
+                if((getDataInt(contentlen)+ header.size()) <= curconnection->getRecvLength()){
                     netplus::con::condata *edblock,*sdblock;
-                    size_t edblocksize = getDataSizet(contentlen)+header.length(), sdblocksize = header.length();
+                    size_t edblocksize = getDataSizet(contentlen)+header.size(), sdblocksize = header.size();
 
                     for (sdblock = curconnection->getRecvFirst(); sdblock; sdblock = sdblock->nextcondata()) {
                         if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
@@ -557,11 +558,11 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                         break;
                     }
 
-                    curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _Request);
-                    curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.length());
+                    curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
+                    curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.size());
                 }
             } else {
-                curconnection->resizeRecvQueue(header.length());
+                curconnection->resizeRecvQueue(header.size());
             }
 
             if (curconnection->getRecvLength()!=0) {
@@ -1164,7 +1165,8 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   std::string formdat;
   if(request->getRequestType()==POSTREQUEST){
       size_t rsize=request->getRequestLength();
-      formdat.append(request->getRequest(),rsize);
+      std::copy(request->_MessageBody.begin(),request->_MessageBody.end(),
+                std::inserter<std::string>(formdat,formdat.end()));
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);

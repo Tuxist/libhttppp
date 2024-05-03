@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/types.h>
 
 #include <memory>
+#include <vector>
 #include <string>
 #include <netplus/eventapi.h>
 
@@ -145,12 +146,14 @@ namespace libhttppp {
     void           setMaxUploadSize(size_t upsize);
     void           send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
   private:
-    std::string    _Request;
-    int            _RequestType;
-    std::string    _RequestURL;
-    std::string    _RequestVersion;
-    size_t         _MaxUploadSize;
-    netplus::con   *_Connection;
+    std::string       _Request;
+    int               _RequestType;
+    std::string       _RequestURL;
+    std::string       _RequestVersion;
+    size_t            _MaxUploadSize;
+    std::vector<char> _MessageBody;
+    netplus::con     *_Connection;
+    friend class HttpForm;
   };
   
   class HttpForm {
