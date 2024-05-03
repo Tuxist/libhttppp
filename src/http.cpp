@@ -419,6 +419,7 @@ libhttppp::HttpResponse::~HttpResponse() {
 
 libhttppp::HttpRequest::HttpRequest(){
   _RequestType=0;
+  _MaxUploadSize=DEFAULT_UPLOADSIZE;
 }
 
 void libhttppp::HttpRequest::parse(netplus::con* curconnection){
@@ -550,14 +551,12 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                         break;
                     }
 
-                    _Request.clear();
                     curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _Request);
                     curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.length());
-                }else{
-                    netplus::con::condata *edblock=curconnection->getRecvLast(),*sdblock=curconnection->getRecvFirst();
-                    _Request.clear();
-                    curconnection->copyValue(sdblock,header.length(), edblock, edblock->getDataLength(), _Request);
-                    curconnection->resizeRecvQueue( + header.length());
+                }else if(curconnection->getRecvLength() > _MaxUploadSize){
+                    curconnection->cleanRecvData();
+                    excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
+                    throw excep;
                 }
             } else {
                 curconnection->resizeRecvQueue(header.length());
@@ -637,6 +636,11 @@ void libhttppp::HttpRequest::setRequestData(const char* data, size_t len){
   _Request.resize(len);
   _Request.insert(0,data);
 }
+
+void libhttppp::HttpRequest::setMaxUploadSize(size_t upsize){
+  _MaxUploadSize=upsize;
+}
+
 
 void libhttppp::HttpRequest::setRequestVersion(const char* version){
   if(version)

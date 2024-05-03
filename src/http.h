@@ -142,13 +142,14 @@ namespace libhttppp {
     void           setRequestVersion(const char *version);
     /*only for post Reuquesttype*/
     void           setRequestData(const char *data,size_t len);
+    void           setMaxUploadSize(size_t upsize);
     void           send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
   private:
     std::string    _Request;
     int            _RequestType;
     std::string    _RequestURL;
     std::string    _RequestVersion;
-
+    size_t         _MaxUploadSize;
     netplus::con   *_Connection;
   };
   
