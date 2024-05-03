@@ -561,8 +561,6 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                     curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
                     curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.size());
                 }
-            } else {
-                curconnection->resizeRecvQueue(header.size());
             }
 
             if (curconnection->getRecvLength()!=0) {
