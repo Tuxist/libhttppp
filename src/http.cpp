@@ -467,7 +467,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
             for(size_t cpos=pos; cpos<header.size(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    std::copy(header.begin()+pos,header.begin()+cpos,_Request.begin());
+                    std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_Request,_Request.begin()));
                     ++pos;
                     break;
                 }
@@ -482,7 +482,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
             for(size_t cpos=pos; cpos<header.size(); ++cpos){
                 if(header[cpos]==' ' && (cpos-pos)<255){
-                    std::copy(header.begin()+pos,header.begin()+cpos,_RequestVersion.begin());
+                    std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
                     ++pos;
                     found=true;
                     break;
@@ -506,7 +506,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                         size_t keylen=delimeter-startkeypos;
                         if(keylen>0 && keylen <= header.size()){
                             std::string key;
-                            std::copy(header.begin()+startkeypos,header.begin()+delimeter,key.begin());
+                            std::copy(header.begin()+startkeypos,header.begin()+delimeter,std::inserter<std::string>(key,key.begin()));
                             for (size_t it = 0; it < keylen; ++it) {
                                 key[it] = (char)tolower(key[it]);
                             }
@@ -514,7 +514,7 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
                             if(pos > 0 && valuelen <= header.size()){
                                 std::string value;
                                 size_t vstart=delimeter+2;
-                                std::copy(header.begin()+vstart,header.begin()+(delimeter-2),value.begin());
+                                std::copy(header.begin()+vstart,header.begin()+(delimeter-2),std::inserter<std::string>(value,value.begin()));
                                 for (size_t it = 0; it < valuelen; ++it) {
                                     value[it] = (char)tolower(value[it]);
                                 }
