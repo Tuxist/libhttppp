@@ -531,6 +531,12 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             HttpHeader::HeaderData *contentlen=getData("content-length");
 
             if(_RequestType==POSTREQUEST){
+                if(curconnection->getRecvLength() > _MaxUploadSize){
+                    curconnection->cleanRecvData();
+                    excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
+                    throw excep;
+                }
+
                 if((getDataInt(contentlen)+ header.length()) <= curconnection->getRecvLength()){
                     netplus::con::condata *edblock,*sdblock;
                     size_t edblocksize = getDataSizet(contentlen)+header.length(), sdblocksize = header.length();
@@ -553,10 +559,6 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
                     curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _Request);
                     curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.length());
-                }else if(curconnection->getRecvLength() > _MaxUploadSize){
-                    curconnection->cleanRecvData();
-                    excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
-                    throw excep;
                 }
             } else {
                 curconnection->resizeRecvQueue(header.length());
