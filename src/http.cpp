@@ -433,7 +433,7 @@ libhttppp::HttpRequest::HttpRequest(netplus::con* curconnection) : HttpRequest()
   _Connection=curconnection;
 }
 
-int libhttppp::HttpRequest::parse(){
+size_t libhttppp::HttpRequest::parse(){
     HTTPException excep;
 
     _Request.clear();
@@ -552,12 +552,7 @@ int libhttppp::HttpRequest::parse(){
                     throw excep;
                 }
 
-                if(_Connection->getRecvLength() <=(getDataInt(contentlen)+ _Header.size())){
-                    return Reciving;
-                }
             }
-
-            _Connection->resizeRecvQueue(_Header.size());
 
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
@@ -571,7 +566,7 @@ int libhttppp::HttpRequest::parse(){
         throw e;
     }
 
-    return 0;
+    return _Header.size();
 }
 
 void libhttppp::HttpRequest::printHeader(std::string &buffer){
@@ -638,7 +633,6 @@ std::vector<char> libhttppp::HttpRequest::getMessageBody(){
   }
 
   _Connection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
-  _Connection->resizeRecvQueue(getDataSizet(contentlen)+_Header.size());
   return _MessageBody;
 }
 

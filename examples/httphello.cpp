@@ -40,6 +40,8 @@ public:
     };
     void RequestEvent(netplus::con *curcon){
         try{
+            libhttppp::HttpRequest curreq(curcon);
+            curcon->resizeRecvQueue(0,curreq.parse());
             libhttppp::HttpResponse curres;
             const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
             curres.setContentType("text/html");

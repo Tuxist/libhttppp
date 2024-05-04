@@ -127,8 +127,8 @@ namespace libhttppp {
     HttpRequest(netplus::con *curconnection);
     ~HttpRequest();
     /*server methods*/
-    enum State     {Completed=0,Reciving=1,Sending=2};
-    int               parse(); //only use as server
+
+    size_t            parse(); //only use as server
     void              printHeader(std::string &buffer);
     int               getRequestType();
     const char       *getRequestURL();

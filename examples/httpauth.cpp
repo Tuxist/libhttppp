@@ -47,7 +47,7 @@ public:
         try{
             std::cout << "Parse Request\n" << std::endl;
             libhttppp::HttpRequest curreq(curcon);
-            curreq.parse();
+            curcon->resizeRecvQueue(0,curreq.parse());
             const char *cururl=curreq.getRequestURL();
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 libhttppp::HttpResponse curres;
