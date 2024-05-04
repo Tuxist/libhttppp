@@ -48,7 +48,7 @@ public:
             libhtmlpp::HtmlString formdat;
             try {
                 std::cout << "Parse Request" << std::endl;
-                curcon->resizeRecvQueue(0,curreq.parse());
+                curcon->resizeRecvQueue(curreq.parse());
                 Multiform(curreq, formdat);
                 URlform(curreq, formdat);
                 std::cout << "Send answer" << std::endl;

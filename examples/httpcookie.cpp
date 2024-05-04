@@ -145,7 +145,7 @@ public:
         try{
             std::cout << "Parse Request" << std::endl;
             libhttppp::HttpRequest curreq(curcon);
-            curcon->resizeRecvQueue(0,curreq.parse());
+            curcon->resizeRecvQueue(curreq.parse());
             std::cout << "Send answer" << std::endl;
             CookieTest(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
