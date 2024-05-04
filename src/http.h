@@ -124,33 +124,36 @@ namespace libhttppp {
   class HttpRequest : public HttpHeader{
   public:
     HttpRequest();
+    HttpRequest(netplus::con *curconnection);
     ~HttpRequest();
     /*server methods*/
-    void           parse(netplus::con *curconnection); //only use as server
-    void           printHeader(std::string &buffer);
-    int            getRequestType();
-    const char    *getRequestURL();
-    const char    *getRequest();
-    size_t         getRequestLength();
-    const char    *getRequestVersion();
-
+    enum State     {Completed=0,Reciving=1,Sending=2};
+    int               parse(); //only use as server
+    void              printHeader(std::string &buffer);
+    int               getRequestType();
+    const char       *getRequestURL();
+    const char       *getRequest();
+    size_t            getRequestLength();
+    const char       *getRequestVersion();
+    std::vector<char> getMessageBody();
     /*mobilphone switch*/
     bool isMobile();
 
     /*Client methods*/
-    void           setRequestType(int req);
-    void           setRequestURL(const char *url);
-    void           setRequestVersion(const char *version);
+    void              setRequestType(int req);
+    void              setRequestURL(const char *url);
+    void              setRequestVersion(const char *version);
     /*only for post Reuquesttype*/
-    void           setRequestData(const char *data,size_t len);
-    void           setMaxUploadSize(size_t upsize);
-    void           send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
+    void              setRequestData(const char *data,size_t len);
+    void              setMaxUploadSize(size_t upsize);
+    void              send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
   private:
     std::string       _Request;
     int               _RequestType;
     std::string       _RequestURL;
     std::string       _RequestVersion;
     size_t            _MaxUploadSize;
+    std::vector<char> _Header;
     std::vector<char> _MessageBody;
     netplus::con     *_Connection;
     friend class HttpForm;

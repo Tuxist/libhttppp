@@ -46,8 +46,8 @@ public:
     void RequestEvent(netplus::con *curcon){
         try{
             std::cout << "Parse Request\n" << std::endl;
-            libhttppp::HttpRequest curreq;
-            curreq.parse(curcon);
+            libhttppp::HttpRequest curreq(curcon);
+            curreq.parse();
             const char *cururl=curreq.getRequestURL();
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 libhttppp::HttpResponse curres;

@@ -127,8 +127,8 @@ public:
     
     void IndexController(netplus::con *curcon){
         try{
-            libhttppp::HttpRequest curreq;
-            curreq.parse(curcon);
+            libhttppp::HttpRequest curreq(curcon);
+            curreq.parse();
             const char *cururl=curreq.getRequestURL();
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);

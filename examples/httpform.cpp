@@ -44,11 +44,11 @@ public:
         
     };
     void RequestEvent(netplus::con *curcon){
-            libhttppp::HttpRequest curreq;
+            libhttppp::HttpRequest curreq(curcon);
             libhtmlpp::HtmlString formdat;
             try {
                 std::cout << "Parse Request" << std::endl;
-                curreq.parse(curcon);
+                curreq.parse();
                 Multiform(curreq, formdat);
                 URlform(curreq, formdat);
                 std::cout << "Send answer" << std::endl;

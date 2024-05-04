@@ -421,30 +421,44 @@ libhttppp::HttpResponse::~HttpResponse() {
 libhttppp::HttpRequest::HttpRequest(){
   _RequestType=0;
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
+};
+
+libhttppp::HttpRequest::HttpRequest(netplus::con* curconnection) : HttpRequest(){
+  if(!curconnection){
+    HTTPException excep;
+    excep[HTTPException::Warning] << "HttpRequest Connection empty!";
+    curconnection->cleanRecvData();
+    throw excep;
+  }
+  _Connection=curconnection;
 }
 
-void libhttppp::HttpRequest::parse(netplus::con* curconnection){
+int libhttppp::HttpRequest::parse(){
     HTTPException excep;
-    if(!curconnection)
-        return;
+
+    _Request.clear();
+    _RequestURL.clear();
+    _RequestVersion.clear();
+    _Header.clear();
+    _MessageBody.clear();
 
     try{
-        netplus::con::condata *curdat=curconnection->getRecvFirst();
+        netplus::con::condata *curdat=_Connection->getRecvFirst();
         if(curdat){
             netplus::con::condata *startblock;
             int startpos=0;
             
-            if((startpos=curconnection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
+            if((startpos=_Connection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
                 _RequestType=GETREQUEST;
-            }else if((startpos=curconnection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
+            }else if((startpos=_Connection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
                 _RequestType=POSTREQUEST;
             }else{
                 excep[HTTPException::Warning] << "Requesttype not known cleanup";
-                curconnection->cleanRecvData();
+                _Connection->cleanRecvData();
                 throw excep;
             }
             netplus::con::condata *endblock;
-            ssize_t endpos=curconnection->searchValue(startblock,&endblock,"\r\n\r\n",4);
+            ssize_t endpos=_Connection->searchValue(startblock,&endblock,"\r\n\r\n",4);
             if(endpos==-1){
                 excep[HTTPException::Error] << "can't find newline headerend";
                 throw excep;
@@ -452,22 +466,22 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             endpos+=4;  
             
             
-            std::vector<char> header;
-            curconnection->copyValue(startblock,startpos,endblock,endpos,header);
+
+            _Connection->copyValue(startblock,startpos,endblock,endpos,_Header);
             
             bool found=false;
             int pos=0;
 
-            for(size_t cpos=pos; cpos< header.size(); ++cpos){
-                if(header[cpos]==' '){
+            for(size_t cpos=pos; cpos< _Header.size(); ++cpos){
+                if(_Header[cpos]==' '){
                     pos=++cpos;
                     break;
                 }
             }
 
-            for(size_t cpos=pos; cpos<header.size(); ++cpos){
-                if(header[cpos]==' ' && (cpos-pos)<255){
-                    std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_Request,_Request.begin()));
+            for(size_t cpos=pos; cpos<_Header.size(); ++cpos){
+                if(_Header[cpos]==' ' && (cpos-pos)<255){
+                    std::copy(_Header.begin()+pos,_Header.begin()+cpos,std::inserter<std::string>(_Request,_Request.begin()));
                     ++pos;
                     break;
                 }
@@ -480,9 +494,9 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
               _RequestURL=_Request.substr(0,last);
             }
 
-            for(size_t cpos=pos; cpos<header.size(); ++cpos){
-                if(header[cpos]==' ' && (cpos-pos)<255){
-                    std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
+            for(size_t cpos=pos; cpos<_Header.size(); ++cpos){
+                if(_Header[cpos]==' ' && (cpos-pos)<255){
+                    std::copy(_Header.begin()+pos,_Header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
                     ++pos;
                     found=true;
                     break;
@@ -497,24 +511,24 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             /*parse the http header fields*/
             size_t lrow=0,delimeter=0,startkeypos=0;
             
-            for(size_t pos=0; pos< header.size(); pos++){
-                if(delimeter==0 && header[pos]==':'){
+            for(size_t pos=0; pos< _Header.size(); pos++){
+                if(delimeter==0 && _Header[pos]==':'){
                     delimeter=pos; 
                 }
-                if(header[pos]=='\r'){
+                if(_Header[pos]=='\r'){
                     if(delimeter>lrow && delimeter!=0){
                         size_t keylen=delimeter-startkeypos;
-                        if(keylen>0 && keylen <= header.size()){
+                        if(keylen>0 && keylen <= _Header.size()){
                             std::string key;
-                            std::copy(header.begin()+startkeypos,header.begin()+delimeter,std::inserter<std::string>(key,key.begin()));
+                            std::copy(_Header.begin()+startkeypos,_Header.begin()+(delimeter+1),std::inserter<std::string>(key,key.begin()));
                             for (size_t it = 0; it < keylen; ++it) {
                                 key[it] = (char)tolower(key[it]);
                             }
                             size_t valuelen=(pos-delimeter)-2;
-                            if(pos > 0 && valuelen <= header.size()){
+                            if(pos > 0 && valuelen <= _Header.size()){
                                 std::string value;
                                 size_t vstart=delimeter+2;
-                                std::copy(header.begin()+vstart,header.begin()+(delimeter-2),std::inserter<std::string>(value,value.begin()));
+                                std::copy(_Header.begin()+vstart,_Header.begin()+(delimeter-1),std::inserter<std::string>(value,value.begin()));
                                 for (size_t it = 0; it < valuelen; ++it) {
                                     value[it] = (char)tolower(value[it]);
                                 }
@@ -532,40 +546,18 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
             HttpHeader::HeaderData *contentlen=getData("content-length");
 
             if(_RequestType==POSTREQUEST){
-                if(curconnection->getRecvLength() > _MaxUploadSize){
-                    curconnection->cleanRecvData();
+                if(_Connection->getRecvLength() > _MaxUploadSize){
+                    _Connection->cleanRecvData();
                     excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
                     throw excep;
                 }
 
-                if((getDataInt(contentlen)+ header.size()) <= curconnection->getRecvLength()){
-                    netplus::con::condata *edblock,*sdblock;
-                    size_t edblocksize = getDataSizet(contentlen)+header.size(), sdblocksize = header.size();
-
-                    for (sdblock = curconnection->getRecvFirst(); sdblock; sdblock = sdblock->nextcondata()) {
-                        if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
-                            sdblocksize -= sdblock->getDataLength();
-                            continue;
-                        }
-                        break;
-                    }
-
-                    for(edblock=curconnection->getRecvFirst(); edblock; edblock=edblock->nextcondata()){
-                        if (edblocksize !=0 && edblock->getDataLength() <= edblocksize) {
-                            edblocksize -= edblock->getDataLength();
-                            continue;
-                        }
-                        break;
-                    }
-
-                    curconnection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
-                    curconnection->resizeRecvQueue(getDataSizet(contentlen) + header.size());
+                if(_Connection->getRecvLength() <=(getDataInt(contentlen)+ _Header.size())){
+                    return Reciving;
                 }
             }
 
-            if (curconnection->getRecvLength()!=0) {
-                excep[HTTPException::Note] << "RequestAgain";
-            }
+            _Connection->resizeRecvQueue(_Header.size());
 
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
@@ -574,10 +566,12 @@ void libhttppp::HttpRequest::parse(netplus::con* curconnection){
 
     }catch(HTTPException &e){
         if (e.getErrorType() != libhttppp::HTTPException::Note) {
-            curconnection->cleanRecvData();           
+            _Connection->cleanRecvData();
         }
         throw e;
     }
+
+    return 0;
 }
 
 void libhttppp::HttpRequest::printHeader(std::string &buffer){
@@ -619,6 +613,33 @@ size_t libhttppp::HttpRequest::getRequestLength() {
 
 const char * libhttppp::HttpRequest::getRequestVersion(){
   return _RequestVersion.c_str();
+}
+
+std::vector<char> libhttppp::HttpRequest::getMessageBody(){
+  HttpHeader::HeaderData *contentlen=getData("content-length");
+
+  netplus::con::condata *edblock,*sdblock;
+  size_t edblocksize = getDataSizet(contentlen)+_Header.size(), sdblocksize = _Header.size();
+
+  for (sdblock = _Connection->getRecvFirst(); sdblock; sdblock = sdblock->nextcondata()) {
+    if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
+      sdblocksize -= sdblock->getDataLength();
+      continue;
+    }
+    break;
+  }
+
+  for(edblock=_Connection->getRecvFirst(); edblock; edblock=edblock->nextcondata()){
+    if (edblocksize !=0 && edblock->getDataLength() <= edblocksize) {
+      edblocksize -= edblock->getDataLength();
+      continue;
+    }
+    break;
+  }
+
+  _Connection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
+  _Connection->resizeRecvQueue(getDataSizet(contentlen)+_Header.size());
+  return _MessageBody;
 }
 
 bool libhttppp::HttpRequest::isMobile(){
@@ -1163,8 +1184,8 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   std::string formdat;
   if(request->getRequestType()==POSTREQUEST){
       size_t rsize=request->getRequestLength();
-      std::copy(request->_MessageBody.begin(),request->_MessageBody.end(),
-                std::inserter<std::string>(formdat,formdat.end()));
+      std::vector<char> mdat=request->getMessageBody();
+      std::copy(mdat.begin(),mdat.end(),std::inserter<std::string>(formdat,formdat.end()));
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);

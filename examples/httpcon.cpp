@@ -72,8 +72,8 @@ public:
     void RequestEvent(netplus::con *curcon){
         try{
             std::cout << "Parse Request" << std::endl;
-            libhttppp::HttpRequest curreq;
-            curreq.parse(curcon);
+            libhttppp::HttpRequest curreq(curcon);
+            curreq.parse();
             std::cout << "Send answer" << std::endl;
             sendResponse(curcon,&curreq);
         }catch(libhttppp::HTTPException &e){
