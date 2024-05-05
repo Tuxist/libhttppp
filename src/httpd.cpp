@@ -36,6 +36,7 @@
 
 #include "http.h"
 #include "httpd.h"
+#include "exception.h"
 
 #define MAXDEFAULTCONN 1024
 #define MBEDTLS_PSA_CRYPTO_CONFIG true
@@ -49,6 +50,7 @@ void libhttppp::HttpEvent::CreateConnetion(netplus::con ** curon){
 
 void libhttppp::HttpEvent::deleteConnetion(netplus::con* curon){
     delete curon;
+    curon=nullptr;
 }
 
 void libhttppp::HttpEvent::RequestEvent(HttpRequest *curreq){
@@ -64,6 +66,15 @@ void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq){
 }
 
 void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
+    size_t size;
+    try{
+        size=((HttpRequest*)curcon)->parse();
+    }catch(HTTPException &e){
+        netplus::NetException re;
+        re[netplus::NetException::Error] << "http error:" << e.what();
+        throw re;
+    }
+    curcon->resizeRecvQueue(size);
     RequestEvent((HttpRequest*)curcon);
 }
 

@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include "httpd.h"
 
-void sendResponse(netplus::con *curcon,libhttppp::HttpRequest *curreq) {
+void sendResponse(libhttppp::HttpRequest *curreq) {
      libhttppp::HttpResponse curres;
      curres.setState(HTTP200);
      curres.setVersion(HTTPVERSION(1.1));
@@ -59,7 +59,7 @@ void sendResponse(netplus::con *curcon,libhttppp::HttpRequest *curreq) {
      condat  << "</body></html>";
      libhtmlpp::HtmlString html;
      libhtmlpp::print(condat.parse(),html);
-     curres.send(curcon,html.c_str(),html.size());
+     curres.send(curreq,html.c_str(),html.size());
 };
 
 class Controller : public libhttppp::HttpEvent {
@@ -67,13 +67,10 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
-    void RequestEvent(netplus::con *curcon){
+    void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
-            std::cout << "Parse Request" << std::endl;
-            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
-            curcon->resizeRecvQueue(curreq->parse());
             std::cout << "Send answer"  << std::endl;
-            sendResponse(curcon,curreq);
+            sendResponse(curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
             throw e;

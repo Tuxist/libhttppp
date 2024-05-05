@@ -125,11 +125,8 @@ public:
         
     };
     
-    void IndexController(netplus::con *curcon){
+    void IndexController(libhttppp::HttpRequest *curreq){
         try{
-            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
-            curcon->resizeRecvQueue(curreq->parse());
-
             const char *cururl=curreq->getRequestURL();
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
@@ -144,26 +141,26 @@ public:
                 sys.TimeInfo(index);
                 sys.KernelInfo(index);
                 libhtmlpp::print(&index,html);
-                curres.send(curcon,html.c_str(),html.size());
+                curres.send(curreq,html.c_str(),html.size());
             }else if(strncmp(cururl,"/images/header.png",18)==0){
                 curres.setContentType("image/png");
-                curres.send(curcon,(const char*)header_png,header_png_size);
+                curres.send(curreq,(const char*)header_png,header_png_size);
             }else if(strncmp(cururl,"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
-                curres.send(curcon,(const char*)favicon_ico,favicon_ico_size);
+                curres.send(curreq,(const char*)favicon_ico,favicon_ico_size);
             }else{
                 curres.setState(HTTP404);
-                curres.send(curcon,nullptr,0);
+                curres.send(curreq,nullptr,0);
             }
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
         }
     }
     /*virtual method from event will call for every incomming Request*/
-    void RequestEvent(netplus::con *curcon){
+    void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
             /*self implemented controller see above*/
-            IndexController(curcon);
+            IndexController(curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() <<std::endl;
         }

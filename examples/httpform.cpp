@@ -44,22 +44,13 @@ public:
         
     };
 
-    void RequestEvent(netplus::con *curcon){
-            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
+    void RequestEvent(libhttppp::HttpRequest* curreq ){
             libhtmlpp::HtmlString formdat;
             try {
-                std::cout << "Parse Request" << std::endl;
-                try{
-                    curreq->resizeRecvQueue(curreq->parse());
-                }catch(...){
-                    curreq->cleanRecvData();
-                    std::cerr << "Illegal Request !";
-                    return;
-                }
-                Multiform(*curreq, formdat);
-                URlform(*curreq, formdat);
+                Multiform(curreq, formdat);
+                URlform(curreq, formdat);
                 std::cout << "Send answer" << std::endl;
-                sendResponse(curcon, formdat);
+                sendResponse(curreq, formdat);
                 
             }
             catch (libhttppp::HTTPException& e) {
@@ -68,14 +59,14 @@ public:
                     curres.setState(HTTP500);
                     curres.setVersion(HTTPVERSION(2.0));
                     curres.setContentLength(0);
-                    curres.send(curcon, e.what(), strlen(e.what()));
+                    curres.send(curreq, e.what(), strlen(e.what()));
                 }
             }
     }
 private:
-    void Multiform(libhttppp::HttpRequest& curreq, libhtmlpp::HtmlString& condat) {
+    void Multiform(libhttppp::HttpRequest* curreq, libhtmlpp::HtmlString& condat) {
         libhttppp::HttpForm curform;
-        curform.parse(&curreq);
+        curform.parse(curreq);
 
         if (curform.getBoundary()) {
             condat << "Boundary: " << curform.getBoundary() << "<br>";
@@ -103,9 +94,9 @@ private:
         }
     };
 
-    void URlform(libhttppp::HttpRequest& curreq, libhtmlpp::HtmlString& condat) {
+    void URlform(libhttppp::HttpRequest* curreq, libhtmlpp::HtmlString& condat) {
         libhttppp::HttpForm curform;
-        curform.parse(&curreq);
+        curform.parse(curreq);
         if (curform.getUrlcodedFormData()) {
             for (libhttppp::HttpForm::UrlcodedFormData* cururlform = curform.getUrlcodedFormData(); cururlform;
                 cururlform = cururlform->nextUrlcodedFormData()) {
@@ -117,7 +108,7 @@ private:
         }
     };
 
-    void sendResponse(netplus::con* curcon, libhtmlpp::HtmlString formdat) {
+    void sendResponse(libhttppp::HttpRequest* curreq, libhtmlpp::HtmlString formdat) {
         libhttppp::HttpResponse curres;
         libhtmlpp::HtmlString condat;
         curres.setState(HTTP200);
@@ -189,7 +180,7 @@ private:
         condat << "</div></body></html>";
         libhtmlpp::HtmlString html;
         libhtmlpp::print(condat.parse(),html);
-        curres.send(curcon, html.c_str(), html.size());
+        curres.send(curreq, html.c_str(), html.size());
     };
 };
 

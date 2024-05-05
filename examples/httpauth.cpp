@@ -46,11 +46,6 @@ public:
     void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
             std::cout << "Parse Request\n" << std::endl;
-            try{
-                curreq->resizeRecvQueue(curreq->parse());
-            }catch(...){
-                std::cerr << "Illegal request !" << std::endl;
-            }
             const char *cururl=curreq->getRequestURL();
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 libhttppp::HttpResponse curres;
