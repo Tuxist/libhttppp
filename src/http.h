@@ -31,6 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <memory>
 #include <vector>
 #include <string>
+
+#include <netplus/socket.h>
+#include <netplus/connection.h>
 #include <netplus/eventapi.h>
 
 #include "config.h"
@@ -82,7 +85,7 @@ namespace libhttppp {
     HeaderData *_lastHeaderData;
   };
   
-  class HttpResponse : public HttpHeader {
+  class HttpResponse : public HttpHeader,public netplus::con {
   public:
     HttpResponse();
     ~HttpResponse();
@@ -121,10 +124,10 @@ namespace libhttppp {
   };
   
  
-  class HttpRequest : public HttpHeader{
+  class HttpRequest : public HttpHeader, public netplus::con{
   public:
     HttpRequest();
-    HttpRequest(netplus::con *curconnection);
+    HttpRequest(netplus::eventapi *evapi);
     ~HttpRequest();
     /*server methods*/
 
@@ -155,7 +158,6 @@ namespace libhttppp {
     size_t            _MaxUploadSize;
     std::vector<char> _Header;
     std::vector<char> _MessageBody;
-    netplus::con     *_Connection;
     friend class HttpForm;
   };
   

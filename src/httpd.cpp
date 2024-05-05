@@ -34,12 +34,25 @@
 
 #include <cmdplus/cmdplus.h>
 
+#include "http.h"
 #include "httpd.h"
 
 #define MAXDEFAULTCONN 1024
 #define MBEDTLS_PSA_CRYPTO_CONFIG true
 
-libhttppp::HttpD::HttpD(int argc, char** argv){
+libhttppp::HttpEvent::HttpEvent(netplus::socket *ssock) : netplus::event(ssock){
+}
+
+void libhttppp::HttpEvent::CreateConnetion(netplus::con ** curon){
+    *curon=new HttpRequest(this);
+}
+
+void libhttppp::HttpEvent::deleteConnetion(netplus::con* curon){
+    delete curon;
+}
+
+
+libhttppp::HttpD::HttpD(int argc, char** argv) {
     HTTPDCmdController= &cmdplus::CmdController::getInstance();
     /*Register Parameters*/
     HTTPDCmdController->registerCmd("help", 'h', false, (const char*) nullptr, "Helpmenu");

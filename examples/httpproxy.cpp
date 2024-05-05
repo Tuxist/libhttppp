@@ -62,18 +62,18 @@ void sendResponse(netplus::con *curcon,libhttppp::HttpRequest *curreq) {
      curres.send(curcon,html.c_str(),html.size());
 };
 
-class Controller : public netplus::event {
+class Controller : public libhttppp::HttpEvent {
 public:
-    Controller(netplus::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
     void RequestEvent(netplus::con *curcon){
         try{
             std::cout << "Parse Request" << std::endl;
-            libhttppp::HttpRequest curreq(curcon);
-            curcon->resizeRecvQueue(curreq.parse());
+            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
+            curcon->resizeRecvQueue(curreq->parse());
             std::cout << "Send answer"  << std::endl;
-            sendResponse(curcon,&curreq);
+            sendResponse(curcon,curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
             throw e;

@@ -38,19 +38,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "httpd.h"
 
 
-class Controller : public netplus::event {
+class Controller : public libhttppp::HttpEvent {
 public:
-    Controller(netplus::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
     void RequestEvent(netplus::con *curcon){
-            libhttppp::HttpRequest curreq(curcon);
+            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
             libhtmlpp::HtmlString formdat;
             try {
                 std::cout << "Parse Request" << std::endl;
-                curcon->resizeRecvQueue(curreq.parse());
-                Multiform(curreq, formdat);
-                URlform(curreq, formdat);
+                curcon->resizeRecvQueue(curreq->parse());
+                Multiform(*curreq, formdat);
+                URlform(*curreq, formdat);
                 std::cout << "Send answer" << std::endl;
                 sendResponse(curcon, formdat);
                 

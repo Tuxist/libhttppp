@@ -136,18 +136,18 @@ private:
     libhttppp::HttpRequest *_Curreq;
 };
 
-class Controller : public netplus::event {
+class Controller : public libhttppp::HttpEvent {
 public:
-    Controller(netplus::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
     void RequestEvent(netplus::con *curcon){
         try{
             std::cout << "Parse Request" << std::endl;
-            libhttppp::HttpRequest curreq(curcon);
-            curcon->resizeRecvQueue(curreq.parse());
+            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
+            curcon->resizeRecvQueue(curreq->parse());
             std::cout << "Send answer" << std::endl;
-            CookieTest(curcon,&curreq);
+            CookieTest(curcon,curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr<< e.what() << std::endl;
         }

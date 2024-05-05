@@ -37,18 +37,18 @@
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public netplus::event {
+class Controller : public libhttppp::HttpEvent {
 public:
-    Controller(netplus::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
     
     void RequestEvent(netplus::con *curcon){
         try{
             std::cout << "Parse Request\n" << std::endl;
-            libhttppp::HttpRequest curreq(curcon);
-            curcon->resizeRecvQueue(curreq.parse());
-            const char *cururl=curreq.getRequestURL();
+            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
+            curcon->resizeRecvQueue(curreq->parse());
+            const char *cururl=curreq->getRequestURL();
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 libhttppp::HttpResponse curres;
                 curres.setState(HTTP200);

@@ -119,18 +119,18 @@ public:
 
 };
 
-class Controller : public netplus::event {
+class Controller : public libhttppp::HttpEvent {
 public:
-    Controller(netplus::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
     
     void IndexController(netplus::con *curcon){
         try{
-            libhttppp::HttpRequest curreq(curcon);
-            curcon->resizeRecvQueue(curreq.parse());
+            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
+            curcon->resizeRecvQueue(curreq->parse());
 
-            const char *cururl=curreq.getRequestURL();
+            const char *cururl=curreq->getRequestURL();
             libhttppp::HttpResponse curres;
             curres.setState(HTTP200);
             curres.setVersion(HTTPVERSION(2.0));

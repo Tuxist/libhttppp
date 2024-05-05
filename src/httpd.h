@@ -37,6 +37,14 @@ namespace cmdplus {
 }
 
 namespace libhttppp {
+
+    class HttpEvent : public netplus::event{
+    public:
+        HttpEvent(netplus::socket *ssock);
+        void CreateConnetion(netplus::con **curon);
+        void deleteConnetion(netplus::con *curon);
+    };
+
     class HttpD {
     public:
         HttpD(int argc, char** argv);

@@ -33,15 +33,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "http.h"
 #include "httpd.h"
 
-class Controller : public netplus::event {
+class Controller : public libhttppp::HttpEvent {
 public:
-    Controller(netplus::socket* serversocket) : event(serversocket){
+    Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
     void RequestEvent(netplus::con *curcon){
         try{
-            libhttppp::HttpRequest curreq(curcon);
-            curcon->resizeRecvQueue(curreq.parse());
+            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
+            curcon->resizeRecvQueue(curreq->parse());
             libhttppp::HttpResponse curres;
             const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
             curres.setContentType("text/html");

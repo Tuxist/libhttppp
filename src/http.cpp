@@ -423,14 +423,9 @@ libhttppp::HttpRequest::HttpRequest(){
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
 };
 
-libhttppp::HttpRequest::HttpRequest(netplus::con* curconnection) : HttpRequest(){
-  if(!curconnection){
-    HTTPException excep;
-    excep[HTTPException::Warning] << "HttpRequest Connection empty!";
-    curconnection->cleanRecvData();
-    throw excep;
-  }
-  _Connection=curconnection;
+libhttppp::HttpRequest::HttpRequest(netplus::eventapi *evapi) : netplus::con(evapi) {
+  _RequestType=0;
+  _MaxUploadSize=DEFAULT_UPLOADSIZE;
 }
 
 size_t libhttppp::HttpRequest::parse(){
@@ -443,22 +438,22 @@ size_t libhttppp::HttpRequest::parse(){
     _MessageBody.clear();
 
     try{
-        netplus::con::condata *curdat=_Connection->getRecvFirst();
+        netplus::con::condata *curdat=getRecvFirst();
         if(curdat){
             netplus::con::condata *startblock;
             int startpos=0;
             
-            if((startpos=_Connection->searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
+            if((startpos=searchValue(curdat,&startblock,"GET",3))==0 && startblock==curdat){
                 _RequestType=GETREQUEST;
-            }else if((startpos=_Connection->searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
+            }else if((startpos=searchValue(curdat,&startblock,"POST",4))==0 && startblock==curdat){
                 _RequestType=POSTREQUEST;
             }else{
                 excep[HTTPException::Warning] << "Requesttype not known cleanup";
-                _Connection->cleanRecvData();
+                cleanRecvData();
                 throw excep;
             }
             netplus::con::condata *endblock;
-            ssize_t endpos=_Connection->searchValue(startblock,&endblock,"\r\n\r\n",4);
+            ssize_t endpos=searchValue(startblock,&endblock,"\r\n\r\n",4);
             if(endpos==-1){
                 excep[HTTPException::Error] << "can't find newline headerend";
                 throw excep;
@@ -467,7 +462,7 @@ size_t libhttppp::HttpRequest::parse(){
             
             
 
-            _Connection->copyValue(startblock,startpos,endblock,endpos,_Header);
+            copyValue(startblock,startpos,endblock,endpos,_Header);
             
             bool found=false;
             int pos=0;
@@ -546,8 +541,8 @@ size_t libhttppp::HttpRequest::parse(){
             HttpHeader::HeaderData *contentlen=getData("content-length");
 
             if(_RequestType==POSTREQUEST){
-                if(_Connection->getRecvLength() > _MaxUploadSize){
-                    _Connection->cleanRecvData();
+                if(getRecvLength() > _MaxUploadSize){
+                    cleanRecvData();
                     excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
                     throw excep;
                 }
@@ -561,11 +556,10 @@ size_t libhttppp::HttpRequest::parse(){
 
     }catch(HTTPException &e){
         if (e.getErrorType() != libhttppp::HTTPException::Note) {
-            _Connection->cleanRecvData();
+            cleanRecvData();
         }
         throw e;
     }
-
     return _Header.size();
 }
 
@@ -616,7 +610,7 @@ std::vector<char> libhttppp::HttpRequest::getMessageBody(){
   netplus::con::condata *edblock,*sdblock;
   size_t edblocksize = getDataSizet(contentlen)+_Header.size(), sdblocksize = _Header.size();
 
-  for (sdblock = _Connection->getRecvFirst(); sdblock; sdblock = sdblock->nextcondata()) {
+  for (sdblock = getRecvFirst(); sdblock; sdblock = sdblock->nextcondata()) {
     if (sdblocksize!=0 && sdblock->getDataLength() <= sdblocksize) {
       sdblocksize -= sdblock->getDataLength();
       continue;
@@ -624,7 +618,7 @@ std::vector<char> libhttppp::HttpRequest::getMessageBody(){
     break;
   }
 
-  for(edblock=_Connection->getRecvFirst(); edblock; edblock=edblock->nextcondata()){
+  for(edblock=getRecvFirst(); edblock; edblock=edblock->nextcondata()){
     if (edblocksize !=0 && edblock->getDataLength() <= edblocksize) {
       edblocksize -= edblock->getDataLength();
       continue;
@@ -632,7 +626,7 @@ std::vector<char> libhttppp::HttpRequest::getMessageBody(){
     break;
   }
 
-  _Connection->copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
+  copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
   return _MessageBody;
 }
 
