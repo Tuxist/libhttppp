@@ -38,14 +38,13 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
-    void RequestEvent(netplus::con *curcon){
+    void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
-            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
-            curcon->resizeRecvQueue(curreq->parse());
+            curreq->resizeRecvQueue(curreq->parse());
             libhttppp::HttpResponse curres;
             const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
             curres.setContentType("text/html");
-            curres.send(curcon,hello,strlen(hello));
+            curres.send(curreq,hello,strlen(hello));
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
         }

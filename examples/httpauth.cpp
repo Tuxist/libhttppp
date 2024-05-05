@@ -43,11 +43,14 @@ public:
         
     };
     
-    void RequestEvent(netplus::con *curcon){
+    void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
             std::cout << "Parse Request\n" << std::endl;
-            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
-            curcon->resizeRecvQueue(curreq->parse());
+            try{
+                curreq->resizeRecvQueue(curreq->parse());
+            }catch(...){
+                std::cerr << "Illegal request !" << std::endl;
+            }
             const char *cururl=curreq->getRequestURL();
             if(strncmp(cururl,"/",strlen(cururl))==0){
                 libhttppp::HttpResponse curres;
@@ -69,11 +72,11 @@ public:
                 condat  << "</ul></body></html>";
                 libhtmlpp::HtmlString html;
                 libhtmlpp::print(condat.parse(),html);
-                curres.send(curcon,html.c_str(),html.size());
+                curres.send(curreq,html.c_str(),html.size());
             }else if(strncmp(cururl,"/httpbasicauth",strlen(cururl))==0 ||
                 strncmp(cururl,"/httpdigestauth",strlen(cururl))==0){
                 libhttppp::HttpAuth httpauth;
-            httpauth.parse(&curreq);
+            httpauth.parse(curreq);
             const char *username=httpauth.getUsername();
             const char *password=httpauth.getPassword();
             if(username && password){
@@ -96,7 +99,7 @@ public:
                 curres.setContentType("text/html");
                 libhtmlpp::HtmlString html;
                 libhtmlpp::print(condat.parse(),html);
-                curres.send(curcon,html.c_str(),html.size());
+                curres.send(curreq,html.c_str(),html.size());
                 return;
                 }else{
                     libhttppp::HttpResponse curres;
@@ -110,7 +113,7 @@ public:
                     }
                     httpauth.setRealm("httpauthtest");
                     httpauth.setAuth(&curres);
-                    curres.send(curcon,nullptr,0);
+                    curres.send(curreq,nullptr,0);
                     return;
                 }
             }else{
@@ -118,7 +121,7 @@ public:
                 curres.setState(HTTP404);
                 curres.setVersion(HTTPVERSION(1.1));
                 curres.setContentType("text/html");
-                curres.send(curcon,nullptr,0);
+                curres.send(curreq,nullptr,0);
             }                
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;

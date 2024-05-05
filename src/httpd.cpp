@@ -51,6 +51,35 @@ void libhttppp::HttpEvent::deleteConnetion(netplus::con* curon){
     delete curon;
 }
 
+void libhttppp::HttpEvent::RequestEvent(HttpRequest *curreq){
+}
+
+void libhttppp::HttpEvent::ResponseEvent(HttpRequest *curreq){
+}
+
+void libhttppp::HttpEvent::ConnectEvent(HttpRequest *curreq){
+}
+
+void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq){
+}
+
+void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
+    RequestEvent((HttpRequest*)curcon);
+}
+
+void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
+    ResponseEvent((HttpRequest*)curcon);
+}
+
+void libhttppp::HttpEvent::ConnectEvent(netplus::con* curcon){
+    ConnectEvent((HttpRequest*)curcon);
+}
+
+void libhttppp::HttpEvent::DisconnectEvent(netplus::con* curcon){
+    DisconnectEvent((HttpRequest*)curcon);
+}
+
+
 
 libhttppp::HttpD::HttpD(int argc, char** argv) {
     HTTPDCmdController= &cmdplus::CmdController::getInstance();

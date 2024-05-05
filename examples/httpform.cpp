@@ -43,12 +43,19 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
+
     void RequestEvent(netplus::con *curcon){
             libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
             libhtmlpp::HtmlString formdat;
             try {
                 std::cout << "Parse Request" << std::endl;
-                curcon->resizeRecvQueue(curreq->parse());
+                try{
+                    curreq->resizeRecvQueue(curreq->parse());
+                }catch(...){
+                    curreq->cleanRecvData();
+                    std::cerr << "Illegal Request !";
+                    return;
+                }
                 Multiform(*curreq, formdat);
                 URlform(*curreq, formdat);
                 std::cout << "Send answer" << std::endl;
@@ -69,6 +76,7 @@ private:
     void Multiform(libhttppp::HttpRequest& curreq, libhtmlpp::HtmlString& condat) {
         libhttppp::HttpForm curform;
         curform.parse(&curreq);
+
         if (curform.getBoundary()) {
             condat << "Boundary: " << curform.getBoundary() << "<br>";
             for (libhttppp::HttpForm::MultipartFormData* curformdat = curform.getMultipartFormData(); curformdat; curformdat = curformdat->nextMultipartFormData()) {

@@ -28,6 +28,7 @@
 #include <netplus/socket.h>
 #include <netplus/eventapi.h>
 
+#include "http.h"
 #include "exception.h"
 
 #pragma once
@@ -43,6 +44,17 @@ namespace libhttppp {
         HttpEvent(netplus::socket *ssock);
         void CreateConnetion(netplus::con **curon);
         void deleteConnetion(netplus::con *curon);
+
+        virtual void RequestEvent(HttpRequest *curreq);
+        virtual void ResponseEvent(HttpRequest *curreq);
+        virtual void ConnectEvent(HttpRequest *curreq);
+        virtual void DisconnectEvent(HttpRequest *curreq);
+    private:
+        void RequestEvent(netplus::con *curcon);
+        void ResponseEvent(netplus::con *curcon);
+        void ConnectEvent(netplus::con *curcon);
+        void DisconnectEvent(netplus::con *curcon);
+
     };
 
     class HttpD {
