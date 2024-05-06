@@ -445,7 +445,6 @@ size_t libhttppp::HttpRequest::parse(){
     _RequestURL.clear();
     _RequestVersion.clear();
     _Header.clear();
-    _MessageBody.clear();
 
     try{
         netplus::con::condata *curdat=getRecvFirst();
@@ -614,7 +613,7 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
   return _RequestVersion.c_str();
 }
 
-std::vector<char> libhttppp::HttpRequest::getMessageBody(){
+size_t libhttppp::HttpRequest::getMessageBody(std::vector<char> &mbody){
   HttpHeader::HeaderData *contentlen=getData("content-length");
 
   netplus::con::condata *edblock,*sdblock;
@@ -636,8 +635,8 @@ std::vector<char> libhttppp::HttpRequest::getMessageBody(){
     break;
   }
 
-  copyValue(sdblock, sdblocksize, edblock, edblocksize, _MessageBody);
-  return _MessageBody;
+  copyValue(sdblock, sdblocksize, edblock, edblocksize, mbody);
+  return getDataSizet(contentlen);
 }
 
 bool libhttppp::HttpRequest::isMobile(){
@@ -1181,8 +1180,11 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   HTTPException httpexception;
   std::string formdat;
   if(request->getRequestType()==POSTREQUEST){
-      std::vector<char> mdat=request->getMessageBody();
-      std::copy(mdat.begin(),mdat.end(),std::inserter<std::string>(formdat,formdat.end()));
+      std::vector<char> mdat;
+      request->getMessageBody(mdat);
+      std::copy(mdat.begin(),mdat.end(),std::inserter<std::string>(formdat,formdat.begin()));
+      formdat.push_back('\0');
+      std::cout << formdat <<std::endl;
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);

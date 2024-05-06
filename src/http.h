@@ -140,7 +140,7 @@ namespace libhttppp {
     const char       *getRequest();
     size_t            getRequestLength();
     const char       *getRequestVersion();
-    std::vector<char> getMessageBody();
+    size_t            getMessageBody(std::vector<char> &mbody);
     /*mobilphone switch*/
     bool isMobile();
 
@@ -159,7 +159,6 @@ namespace libhttppp {
     std::string       _RequestVersion;
     size_t            _MaxUploadSize;
     std::vector<char> _Header;
-    std::vector<char> _MessageBody;
     friend class HttpForm;
   };
   
