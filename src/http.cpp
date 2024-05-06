@@ -174,6 +174,16 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
   return hsize;
 }
 
+void libhttppp::HttpHeader::clear(){
+  while(_firstHeaderData){
+    HeaderData *tmpdat=_firstHeaderData->_nextHeaderData;
+    _firstHeaderData->_nextHeaderData=nullptr;
+    delete _firstHeaderData;
+    _firstHeaderData=tmpdat;
+  }
+  _lastHeaderData=nullptr;
+}
+
 
 libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     HTTPException excep;
@@ -477,6 +487,7 @@ size_t libhttppp::HttpRequest::parse(){
             for(size_t cpos=pos; cpos<_Header.size(); ++cpos){
                 if(_Header[cpos]==' ' && (cpos-pos)<255){
                     std::copy(_Header.begin()+pos,_Header.begin()+cpos,std::inserter<std::string>(_Request,_Request.begin()));
+                    _Request.push_back('\0');
                     ++pos;
                     break;
                 }
@@ -492,6 +503,7 @@ size_t libhttppp::HttpRequest::parse(){
             for(size_t cpos=pos; cpos<_Header.size(); ++cpos){
                 if(_Header[cpos]==' ' && (cpos-pos)<255){
                     std::copy(_Header.begin()+pos,_Header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
+                    _RequestVersion.push_back('\0');
                     ++pos;
                     found=true;
                     break;
@@ -514,20 +526,19 @@ size_t libhttppp::HttpRequest::parse(){
                     if(delimeter>lrow && delimeter!=0){
                         size_t keylen=delimeter-startkeypos;
                         if(keylen>0 && keylen <= _Header.size()){
-                            std::string key;
-                            std::copy(_Header.begin()+startkeypos,_Header.begin()+(delimeter+1),std::inserter<std::string>(key,key.begin()));
+                            std::string key(_Header.begin()+startkeypos,_Header.begin()+delimeter);
                             for (size_t it = 0; it < keylen; ++it) {
                                 key[it] = (char)tolower(key[it]);
                             }
+                            key.push_back('\0');
                             size_t valuelen=(pos-delimeter)-2;
                             if(pos > 0 && valuelen <= _Header.size()){
-                                std::string value;
                                 size_t vstart=delimeter+2;
-                                std::copy(_Header.begin()+vstart,_Header.begin()+(delimeter-1),std::inserter<std::string>(value,value.begin()));
+                                std::string value(_Header.begin()+vstart,_Header.begin()+pos);
                                 for (size_t it = 0; it < valuelen; ++it) {
                                     value[it] = (char)tolower(value[it]);
                                 }
-
+                                value.push_back('\0');
                                 *setData(key.c_str())<<value.c_str();
                             }
                         }
@@ -537,8 +548,6 @@ size_t libhttppp::HttpRequest::parse(){
                     startkeypos=lrow+2;
                 }
             }
-
-            HttpHeader::HeaderData *contentlen=getData("content-length");
 
             if(_RequestType==POSTREQUEST){
                 if(getRecvLength() > _MaxUploadSize){
@@ -554,11 +563,12 @@ size_t libhttppp::HttpRequest::parse(){
             throw excep;
         }
 
-    }catch(HTTPException &e){
-        if (e.getErrorType() != libhttppp::HTTPException::Note) {
+    }catch(netplus::NetException &e){
+        if (e.getErrorType() != netplus::NetException::Note) {
             cleanRecvData();
         }
-        throw e;
+        excep[HTTPException::Error] << "netplus error: " << e.what();
+        throw excep;
     }
     return _Header.size();
 }
@@ -1171,7 +1181,6 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   HTTPException httpexception;
   std::string formdat;
   if(request->getRequestType()==POSTREQUEST){
-      size_t rsize=request->getRequestLength();
       std::vector<char> mdat=request->getMessageBody();
       std::copy(mdat.begin(),mdat.end(),std::inserter<std::string>(formdat,formdat.end()));
   }else if(request->getRequestType()==GETREQUEST){

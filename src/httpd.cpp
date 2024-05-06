@@ -49,8 +49,7 @@ void libhttppp::HttpEvent::CreateConnetion(netplus::con ** curon){
 }
 
 void libhttppp::HttpEvent::deleteConnetion(netplus::con* curon){
-    delete curon;
-    curon=nullptr;
+    delete (HttpRequest*)curon;
 }
 
 void libhttppp::HttpEvent::RequestEvent(HttpRequest *curreq){
@@ -69,13 +68,14 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
     size_t size;
     try{
         size=((HttpRequest*)curcon)->parse();
+        RequestEvent((HttpRequest*)curcon);
+        ((HttpRequest*)curcon)->clear();
     }catch(HTTPException &e){
         netplus::NetException re;
         re[netplus::NetException::Error] << "http error:" << e.what();
         throw re;
     }
     curcon->resizeRecvQueue(size);
-    RequestEvent((HttpRequest*)curcon);
 }
 
 void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){

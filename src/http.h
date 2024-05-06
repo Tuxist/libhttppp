@@ -78,6 +78,8 @@ namespace libhttppp {
     
     size_t      getElements();
     size_t      getHeaderSize();
+
+    void        clear();
   protected:
     HttpHeader();
     virtual ~HttpHeader();

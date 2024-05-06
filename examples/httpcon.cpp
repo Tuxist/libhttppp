@@ -47,7 +47,7 @@ void sendResponse(libhttppp::HttpRequest *curreq) {
              << "    <title>ConnectionTest</title>"
              << "    <meta content=\"\">"
              << "    <meta charset=\"utf-8\">"
-             << "    <style></style>"
+             << "    <style> </style>"
              << "  </head>"
              << "<body>";
      if(curreq->isMobile())
