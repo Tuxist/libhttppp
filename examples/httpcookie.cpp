@@ -41,8 +41,7 @@
 
 class CookieTest {
 public:
-    CookieTest(netplus::con *curcon,libhttppp::HttpRequest *curreq){
-        _Curcon=curcon;
+    CookieTest(libhttppp::HttpRequest *curreq){
         _Curreq=curreq;
         
         _Curres.setState(HTTP200);
@@ -67,7 +66,7 @@ public:
 
         libhtmlpp::HtmlString html;
         libhtmlpp::print(_HTMLDat.parse(),html);
-        _Curres.send(_Curcon,html.c_str(),html.size());
+        _Curres.send(_Curreq,html.c_str(),html.size());
     };
     
     const char *getData(const char *key){
@@ -132,7 +131,6 @@ private:
     libhtmlpp::HtmlString  _HTMLDat;
     libhttppp::HttpCookie   _Cookie;
     libhttppp::HttpResponse _Curres;
-    netplus::con          *_Curcon;
     libhttppp::HttpRequest *_Curreq;
 };
 
@@ -141,13 +139,10 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
-    void RequestEvent(netplus::con *curcon){
+    void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
-            std::cout << "Parse Request" << std::endl;
-            libhttppp::HttpRequest *curreq =(libhttppp::HttpRequest *) curcon;
-            curcon->resizeRecvQueue(curreq->parse());
             std::cout << "Send answer" << std::endl;
-            CookieTest(curcon,curreq);
+            CookieTest ctest(curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr<< e.what() << std::endl;
         }

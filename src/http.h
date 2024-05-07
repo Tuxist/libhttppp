@@ -158,7 +158,6 @@ namespace libhttppp {
     std::string       _RequestURL;
     std::string       _RequestVersion;
     size_t            _MaxUploadSize;
-    std::vector<char> _Header;
     friend class HttpForm;
   };
   
