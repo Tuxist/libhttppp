@@ -118,13 +118,13 @@ public:
     
     void parseCookie() {
         _Cookie.parse(_Curreq);
-        _HTMLDat  << "<div style=\"border: thin solid black\"><span>Httpcookie's</span></br>";
+        _HTMLDat  << "<div style=\"border: thin solid black\"><span>Httpcookie's</span><br>";
         for(libhttppp::HttpCookie::CookieData *curcookie=_Cookie.getfirstCookieData(); 
             curcookie; curcookie=curcookie->nextCookieData()){
-            _HTMLDat  << "key: " << curcookie->getKey() << " ";
-            _HTMLDat  << "value: " << curcookie->getValue() << "</br>";
+            _HTMLDat  << "<span>key: " << curcookie->getKey() << "</span> ";
+            _HTMLDat  << "<span>value: " << curcookie->getValue() << "</span><br>";
         }
-        _HTMLDat << "</div></br>";
+        _HTMLDat << "</div><br>";
     };
     
 private:
