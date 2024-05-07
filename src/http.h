@@ -153,6 +153,7 @@ namespace libhttppp {
     void              setMaxUploadSize(size_t upsize);
     void              send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
   private:
+    size_t            _Readed;
     std::string       _Request;
     int               _RequestType;
     std::string       _RequestURL;

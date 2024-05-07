@@ -53,7 +53,7 @@ public:
         << "    <title>CookieTest</title>"
         << "    <meta content=\"\">"
         << "    <meta charset=\"utf-8\">"
-        << "    <style></style>"
+        << "    <style> </style>"
         << "  </head>"
         << "<body>";
         try{
