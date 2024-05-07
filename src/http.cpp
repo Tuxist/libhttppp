@@ -454,7 +454,7 @@ size_t libhttppp::HttpRequest::parse(){
         for(size_t i=0; i<RecvData.size(); ++i){
             for(size_t ii=0; ii<=wsize; ++ii){
                 if(ii==wsize){
-                    return ii;
+                    return i-wsize;
                 }
                 if(RecvData[i]==word[ii]){
                     ++i;
@@ -486,10 +486,11 @@ size_t libhttppp::HttpRequest::parse(){
                 excep[HTTPException::Error] << "can't find newline headerend";
                 throw excep;
             }
-            
+
             std::copy(RecvData.begin()+startpos,RecvData.begin()+endpos,
                       std::inserter<std::vector<char>>(header,header.begin()));
-            
+
+            endpos+=4;
             bool found=false;
             int pos=0;
 
@@ -573,8 +574,9 @@ size_t libhttppp::HttpRequest::parse(){
                 }
 
             }
-            std::move(RecvData.begin()+header.size(),RecvData.end(),RecvData.begin());
-            RecvData.shrink_to_fit();
+
+            std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
+            RecvData.resize(RecvData.size()-endpos);
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;

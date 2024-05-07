@@ -75,8 +75,6 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
         re[netplus::NetException::Error] << "http error:" << e.what();
         throw re;
     }
-    std::move(curcon->RecvData.begin()+size,curcon->RecvData.end(),curcon->RecvData.begin());
-    curcon->RecvData.resize(curcon->RecvData.size()-size);
 }
 
 void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
