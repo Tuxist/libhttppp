@@ -429,16 +429,20 @@ libhttppp::HttpResponse::~HttpResponse() {
 
 }
 
-libhttppp::HttpRequest::HttpRequest(){
+libhttppp::HttpRequest::HttpRequest() : HttpHeader(){
   _RequestType=0;
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
   _Readed=0;
+  _firstHeaderData=nullptr;
+  _lastHeaderData=nullptr;
 };
 
 libhttppp::HttpRequest::HttpRequest(netplus::eventapi *evapi) : netplus::con(evapi) {
   _RequestType=0;
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
   _Readed=0;
+  _firstHeaderData=nullptr;
+  _lastHeaderData=nullptr;
 }
 
 size_t libhttppp::HttpRequest::parse(){
