@@ -66,7 +66,15 @@ void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq){
 
 void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
     try{
-        ((HttpRequest*)curcon)->parse();
+        HttpRequest *cureq =(HttpRequest*)curcon;
+
+        cureq->parse();
+
+        if(cureq->getContentLength()<=cureq->RecvData.size()){
+            PostEvent(cureq);
+            cureq->clear();
+        }
+
         RequestEvent((HttpRequest*)curcon);
     }catch(HTTPException &e){
         netplus::NetException re;
@@ -74,6 +82,10 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
         throw re;
     }
 }
+
+void libhttppp::HttpEvent::PostEvent(HttpRequest* curreq){
+}
+
 
 void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
     ResponseEvent((HttpRequest*)curcon);

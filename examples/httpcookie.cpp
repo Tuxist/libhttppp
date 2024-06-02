@@ -139,7 +139,7 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
-    void RequestEvent(libhttppp::HttpRequest *curreq){
+    void PostEvent(libhttppp::HttpRequest *curreq){
         try{
             std::cout << "Send answer" << std::endl;
             CookieTest ctest(curreq);
