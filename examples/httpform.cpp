@@ -47,11 +47,14 @@ public:
     void RequestEvent(libhttppp::HttpRequest* curreq ){
             libhtmlpp::HtmlString formdat;
             try {
-                Multiform(curreq, formdat);
-                URlform(curreq, formdat);
-                std::cout << "Send answer" << std::endl;
-                sendResponse(curreq, formdat);
-                
+                std::cout << curreq->getContentLength() << ": " << curreq->RecvData.size() << std::endl;
+                if(curreq->getContentLength() <= curreq->RecvData.size()){
+                    Multiform(curreq, formdat);
+                    URlform(curreq, formdat);
+                    std::cout << "Send answer" << std::endl;
+                    sendResponse(curreq, formdat);
+                    curreq->clear();
+                }
             }
             catch (libhttppp::HTTPException& e) {
                 if (e.getErrorType() != libhttppp::HTTPException::Note) {

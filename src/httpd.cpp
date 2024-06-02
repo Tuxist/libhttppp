@@ -65,11 +65,9 @@ void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq){
 }
 
 void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
-    size_t size;
     try{
-        size=((HttpRequest*)curcon)->parse();
+        ((HttpRequest*)curcon)->parse();
         RequestEvent((HttpRequest*)curcon);
-        ((HttpRequest*)curcon)->clear();
     }catch(HTTPException &e){
         netplus::NetException re;
         re[netplus::NetException::Error] << "http error:" << e.what();

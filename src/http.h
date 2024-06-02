@@ -131,6 +131,9 @@ namespace libhttppp {
     HttpRequest();
     HttpRequest(netplus::eventapi *evapi);
     ~HttpRequest();
+
+    void clear();
+
     /*server methods*/
 
     size_t            parse(); //only use as server
@@ -140,7 +143,8 @@ namespace libhttppp {
     const char       *getRequest();
     size_t            getRequestLength();
     const char       *getRequestVersion();
-    size_t            getMessageBody(std::vector<char> &mbody);
+    size_t            getContentLength();
+
     /*mobilphone switch*/
     bool isMobile();
 
@@ -153,12 +157,12 @@ namespace libhttppp {
     void              setMaxUploadSize(size_t upsize);
     void              send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
   private:
-    size_t            _Readed;
     std::string       _Request;
     int               _RequestType;
     std::string       _RequestURL;
     std::string       _RequestVersion;
     size_t            _MaxUploadSize;
+    HeaderData       *_ContentLength;
     friend class HttpForm;
   };
   

@@ -432,25 +432,30 @@ libhttppp::HttpResponse::~HttpResponse() {
 libhttppp::HttpRequest::HttpRequest() : HttpHeader(){
   _RequestType=0;
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
-  _Readed=0;
   _firstHeaderData=nullptr;
   _lastHeaderData=nullptr;
+  _ContentLength=nullptr;
 };
 
 libhttppp::HttpRequest::HttpRequest(netplus::eventapi *evapi) : netplus::con(evapi) {
   _RequestType=0;
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
-  _Readed=0;
   _firstHeaderData=nullptr;
   _lastHeaderData=nullptr;
+  _ContentLength=nullptr;
 }
+
+void libhttppp::HttpRequest::clear(){
+  HttpHeader::clear();
+  _Request.clear();
+  _RequestURL.clear();
+  _RequestVersion.clear();
+}
+
+
 
 size_t libhttppp::HttpRequest::parse(){
     HTTPException excep;
-
-    _Request.clear();
-    _RequestURL.clear();
-    _RequestVersion.clear();
 
     std::vector<char> header;
 
@@ -472,10 +477,10 @@ size_t libhttppp::HttpRequest::parse(){
     };
 
     try{
-        HttpHeader::HeaderData *contentlen=getData("content-length");
 
-        if(contentlen && getDataSizet(contentlen)!=_Readed)
+        if(!_Request.empty()){
           return 0;
+        }
 
         if(!RecvData.empty()){
 
@@ -586,6 +591,9 @@ size_t libhttppp::HttpRequest::parse(){
 
             std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
             RecvData.resize(RecvData.size()-endpos);
+
+            _ContentLength=getData("content-length");
+
         }else{
             excep[HTTPException::Note] << "No Incoming data in queue";
             throw excep;
@@ -642,16 +650,8 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
   return _RequestVersion.c_str();
 }
 
-size_t libhttppp::HttpRequest::getMessageBody(std::vector<char> &mbody){
-  HttpHeader::HeaderData *contentlen=getData("content-length");
-
-  size_t mlen = RecvData.size() < (getDataSizet(contentlen)-_Readed)?
-                RecvData.size() : (getDataSizet(contentlen)-_Readed);
-
-  std::copy(RecvData.begin(),RecvData.begin()+mlen,
-            std::inserter<std::vector<char>>(mbody,mbody.end()));
-  _Readed+=mlen;
-  return mlen;
+size_t libhttppp::HttpRequest::getContentLength(){
+  return getDataInt(_ContentLength);
 }
 
 bool libhttppp::HttpRequest::isMobile(){
@@ -1195,10 +1195,11 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   HTTPException httpexception;
   std::string formdat;
   if(request->getRequestType()==POSTREQUEST){
-      std::vector<char> mdat;
-      request->getMessageBody(mdat);
-      std::copy(mdat.begin(),mdat.end(),std::inserter<std::string>(formdat,formdat.begin()));
-      formdat.push_back('\0');
+      size_t clen = request->getDataSizet(request->_ContentLength);
+      if(request->RecvData.size()>= clen){
+        std::copy(request->RecvData.begin(),request->RecvData.begin()+clen,std::inserter<std::string>(formdat,formdat.begin()));
+        formdat.push_back('\0');
+      }
   }else if(request->getRequestType()==GETREQUEST){
       const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);
