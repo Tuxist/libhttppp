@@ -50,8 +50,6 @@ namespace libhttppp {
         virtual void ConnectEvent(HttpRequest *curreq);
         virtual void DisconnectEvent(HttpRequest *curreq);
 
-        virtual void PostEvent(HttpRequest *curreq);
-
     private:
         void RequestEvent(netplus::con *curcon);
         void ResponseEvent(netplus::con *curcon);

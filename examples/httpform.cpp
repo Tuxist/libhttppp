@@ -44,16 +44,13 @@ public:
         
     };
 
-    void PostEvent(libhttppp::HttpRequest* curreq ){
+    void RequestEvent(libhttppp::HttpRequest* curreq ){
             libhtmlpp::HtmlString formdat;
             try {
-                std::cout << curreq->getContentLength() << ": " << curreq->RecvData.size() << std::endl;
-                if(curreq->getContentLength() <= curreq->RecvData.size()){
-                    Multiform(curreq, formdat);
-                    URlform(curreq, formdat);
-                    std::cout << "Send answer" << std::endl;
-                    sendResponse(curreq, formdat);
-                }
+                Multiform(curreq, formdat);
+                URlform(curreq, formdat);
+                std::cout << "Send answer" << std::endl;
+                sendResponse(curreq, formdat);
             }
             catch (libhttppp::HTTPException& e) {
                 if (e.getErrorType() != libhttppp::HTTPException::Note) {

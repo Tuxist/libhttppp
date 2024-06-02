@@ -68,24 +68,29 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
     try{
         HttpRequest *cureq =(HttpRequest*)curcon;
 
-        cureq->parse();
+        if(cureq->getRequestType()==0)
+            cureq->parse();
 
-        if(cureq->getContentLength()<=cureq->RecvData.size()){
-            PostEvent(cureq);
-            cureq->clear();
+        switch(cureq->getRequestType()){
+            case GETREQUEST:
+                RequestEvent(cureq);
+                cureq->clear();
+                break;
+            case POSTREQUEST:
+                if(cureq->getContentLength()<=cureq->RecvData.size()){
+                    RequestEvent(cureq);
+                    cureq->clear();
+                }
+                break;
+            default:
+                break;
         }
-
-        RequestEvent((HttpRequest*)curcon);
     }catch(HTTPException &e){
         netplus::NetException re;
         re[netplus::NetException::Error] << "http error:" << e.what();
         throw re;
     }
 }
-
-void libhttppp::HttpEvent::PostEvent(HttpRequest* curreq){
-}
-
 
 void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
     ResponseEvent((HttpRequest*)curcon);

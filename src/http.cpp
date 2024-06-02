@@ -447,6 +447,7 @@ libhttppp::HttpRequest::HttpRequest(netplus::eventapi *evapi) : netplus::con(eva
 
 void libhttppp::HttpRequest::clear(){
   HttpHeader::clear();
+  _RequestType=0;
   _Request.clear();
   _RequestURL.clear();
   _RequestVersion.clear();
@@ -455,158 +456,147 @@ void libhttppp::HttpRequest::clear(){
 
 
 size_t libhttppp::HttpRequest::parse(){
-    HTTPException excep;
+  HTTPException excep;
 
-    std::vector<char> header;
+  std::vector<char> header;
 
-    auto searchElement = [this](const char *word){
-        size_t wsize=strlen(word);
-        for(size_t i=0; i<RecvData.size(); ++i){
-            for(size_t ii=0; ii<=wsize; ++ii){
-                if(ii==wsize){
-                    return i-wsize;
-                }
-                if(RecvData[i]==word[ii]){
-                    ++i;
-                    continue;
-                }
-                break;
-            }
+  auto searchElement = [this](const char *word){
+    size_t wsize=strlen(word);
+    for(size_t i=0; i<RecvData.size(); ++i){
+      for(size_t ii=0; ii<=wsize; ++ii){
+        if(ii==wsize){
+          return i-wsize;
         }
-        return std::string::npos;
-    };
-
-    try{
-
-        if(!_Request.empty()){
-          return 0;
+        if(RecvData[i]==word[ii]){
+          ++i;
+          continue;
         }
-
-        if(!RecvData.empty()){
-
-            size_t startpos=0;
-            
-            if((startpos=searchElement("GET"))!=std::string::npos){
-                _RequestType=GETREQUEST;
-            }else if((startpos=searchElement("POST"))!=std::string::npos){
-                _RequestType=POSTREQUEST;
-            }else{
-                excep[HTTPException::Warning] << "Requesttype not known cleanup";
-                RecvData.clear();
-                throw excep;
-            }
-
-            size_t endpos=searchElement("\r\n\r\n");
-            if(endpos==std::string::npos){
-                excep[HTTPException::Error] << "can't find newline headerend";
-                throw excep;
-            }
-
-            std::copy(RecvData.begin()+startpos,RecvData.begin()+endpos,
-                      std::inserter<std::vector<char>>(header,header.begin()));
-
-            endpos+=4;
-            bool found=false;
-            int pos=0;
-
-            for(size_t cpos=pos; cpos< header.size(); ++cpos){
-                if(header[cpos]==' '){
-                    pos=++cpos;
-                    break;
-                }
-            }
-
-            for(size_t cpos=pos; cpos<header.size(); ++cpos){
-                if(header[cpos]==' ' && (cpos-pos)<255){
-                    std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_Request,_Request.begin()));
-                    _Request.push_back('\0');
-                    ++pos;
-                    break;
-                }
-            }
-
-            if(!_Request.empty()){
-              size_t last =_Request.rfind('?');
-              if(last==std::string::npos)
-                  last=_Request.length();
-              _RequestURL=_Request.substr(0,last);
-            }
-
-            for(size_t cpos=pos; cpos<header.size(); ++cpos){
-                if(header[cpos]==' ' && (cpos-pos)<255){
-                    std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
-                    _RequestVersion.push_back('\0');
-                    ++pos;
-                    found=true;
-                    break;
-                }
-            }
-
-            if(!found){
-                excep[HTTPException::Error] << "can't parse http head";
-                throw excep;
-            }
-            
-            /*parse the http header fields*/
-            size_t lrow=0,delimeter=0,startkeypos=0;
-            
-            for(size_t pos=0; pos< header.size(); pos++){
-                if(delimeter==0 && header[pos]==':'){
-                    delimeter=pos; 
-                }
-                if(header[pos]=='\r'){
-                    if(delimeter>lrow && delimeter!=0){
-                        size_t keylen=delimeter-startkeypos;
-                        if(keylen>0 && keylen <= header.size()){
-                            std::string key(header.begin()+startkeypos,header.begin()+delimeter);
-                            for (size_t it = 0; it < keylen; ++it) {
-                                key[it] = (char)tolower(key[it]);
-                            }
-                            key.push_back('\0');
-                            size_t valuelen=(pos-delimeter)-2;
-                            if(pos > 0 && valuelen <= header.size()){
-                                size_t vstart=delimeter+2;
-                                std::string value(header.begin()+vstart,header.begin()+pos);
-                                for (size_t it = 0; it < valuelen; ++it) {
-                                    value[it] = (char)tolower(value[it]);
-                                }
-                                value.push_back('\0');
-                                *setData(key.c_str())<<value.c_str();
-                            }
-                        }
-                    }
-                    delimeter=0;
-                    lrow=pos;
-                    startkeypos=lrow+2;
-                }
-            }
-
-            if(_RequestType==POSTREQUEST){
-                if( RecvData.size() > _MaxUploadSize){
-                    RecvData.clear();
-                    excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
-                    throw excep;
-                }
-            }
-
-            std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
-            RecvData.resize(RecvData.size()-endpos);
-
-            _ContentLength=getData("content-length");
-
-        }else{
-            excep[HTTPException::Note] << "No Incoming data in queue";
-            throw excep;
-        }
-
-    }catch(netplus::NetException &e){
-        if (e.getErrorType() != netplus::NetException::Note) {
-            RecvData.clear();
-        }
-        excep[HTTPException::Error] << "netplus error: " << e.what();
-        throw excep;
+        break;
+      }
     }
-    return header.size();
+    return std::string::npos;
+  };
+
+  try{
+
+    size_t startpos=0;
+
+    if((startpos=searchElement("GET"))!=std::string::npos){
+      _RequestType=GETREQUEST;
+    }else if((startpos=searchElement("POST"))!=std::string::npos){
+      _RequestType=POSTREQUEST;
+    }else{
+      excep[HTTPException::Warning] << "Requesttype not known cleanup";
+      RecvData.clear();
+      throw excep;
+    }
+
+    size_t endpos=searchElement("\r\n\r\n");
+    if(endpos==std::string::npos){
+      excep[HTTPException::Error] << "can't find newline headerend";
+      throw excep;
+    }
+
+    std::copy(RecvData.begin()+startpos,RecvData.begin()+endpos,
+              std::inserter<std::vector<char>>(header,header.begin()));
+
+    endpos+=4;
+    bool found=false;
+    int pos=0;
+
+    for(size_t cpos=pos; cpos< header.size(); ++cpos){
+      if(header[cpos]==' '){
+        pos=++cpos;
+        break;
+      }
+    }
+
+    for(size_t cpos=pos; cpos<header.size(); ++cpos){
+      if(header[cpos]==' ' && (cpos-pos)<255){
+        std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_Request,_Request.begin()));
+        _Request.push_back('\0');
+        ++pos;
+        break;
+      }
+    }
+
+    if(!_Request.empty()){
+      size_t last =_Request.rfind('?');
+      if(last==std::string::npos)
+        last=_Request.length();
+      _RequestURL=_Request.substr(0,last);
+    }
+
+    for(size_t cpos=pos; cpos<header.size(); ++cpos){
+      if(header[cpos]==' ' && (cpos-pos)<255){
+        std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
+        _RequestVersion.push_back('\0');
+        ++pos;
+        found=true;
+        break;
+      }
+    }
+
+    if(!found){
+      excep[HTTPException::Error] << "can't parse http head";
+      throw excep;
+    }
+
+    /*parse the http header fields*/
+    size_t lrow=0,delimeter=0,startkeypos=0;
+
+    for(size_t pos=0; pos< header.size(); pos++){
+      if(delimeter==0 && header[pos]==':'){
+        delimeter=pos;
+      }
+      if(header[pos]=='\r'){
+        if(delimeter>lrow && delimeter!=0){
+          size_t keylen=delimeter-startkeypos;
+          if(keylen>0 && keylen <= header.size()){
+            std::string key(header.begin()+startkeypos,header.begin()+delimeter);
+            for (size_t it = 0; it < keylen; ++it) {
+              key[it] = (char)tolower(key[it]);
+            }
+            key.push_back('\0');
+            size_t valuelen=(pos-delimeter)-2;
+            if(pos > 0 && valuelen <= header.size()){
+              size_t vstart=delimeter+2;
+              std::string value(header.begin()+vstart,header.begin()+pos);
+              for (size_t it = 0; it < valuelen; ++it) {
+                value[it] = (char)tolower(value[it]);
+              }
+              value.push_back('\0');
+              *setData(key.c_str())<<value.c_str();
+            }
+          }
+        }
+        delimeter=0;
+        lrow=pos;
+        startkeypos=lrow+2;
+      }
+    }
+
+    if(_RequestType==POSTREQUEST){
+      if( RecvData.size() > _MaxUploadSize){
+        RecvData.clear();
+        excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
+        throw excep;
+      }
+    }
+
+    std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
+    RecvData.resize(RecvData.size()-endpos);
+
+    _ContentLength=getData("content-length");
+
+  }catch(netplus::NetException &e){
+    if (e.getErrorType() != netplus::NetException::Note) {
+      RecvData.clear();
+    }
+    excep[HTTPException::Error] << "netplus error: " << e.what();
+    throw excep;
+  }
+  return header.size();
 }
 
 void libhttppp::HttpRequest::printHeader(std::string &buffer){

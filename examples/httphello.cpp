@@ -38,7 +38,7 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
-    void PostEvent(libhttppp::HttpRequest *curreq){
+    void RequestEvent(libhttppp::HttpRequest *curreq){
         try{
             libhttppp::HttpResponse curres;
             const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
