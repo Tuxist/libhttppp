@@ -171,6 +171,28 @@ namespace libhttppp {
     class MultipartForm{
     public:
       class Data{
+        public:
+        class Content {
+        public:
+          const char *getKey();
+          const char *getValue();
+
+          void setKey(const char *key);
+          void setValue(const char *value);
+
+          Content();
+          ~Content();
+
+          Content *nextContent();
+
+        private:
+          Content            *_nextContent;
+          std::vector<char>   _Key;
+          std::vector<char>   _Value;
+          friend class HttpForm;
+          friend class MultipartFormData;
+        };
+
         class ContentDisposition{
         public:
           const char *getKey();
@@ -191,16 +213,21 @@ namespace libhttppp {
           friend class HttpForm;
           friend class MultipartFormData;
         };
-      public:
 
         ContentDisposition *getDisposition();
         void                addDisposition(ContentDisposition disposition);
+
+        Content            *getContent();
+        void                addContent(Content content);
 
         std::vector<char>   Value;
         Data               *nextData();
       private:
         Data();
         ~Data();
+        Content*             _firstContent;
+        Content*             _lastContent;
+
         ContentDisposition *_firstDisposition;
         ContentDisposition *_lastDisposition;
         Data               *_nextData;

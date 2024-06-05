@@ -834,7 +834,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
                 //ceck if boundary before found set data end
                 if(oldpos!=std::string::npos)
                    _parseMultiSection(req,oldpos,cr-realboundary.size());
-                oldpos=cr++;
+                oldpos=cr;
                 //check if boundary finished
                 if(req[cr]=='-' && req[cr+1]=='-'){
                     //boundary finished
@@ -848,17 +848,17 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
         }
     }
 }
-
+#include <iostream>
 void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t start, size_t end){
 
-  auto searchElement = [data](size_t starts,size_t ends, const char *word){
+  auto searchElement = [](size_t starts,size_t ends, const char *word,std::vector<char> &sdata){
     size_t wsize=strlen(word);
     for(size_t i=starts; i< ends; ++i){
       for(size_t ii=0; ii<=wsize; ++ii){
         if(ii==wsize){
           return i;
         }
-        if( data[i]==word[ii]){
+        if( tolower(sdata[i])==tolower(word[ii]) ){
           ++i;
           continue;
         }
@@ -868,16 +868,129 @@ void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t star
     return std::string::npos;
   };
 
-  size_t findel=searchElement(start,end,"\r\n\r\n");
+  size_t findel=searchElement(start,end,"\r\n\r\n",data);
 
-  if(findel!=std::string::npos){
-      if(MultipartFormData._firstData){
-         MultipartFormData._lastData->_nextData =new MultipartForm::Data;
-         MultipartFormData._lastData=MultipartFormData._lastData->_nextData;
-      }else{
-         MultipartFormData._firstData=new MultipartForm::Data;
-         MultipartFormData._lastData=MultipartFormData._firstData;
+  if(findel==std::string::npos)
+    return;
+
+  size_t ctl=std::string::npos,ctlt=std::string::npos;
+
+  if(MultipartFormData._firstData){
+     MultipartFormData._lastData->_nextData =new MultipartForm::Data;
+     MultipartFormData._lastData=MultipartFormData._lastData->_nextData;
+  }else{
+      MultipartFormData._firstData=new MultipartForm::Data;
+      MultipartFormData._lastData=MultipartFormData._firstData;
+  }
+
+  for(size_t scl=++start; scl<findel; ++scl){
+
+      if((data[scl]!= ' ' && data[scl]!= '\r' && data[scl]!= '\n') && ctl==std::string::npos){
+          ctl=scl;
+      }else if(data[scl]==':' && (ctl & ctlt) !=std::string::npos){
+          ctlt=scl;
       }
+
+      if(data[scl]=='\r' && ctl!=std::string::npos && ctlt!=std::string::npos){
+              MultipartForm::Data::Content content;
+              std::copy(data.begin()+ctl,data.begin()+ctlt,
+                            std::inserter<std::vector<char>>(content._Key,content._Key.begin()));
+
+              content._Key.push_back('\0');
+
+              for(size_t tl=0; tl<content._Key.size(); ++tl){
+                content._Key[tl]=tolower(content._Key[tl]);
+              }
+
+              while(data[++ctlt]==' ');
+
+              std::copy(data.begin()+ctlt,data.begin()+scl,
+                            std::inserter<std::vector<char>>(content._Value,content._Value.begin()));
+
+              content._Value.push_back('\0');
+
+              MultipartFormData._lastData->addContent(content);
+
+              ctl=std::string::npos;
+              ctlt=std::string::npos;
+      }
+  }
+
+  MultipartForm::Data::Content *cdispo=nullptr;
+
+  for(MultipartForm::Data::Content *curcontent=MultipartFormData._lastData->_firstContent; curcontent; curcontent=curcontent->nextContent()){
+     if( strcmp(curcontent->getKey(),"content-disposition") ==0 ) {
+        cdispo=curcontent;
+     }
+  }
+
+  if(cdispo){
+
+      size_t ifdp= searchElement(0,cdispo->_Value.size(),"form-data",cdispo->_Value);
+
+      size_t scss=std::string::npos,scse=std::string::npos;
+
+      size_t scvts=std::string::npos;
+
+      size_t scvss=std::string::npos,scvse=std::string::npos;
+
+      for(size_t sc=ifdp; sc<cdispo->_Value.size(); ++sc){
+        std::cout <<  cdispo->_Value[sc] << std::endl;
+        if(scss==std::string::npos){
+          if(cdispo->_Value[sc]!=';' && cdispo->_Value[sc]!=' '){
+            scss=sc;
+          }
+        }else{
+          if( (cdispo->_Value[sc]==' ' || cdispo->_Value[sc]=='=' || sc+1==cdispo->_Value.size()) && scse==std::string::npos){
+            scse=sc;
+          }
+
+          if( scse!=std::string::npos){
+            for(size_t scv=scss; scv<cdispo->_Value.size(); ++scv){
+              if(cdispo->_Value[scv]=='=' && scvts==std::string::npos){
+                scvts=scv;
+              }else if(scvts!=std::string::npos){
+                if(cdispo->_Value[scv]=='"'){
+                  if(scvss==std::string::npos) {
+                    scvss=++scv;
+                  }else if(scvse==std::string::npos){
+                    scvse=scv;
+                    scv++;
+                    sc=scv;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        std::cout << scss << ": " << scse << std::endl;
+
+        if(scss !=std::string::npos && scse !=std::string::npos){
+          MultipartForm::Data::ContentDisposition dispo;
+          std::copy(cdispo->_Value.begin()+scss,cdispo->_Value.begin()+scse,
+                    std::inserter<std::vector<char>>(dispo._Key,dispo._Key.begin()));
+
+          dispo._Key.push_back('\0');
+          if(scvss!=std::string::npos && scvse!=std::string::npos){
+
+            std::copy(cdispo->_Value.begin()+scvss,cdispo->_Value.begin()+scvse,
+                      std::inserter<std::vector<char>>(dispo._Value,dispo._Value.begin()));
+
+            dispo._Value.push_back('\0');
+
+            scvss=std::string::npos;
+            scvse=std::string::npos;
+            scvts=std::string::npos;
+          }
+
+          scss=std::string::npos;
+          scse=std::string::npos;
+          MultipartFormData._lastData->addDisposition(dispo);
+        }
+
+      }
+
       std::copy(data.begin()+findel,data.begin()+end,std::inserter<std::vector<char>>(MultipartFormData._lastData->Value,
                                                                                           MultipartFormData._lastData->Value.begin()));
   }
@@ -888,9 +1001,16 @@ libhttppp::HttpForm::MultipartForm::Data * libhttppp::HttpForm::MultipartForm::D
   return _nextData;
 }
 
+libhttppp::HttpForm::MultipartForm::Data::Content *libhttppp::HttpForm::MultipartForm::Data::Content::nextContent(){
+  return _nextContent;
+}
 
 libhttppp::HttpForm::MultipartForm::Data * libhttppp::HttpForm::MultipartForm::getFormData(){
   return _firstData;
+}
+
+libhttppp::HttpForm::MultipartForm::Data::ContentDisposition * libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::nextContentDisposition(){
+  return _nextContentDisposition;
 }
 
 
@@ -910,101 +1030,60 @@ libhttppp::HttpForm::MultipartForm::~MultipartForm(){
   _lastData=nullptr;
 }
 
-// void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
-//   size_t dislen=strlen(disposition);
-//
-//   for(size_t dpos=0; dpos<dislen; dpos++){
-//     if(disposition[dpos]==';' || disposition[dpos]=='\r'){
-//       char *ctype = new char[dpos+1];
-//       memcpy(ctype,disposition,dpos);
-//       ctype[dpos]='\0';
-//       // getContentDisposition()->setDisposition(ctype);
-//       delete[] ctype;
-//       break;
-//     }
-//   }
-//
-//   const char *lownamedelimter="name=\"";
-//   const char* HIGHnamedelimter = "NAME=\"";
-//   ssize_t namedelimtersize=strlen(lownamedelimter);
-//   ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
-//   for(size_t dp=0; dp<dislen; dp++){
-//     if(lownamedelimter[fcurpos]==disposition[dp] ||
-//         HIGHnamedelimter[fcurpos] == disposition[dp]){
-//         if(fcurpos==0){
-//           fpos=dp;
-//         }
-//         fcurpos++;
-//       }else{
-//         fcurpos=0;
-//         fpos=-1;
-//       }
-//       if(fcurpos==namedelimtersize)
-//         break;
-//   }
-//   if(fpos!=-1){
-//     fendpos=fpos+namedelimtersize;
-//     for(size_t dp=fendpos; dp<dislen; dp++){
-//       if(disposition[dp]=='\"'){
-//         fterm=dp;
-//         break;
-//       }
-//     }
-//
-//     size_t namesize=(fterm-fendpos);
-//     char *name=new char[namesize+1];
-//     memcpy(name,disposition+fendpos,namesize);
-//     name[namesize]='\0';
-//     // getContentDisposition()->setName(name);
-//     delete[] name;
-//   }
-//
-//   const char *lowfilenamedelimter="filename=\"";
-//   const char* HIGHfilenamedelimter = "FILENAME=\"";
-//   ssize_t filenamedelimtersize=strlen(lowfilenamedelimter);
-//   ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
-//   for(size_t dp=0; dp<dislen; dp++){
-//     if(lowfilenamedelimter[filecurpos]==disposition[dp] ||
-//         HIGHfilenamedelimter[filecurpos]==disposition[dp]){
-//         if(filecurpos==0){
-//           filepos=dp;
-//         }
-//         filecurpos++;
-//       }else{
-//         filecurpos=0;
-//         filepos=-1;
-//       }
-//       if(filecurpos==filenamedelimtersize)
-//         break;
-//   }
-//   if(filepos!=-1){
-//     fileendpos=filepos+filenamedelimtersize;
-//     for(size_t dp=fileendpos; dp<dislen; dp++){
-//       if(disposition[dp]=='\"'){
-//         fileterm=dp;
-//         break;
-//       }
-//     }
-//
-//     size_t filenamesize=(fileterm-fileendpos);
-//     char *filename=new char[filenamesize+1];
-//     memcpy(filename,disposition+fileendpos,filenamesize);
-//     filename[filenamesize]='\0';
-//     // getContentDisposition()->setFilename(filename);
-//     delete[] filename;
-//   }
-// }
-
-
 libhttppp::HttpForm::MultipartForm::Data::Data(){
   _firstDisposition=nullptr;
   _lastDisposition=nullptr;
+  _firstContent=nullptr;
+  _lastContent=nullptr;
   _nextData=nullptr;
 }
 
 libhttppp::HttpForm::MultipartForm::Data::~Data(){
+  Content *nextContent=_firstContent,*curelc=nullptr;
+  while(nextContent){
+        curelc=nextContent->_nextContent;
+        nextContent->_nextContent=nullptr;
+        delete nextContent;
+        nextContent=curelc;
+  }
+  _lastContent=nullptr;
+
+  ContentDisposition *nextdis=_firstDisposition,*cureld=nullptr;
+  while(nextdis){
+        cureld=nextdis->_nextContentDisposition;
+        nextdis->_nextContentDisposition=nullptr;
+        delete nextdis;
+        nextdis=cureld;
+  }
+  _lastDisposition=nullptr;
 
 }
+
+libhttppp::HttpForm::MultipartForm::Data::Content::Content(){
+  _nextContent=nullptr;
+}
+
+libhttppp::HttpForm::MultipartForm::Data::Content::~Content(){
+}
+
+void libhttppp::HttpForm::MultipartForm::Data::Content::setKey(const char* key){
+  _Key.clear();
+  std::copy(key,key+(strlen(key)+1),std::inserter<std::vector<char>>(_Key,_Key.begin()));
+}
+
+void libhttppp::HttpForm::MultipartForm::Data::Content::setValue(const char* value){
+  _Value.clear();
+  std::copy(value,value+(strlen(value)+1),std::inserter<std::vector<char>>(_Value,_Value.begin()));
+}
+
+const char * libhttppp::HttpForm::MultipartForm::Data::Content::getKey(){
+  return _Key.data();
+}
+
+const char * libhttppp::HttpForm::MultipartForm::Data::Content::getValue(){
+  return _Value.data();
+}
+
 
 const char *libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::getKey(){
   return _Key.data();
@@ -1043,6 +1122,20 @@ void libhttppp::HttpForm::MultipartForm::Data::addDisposition(ContentDisposition
   }else{
       _firstDisposition=new ContentDisposition(disposition);
       _lastDisposition=_firstDisposition;
+  }
+}
+
+libhttppp::HttpForm::MultipartForm::Data::Content* libhttppp::HttpForm::MultipartForm::Data::getContent(){
+  return _firstContent;
+}
+
+void libhttppp::HttpForm::MultipartForm::Data::addContent(Content content){
+  if(_firstContent){
+      _lastContent->_nextContent=new Content(content);
+      _lastContent=_lastContent->_nextContent;
+  }else{
+      _firstContent=new Content(content);
+      _lastContent=_firstContent;
   }
 }
 

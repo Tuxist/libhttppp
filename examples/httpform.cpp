@@ -69,22 +69,24 @@ private:
 
         if (curform.getBoundary()) {
             condat << "Boundary: " << curform.getBoundary() << "<br>";
-            for (libhttppp::HttpForm::MultipartForm::Data* curformdat = curform.MultipartFormData.getFormData(); curformdat; curformdat = curformdat->nextData()) {
-                // condat << "Content-Disposition: <br>";
-                // libhttppp::HttpForm::MultipartFormData::ContentDisposition* curctdisp = curformdat->getContentDisposition();
-                // if (curctdisp->getDisposition())
-                //     condat << "Disposition: " << curctdisp->getDisposition() << "<br>";
-                // if (curctdisp->getName())
-                //     condat << "Name: " << curctdisp->getName() << "<br>";
-                // if (curctdisp->getFilename())
-                //     condat << "Filename: " << curctdisp->getFilename() << "<br>";
-                // condat << "Multiform Section Data<br>"
-                //     << "<div style=\"border: thin solid black\">";
-                if (!curformdat->Value.empty()){
-                    condat.append(curformdat->Value.data());
+            for (libhttppp::HttpForm::MultipartForm::Data* curformdat = curform.MultipartFormData.getFormData();
+                 curformdat; curformdat = curformdat->nextData()) {
+                condat << "Content-Disposition: <br>";
+                for(libhttppp::HttpForm::MultipartForm::Data::ContentDisposition *curdispo=curformdat->getDisposition();
+                    curdispo; curdispo=curdispo->nextContentDisposition()
+                ){
+                        condat << "Key: "
+                               << curdispo->getKey()
+                               << " Value: "
+                               << curdispo->getValue();
                 }
-                condat << "\r\n<br></div>";
+                condat << "<br>";
+                if (!curformdat->Value.empty()){
+                    condat.append(curformdat->Value.data(),curformdat->Value.size());
+                }
+                condat << "<br>";
             }
+            condat << "\r\n<br></div>";
         }
     };
 
