@@ -192,23 +192,23 @@ namespace libhttppp {
           friend class MultipartFormData;
         };
       public:
+
         ContentDisposition *getDisposition();
         void                addDisposition(ContentDisposition disposition);
+
+        std::vector<char>   Value;
+        Data               *nextData();
       private:
         Data();
         ~Data();
         ContentDisposition *_firstDisposition;
         ContentDisposition *_lastDisposition;
-        std::vector<char>   _Value;
         Data               *_nextData;
         friend class HttpForm;
         friend class MultipartFormData;
       };
       
-
-      const char         *getContentType();
-      
-      Data               *nextData();
+      Data               *getFormData();
 
       MultipartForm();
       ~MultipartForm();
@@ -271,8 +271,7 @@ namespace libhttppp {
     void               _parseMulitpart(HttpRequest *request);
     void               _parseMultiSection(std::vector<char> &data,size_t start, size_t end);
     void               _parseBoundary(const char *contenttype);
-    char              *_Boundary;
-    size_t             _BoundarySize;
+    std::vector<char>  _Boundary;
     
     /*both methods*/
     inline int         _ishex(int x);

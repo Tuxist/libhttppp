@@ -69,25 +69,20 @@ private:
 
         if (curform.getBoundary()) {
             condat << "Boundary: " << curform.getBoundary() << "<br>";
-            for (libhttppp::HttpForm::MultipartForm::Data* curformdat = curform.getMultipartFormData(); curformdat; curformdat = curformdat->nextMultipartFormData()) {
-                condat << "Content-Disposition: <br>";
-                libhttppp::HttpForm::MultipartFormData::ContentDisposition* curctdisp = curformdat->getContentDisposition();
-                if (curctdisp->getDisposition())
-                    condat << "Disposition: " << curctdisp->getDisposition() << "<br>";
-                if (curctdisp->getName())
-                    condat << "Name: " << curctdisp->getName() << "<br>";
-                if (curctdisp->getFilename())
-                    condat << "Filename: " << curctdisp->getFilename() << "<br>";
-                condat << "Multiform Section Data<br>"
-                    << "<div style=\"border: thin solid black\">";
-                if (curformdat->getContentType())
-                    condat << "ContentType: " << curformdat->getContentType() << "<br>\r\n";
-                // condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
-                // for (size_t datapos = 0; datapos < curformdat->getDataSize(); datapos++) {
-                //     condat.push_back(curformdat->getData()[datapos]);
-                //     if (curformdat->getData()[datapos] == '\n')
-                //         condat << "<br>";
-                // }
+            for (libhttppp::HttpForm::MultipartForm::Data* curformdat = curform.MultipartFormData.getFormData(); curformdat; curformdat = curformdat->nextData()) {
+                // condat << "Content-Disposition: <br>";
+                // libhttppp::HttpForm::MultipartFormData::ContentDisposition* curctdisp = curformdat->getContentDisposition();
+                // if (curctdisp->getDisposition())
+                //     condat << "Disposition: " << curctdisp->getDisposition() << "<br>";
+                // if (curctdisp->getName())
+                //     condat << "Name: " << curctdisp->getName() << "<br>";
+                // if (curctdisp->getFilename())
+                //     condat << "Filename: " << curctdisp->getFilename() << "<br>";
+                // condat << "Multiform Section Data<br>"
+                //     << "<div style=\"border: thin solid black\">";
+                if (!curformdat->Value.empty()){
+                    condat.append(curformdat->Value.data());
+                }
                 condat << "\r\n<br></div>";
             }
         }

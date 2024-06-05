@@ -715,12 +715,10 @@ libhttppp::HttpRequest::~HttpRequest(){
 }
 
 libhttppp::HttpForm::HttpForm(){
-  _Boundary=nullptr;
   _Elements=0;
 }
 
 libhttppp::HttpForm::~HttpForm(){
-  delete[] _Boundary;
 }
 
 
@@ -730,7 +728,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
         HttpHeader::HeaderData *ctype=request->getData("content-type");
         _ContentType = request->getData(ctype);
         if(_ContentType &&
-          strncmp(_ContentType,"multipart/form-data",18)==0){
+          strncmp(_ContentType,"multipart/form-data",16)==0){
           _parseMulitpart(request);
         }else{
           _parseUrlDecode(request);
@@ -773,11 +771,11 @@ ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,char *
 }
 
 const char *libhttppp::HttpForm::getBoundary(){
-  return _Boundary;  
+  return _Boundary.data();
 }
 
 size_t libhttppp::HttpForm::getBoundarySize(){
-  return _BoundarySize;
+  return _Boundary.size();
 }
 
 
@@ -807,56 +805,40 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
     ctendpos=strlen(contenttype);
   /*cut boundary=*/
   ctstartpos+=strlen(boundary);
-  if(_Boundary)
-     delete[] _Boundary;
-  _BoundarySize=(ctendpos-ctstartpos);
-  _Boundary=new char[_BoundarySize+1];
-  memcpy(_Boundary,contenttype+ctstartpos,(ctendpos-ctstartpos));
-  _Boundary[(ctendpos-ctstartpos)]='\0';
+  std::copy(contenttype+ctstartpos,contenttype+ctendpos,
+            std::inserter<std::vector<char>>(_Boundary,_Boundary.begin()));
+  _Boundary.push_back('\0');
 }
 
 void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
     _parseBoundary(_ContentType);
-    char *realboundary = new char[_BoundarySize+3];
-    memcpy(realboundary+2,_Boundary,_BoundarySize+1);
+    std::vector<char> realboundary;
+    realboundary.resize(_Boundary.size()+2);
+    std::copy(_Boundary.begin(),_Boundary.end(),realboundary.begin()+2);
     realboundary[0]='-';
     realboundary[1]='-';
-    size_t realboundarylen=_BoundarySize+2;
+
     std::vector<char> req;
 
     std::copy(request->RecvData.begin(),request->RecvData.begin()+request->getContentLength(),
               std::inserter<std::vector<char>>(req,req.begin()));
 
     size_t realboundarypos=0;
-    size_t datalength = 0;
-    size_t datastart=std::string::npos;
-    size_t oldpos=0;
-    size_t cr=0;
-    while(cr < req.size()){
+    size_t oldpos=std::string::npos;
+
+    for(size_t cr=0; cr < req.size(); cr++){
         //check if boundary
-        if((char)tolower(req[cr++])==realboundary[realboundarypos++]){
+        if((char)tolower(req[cr])==realboundary[realboundarypos++]){
             //check if boundary completed
-            if((realboundarypos+1)==realboundarylen){
+            if(realboundarypos==realboundary.size()-1){
                 //ceck if boundary before found set data end
-                if(datastart!=std::string::npos){
-                    if(datalength>0)
-                        _parseMultiSection(req,datastart,cr);
-                    datastart=std::string::npos;
-                }
-                //set cr one higher to cut boundary
-                cr++;
-                //cut first new line
-                while(req[cr]=='\r' || req[cr]=='\n'){
-                    cr++;
-                }
-                datastart=req.at(cr);
-                //store pos dor datalength
-                oldpos=cr;
+                if(oldpos!=std::string::npos)
+                   _parseMultiSection(req,oldpos,cr-realboundary.size());
+                oldpos=cr++;
                 //check if boundary finished
                 if(req[cr]=='-' && req[cr+1]=='-'){
                     //boundary finished
-                    realboundarylen=0;
-                    delete[] realboundary;
+                    realboundary.clear();
                     return;
                 }
             }
@@ -865,17 +847,16 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
             realboundarypos=0;
         }
     }
-    delete[] realboundary;
 }
 
 void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t start, size_t end){
 
-  auto searchElement = [data](size_t start,size_t end, const char *word){
+  auto searchElement = [data](size_t starts,size_t ends, const char *word){
     size_t wsize=strlen(word);
-    for(size_t i=start; i< end; ++i){
+    for(size_t i=starts; i< ends; ++i){
       for(size_t ii=0; ii<=wsize; ++ii){
         if(ii==wsize){
-          return i-wsize;
+          return i;
         }
         if( data[i]==word[ii]){
           ++i;
@@ -887,24 +868,31 @@ void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t star
     return std::string::npos;
   };
 
-  size_t findel=start;
+  size_t findel=searchElement(start,end,"\r\n\r\n");
 
-  while(findel!=std::string::npos){
-      findel=searchElement(findel,end,"\r\n\r\n");
-      if(findel!=std::string::npos){
-          if(MultipartFormData._firstData){
-            MultipartFormData._lastData->_nextData =new MultipartForm::Data;
-            MultipartFormData._lastData=MultipartFormData._lastData->_nextData;
-          }else{
-            MultipartFormData._firstData=new MultipartForm::Data;
-            MultipartFormData._lastData=MultipartFormData._firstData;
-          }
-          std::copy(data.begin()+findel,data.begin()+end,std::inserter<std::vector<char>>(MultipartFormData._lastData->_Value,
-                                                                                          MultipartFormData._lastData->_Value.begin()));
+  if(findel!=std::string::npos){
+      if(MultipartFormData._firstData){
+         MultipartFormData._lastData->_nextData =new MultipartForm::Data;
+         MultipartFormData._lastData=MultipartFormData._lastData->_nextData;
+      }else{
+         MultipartFormData._firstData=new MultipartForm::Data;
+         MultipartFormData._lastData=MultipartFormData._firstData;
       }
+      std::copy(data.begin()+findel,data.begin()+end,std::inserter<std::vector<char>>(MultipartFormData._lastData->Value,
+                                                                                          MultipartFormData._lastData->Value.begin()));
   }
 
 }
+
+libhttppp::HttpForm::MultipartForm::Data * libhttppp::HttpForm::MultipartForm::Data::nextData(){
+  return _nextData;
+}
+
+
+libhttppp::HttpForm::MultipartForm::Data * libhttppp::HttpForm::MultipartForm::getFormData(){
+  return _firstData;
+}
+
 
 libhttppp::HttpForm::MultipartForm::MultipartForm(){
   _firstData=nullptr;
