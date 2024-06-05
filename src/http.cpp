@@ -717,29 +717,28 @@ libhttppp::HttpRequest::~HttpRequest(){
 libhttppp::HttpForm::HttpForm(){
   _Boundary=nullptr;
   _Elements=0;
-  _firstUrlcodedFormData=nullptr;
-  _lastUrlcodedFormData=nullptr;
-  _firstMultipartFormData=nullptr;
-  _lastMultipartFormData=nullptr;
 }
 
 libhttppp::HttpForm::~HttpForm(){
   delete[] _Boundary;
-  delete   _firstMultipartFormData;
-  _lastMultipartFormData=nullptr;
 }
 
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   try{
-      HttpHeader::HeaderData *ctype=request->getData("content-type");
-      _ContentType = request->getData(ctype);
-      if(_ContentType &&
+      if(request->getRequestType()==POSTREQUEST){
+        HttpHeader::HeaderData *ctype=request->getData("content-type");
+        _ContentType = request->getData(ctype);
+        if(_ContentType &&
           strncmp(_ContentType,"multipart/form-data",18)==0){
           _parseMulitpart(request);
+        }else{
+          _parseUrlDecode(request);
+        }
+      }else{
+        _parseUrlDecode(request);
       }
   }catch(...){}
-  _parseUrlDecode(request);
 }
 
 const char *libhttppp::HttpForm::getContentType(){
@@ -823,25 +822,26 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
     realboundary[0]='-';
     realboundary[1]='-';
     size_t realboundarylen=_BoundarySize+2;
-    const char *req=request->getRequest();
-    size_t reqsize=request->getRequestLength();
+    std::vector<char> req;
+
+    std::copy(request->RecvData.begin(),request->RecvData.begin()+request->getContentLength(),
+              std::inserter<std::vector<char>>(req,req.begin()));
+
     size_t realboundarypos=0;
-    unsigned int datalength = 0;
-    const char *datastart=nullptr;
+    size_t datalength = 0;
+    size_t datastart=std::string::npos;
     size_t oldpos=0;
     size_t cr=0;
-    while(cr < reqsize){
+    while(cr < req.size()){
         //check if boundary
         if((char)tolower(req[cr++])==realboundary[realboundarypos++]){
             //check if boundary completed
             if((realboundarypos+1)==realboundarylen){
                 //ceck if boundary before found set data end
-                if(datastart!=nullptr){
-                    //cut boundarylen
-                    datalength=(cr-oldpos)-realboundarylen;
+                if(datastart!=std::string::npos){
                     if(datalength>0)
-                        _parseMultiSection(datastart,datalength);
-                    datastart=nullptr;
+                        _parseMultiSection(req,datastart,cr);
+                    datastart=std::string::npos;
                 }
                 //set cr one higher to cut boundary
                 cr++;
@@ -849,7 +849,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
                 while(req[cr]=='\r' || req[cr]=='\n'){
                     cr++;
                 }
-                datastart=req+cr;
+                datastart=req.at(cr);
                 //store pos dor datalength
                 oldpos=cr;
                 //check if boundary finished
@@ -868,318 +868,196 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
     delete[] realboundary;
 }
 
-void libhttppp::HttpForm::_parseMultiSection(const char* section, size_t sectionsize){
-  _Elements++;
-  MultipartFormData *curmultipartformdata=addMultipartFormData();
-  const char *windelimter="\r\n\r\n";
-  size_t windelimtersize=strlen(windelimter);
-  size_t fpos=0,fendpos=0,fcurpos=0;
-  for(size_t dp=0; dp<sectionsize; dp++){
-    if(windelimter[fcurpos]==section[dp]){
-        if(fcurpos==0){
-          fpos=dp;
-        }
-        fcurpos++;
-      }else{
-        fcurpos=0;
-        fpos=0;
-      }
-      if(fcurpos==windelimtersize)
-        break;
-  }
-  fendpos=fpos+windelimtersize;
-  if(fpos==0 || fendpos==0)
-    return;
-   
-  /*change stpartpos for data*/
-  curmultipartformdata->_Data=section+fendpos;
-  curmultipartformdata->_Datasize=sectionsize-(fendpos+1);
-  
-  /*Debug data in formdata*/
-//   for(size_t cd=0; cd<curmultipartformdata->_Datasize; cd++){
-//     printf("%c",curmultipartformdata->_Data[cd]);
-//     printf(" -> testing loop: %zu \n",cd);
-//   }
-  
-  /*content parameter parsing*/
-  size_t lrow=0,delimeter=0,startkeypos=0;
-  for(size_t pos=0; pos<fendpos; pos++){
-    if(delimeter==0 && section[pos]==':'){
-      delimeter=pos;
-    }
-    if(section[pos]=='\r' && delimeter!=0){
-      if(delimeter>lrow){
-        size_t keylen=delimeter-startkeypos;
-        if(keylen>0 && keylen <=sectionsize){
-          char *key=new char[keylen+1];
-          memcpy(key,section+startkeypos,keylen);
-          key[keylen]='\0';
+void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t start, size_t end){
 
-          for (size_t it = 0; it < keylen; ++it) {
-              key[it] = (char)tolower(key[it]);
+  auto searchElement = [data](size_t start,size_t end, const char *word){
+    size_t wsize=strlen(word);
+    for(size_t i=start; i< end; ++i){
+      for(size_t ii=0; ii<=wsize; ++ii){
+        if(ii==wsize){
+          return i-wsize;
+        }
+        if( data[i]==word[ii]){
+          ++i;
+          continue;
+        }
+        break;
+      }
+    }
+    return std::string::npos;
+  };
+
+  size_t findel=start;
+
+  while(findel!=std::string::npos){
+      findel=searchElement(findel,end,"\r\n\r\n");
+      if(findel!=std::string::npos){
+          if(MultipartFormData._firstData){
+            MultipartFormData._lastData->_nextData =new MultipartForm::Data;
+            MultipartFormData._lastData=MultipartFormData._lastData->_nextData;
+          }else{
+            MultipartFormData._firstData=new MultipartForm::Data;
+            MultipartFormData._lastData=MultipartFormData._firstData;
           }
-
-          size_t valuelen=((pos-delimeter)-2);
-          if(pos > 0 && valuelen <= sectionsize){
-            char *value=new char[valuelen+1];
-            size_t vstart=delimeter+2;
-            memcpy(value,section+vstart,valuelen);
-            value[valuelen]='\0';
-            curmultipartformdata->addContent(key,value);
-            delete[] value;
-          }
-          delete[] key;
-	}
+          std::copy(data.begin()+findel,data.begin()+end,std::inserter<std::vector<char>>(MultipartFormData._lastData->_Value,
+                                                                                          MultipartFormData._lastData->_Value.begin()));
       }
-      delimeter=0;
-      lrow=pos;
-      startkeypos=lrow+2;
-    }
   }
-  //Debug content headerdata
-//   for(libhttppp::HttpForm::MultipartFormData::Content *curcnt=curmultipartformdata->_firstContent; curcnt; curcnt=curcnt->nextContent()){
-//       printf("%s -> %s\n",curcnt->getKey(),curcnt->getValue());
-//       
+
+}
+
+libhttppp::HttpForm::MultipartForm::MultipartForm(){
+  _firstData=nullptr;
+  _lastData=nullptr;
+}
+
+libhttppp::HttpForm::MultipartForm::~MultipartForm(){
+  Data *next=_firstData,*curel=nullptr;
+  while(next){
+        curel=next->_nextData;
+        next->_nextData=nullptr;
+        delete next;
+        next=curel;
+  }
+  _lastData=nullptr;
+}
+
+// void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
+//   size_t dislen=strlen(disposition);
+//
+//   for(size_t dpos=0; dpos<dislen; dpos++){
+//     if(disposition[dpos]==';' || disposition[dpos]=='\r'){
+//       char *ctype = new char[dpos+1];
+//       memcpy(ctype,disposition,dpos);
+//       ctype[dpos]='\0';
+//       // getContentDisposition()->setDisposition(ctype);
+//       delete[] ctype;
+//       break;
+//     }
 //   }
-  
-  curmultipartformdata->_parseContentDisposition(
-    curmultipartformdata->getContent("content-disposition")
-  );
+//
+//   const char *lownamedelimter="name=\"";
+//   const char* HIGHnamedelimter = "NAME=\"";
+//   ssize_t namedelimtersize=strlen(lownamedelimter);
+//   ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
+//   for(size_t dp=0; dp<dislen; dp++){
+//     if(lownamedelimter[fcurpos]==disposition[dp] ||
+//         HIGHnamedelimter[fcurpos] == disposition[dp]){
+//         if(fcurpos==0){
+//           fpos=dp;
+//         }
+//         fcurpos++;
+//       }else{
+//         fcurpos=0;
+//         fpos=-1;
+//       }
+//       if(fcurpos==namedelimtersize)
+//         break;
+//   }
+//   if(fpos!=-1){
+//     fendpos=fpos+namedelimtersize;
+//     for(size_t dp=fendpos; dp<dislen; dp++){
+//       if(disposition[dp]=='\"'){
+//         fterm=dp;
+//         break;
+//       }
+//     }
+//
+//     size_t namesize=(fterm-fendpos);
+//     char *name=new char[namesize+1];
+//     memcpy(name,disposition+fendpos,namesize);
+//     name[namesize]='\0';
+//     // getContentDisposition()->setName(name);
+//     delete[] name;
+//   }
+//
+//   const char *lowfilenamedelimter="filename=\"";
+//   const char* HIGHfilenamedelimter = "FILENAME=\"";
+//   ssize_t filenamedelimtersize=strlen(lowfilenamedelimter);
+//   ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
+//   for(size_t dp=0; dp<dislen; dp++){
+//     if(lowfilenamedelimter[filecurpos]==disposition[dp] ||
+//         HIGHfilenamedelimter[filecurpos]==disposition[dp]){
+//         if(filecurpos==0){
+//           filepos=dp;
+//         }
+//         filecurpos++;
+//       }else{
+//         filecurpos=0;
+//         filepos=-1;
+//       }
+//       if(filecurpos==filenamedelimtersize)
+//         break;
+//   }
+//   if(filepos!=-1){
+//     fileendpos=filepos+filenamedelimtersize;
+//     for(size_t dp=fileendpos; dp<dislen; dp++){
+//       if(disposition[dp]=='\"'){
+//         fileterm=dp;
+//         break;
+//       }
+//     }
+//
+//     size_t filenamesize=(fileterm-fileendpos);
+//     char *filename=new char[filenamesize+1];
+//     memcpy(filename,disposition+fileendpos,filenamesize);
+//     filename[filenamesize]='\0';
+//     // getContentDisposition()->setFilename(filename);
+//     delete[] filename;
+//   }
+// }
+
+
+libhttppp::HttpForm::MultipartForm::Data::Data(){
+  _firstDisposition=nullptr;
+  _lastDisposition=nullptr;
+  _nextData=nullptr;
 }
 
-libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::addMultipartFormData(){
-  if(!_firstMultipartFormData){
-    _firstMultipartFormData= new MultipartFormData;
-    _lastMultipartFormData=_firstMultipartFormData;
+libhttppp::HttpForm::MultipartForm::Data::~Data(){
+
+}
+
+const char *libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::getKey(){
+  return _Key.data();
+}
+
+const char *libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::getValue(){
+  return _Value.data();
+}
+
+void libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::setKey(const char* key){
+  _Key.clear();
+  std::copy(key,key+(strlen(key)+1),std::inserter<std::vector<char>>(_Key,_Key.begin()));
+}
+
+void libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::setValue(const char* value){
+  _Value.clear();
+  std::copy(value,value+(strlen(value)+1),std::inserter<std::vector<char>>(_Value,_Value.begin()));
+}
+
+
+libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::ContentDisposition(){
+  _nextContentDisposition=nullptr;
+}
+
+libhttppp::HttpForm::MultipartForm::Data::ContentDisposition::~ContentDisposition(){
+}
+
+libhttppp::HttpForm::MultipartForm::Data::ContentDisposition* libhttppp::HttpForm::MultipartForm::Data::getDisposition(){
+  return _firstDisposition;
+}
+
+void libhttppp::HttpForm::MultipartForm::Data::addDisposition(ContentDisposition disposition){
+  if(_firstDisposition){
+      _lastDisposition->_nextContentDisposition=new ContentDisposition(disposition);
+      _lastDisposition=_lastDisposition->_nextContentDisposition;
   }else{
-    _lastMultipartFormData->_nextMultipartFormData=new MultipartFormData;
-    _lastMultipartFormData=_lastMultipartFormData->_nextMultipartFormData;
-  }
-  return _lastMultipartFormData;
-}
-
-libhttppp::HttpForm::MultipartFormData  *libhttppp::HttpForm::getMultipartFormData(){
-  return _firstMultipartFormData;
-}
-
-libhttppp::HttpForm::MultipartFormData::MultipartFormData(){
-  _ContentDisposition=new ContentDisposition;
-  _nextMultipartFormData=nullptr;
-  _Data=nullptr;
-  _firstContent=nullptr;
-  _lastContent=nullptr;
-}
-
-libhttppp::HttpForm::MultipartFormData::~MultipartFormData(){
-  delete _ContentDisposition;
-  delete _nextMultipartFormData;
-  delete _firstContent;
-  _lastContent=nullptr;
-}
-
-const char *libhttppp::HttpForm::MultipartFormData::getData(){
-  return _Data;  
-}
-
-size_t libhttppp::HttpForm::MultipartFormData::getDataSize(){
-  return _Datasize;
-}
-
-
-libhttppp::HttpForm::MultipartFormData::ContentDisposition *libhttppp::HttpForm::MultipartFormData::getContentDisposition(){
-  return _ContentDisposition;
-}
-
-void libhttppp::HttpForm::MultipartFormData::_parseContentDisposition(const char *disposition){
-  size_t dislen=strlen(disposition);
-  
-  for(size_t dpos=0; dpos<dislen; dpos++){
-    if(disposition[dpos]==';' || disposition[dpos]=='\r'){
-      char *ctype = new char[dpos+1];
-      memcpy(ctype,disposition,dpos);
-      ctype[dpos]='\0';
-      getContentDisposition()->setDisposition(ctype);
-      delete[] ctype;
-      break;
-    }
-  }
-  
-  const char *lownamedelimter="name=\"";
-  const char* HIGHnamedelimter = "NAME=\"";
-  ssize_t namedelimtersize=strlen(lownamedelimter);
-  ssize_t fpos=-1,fendpos=0,fcurpos=0,fterm=0;
-  for(size_t dp=0; dp<dislen; dp++){
-    if(lownamedelimter[fcurpos]==disposition[dp] ||
-        HIGHnamedelimter[fcurpos] == disposition[dp]){
-        if(fcurpos==0){
-          fpos=dp;
-        }
-        fcurpos++;
-      }else{
-        fcurpos=0;
-        fpos=-1;
-      }
-      if(fcurpos==namedelimtersize)
-        break;
-  }
-  if(fpos!=-1){
-    fendpos=fpos+namedelimtersize;
-    for(size_t dp=fendpos; dp<dislen; dp++){
-      if(disposition[dp]=='\"'){
-        fterm=dp;
-        break;
-      }
-    }
-  
-    size_t namesize=(fterm-fendpos);
-    char *name=new char[namesize+1];
-    memcpy(name,disposition+fendpos,namesize);
-    name[namesize]='\0';
-    getContentDisposition()->setName(name);
-    delete[] name;
-  }
-  
-  const char *lowfilenamedelimter="filename=\"";
-  const char* HIGHfilenamedelimter = "FILENAME=\"";
-  ssize_t filenamedelimtersize=strlen(lowfilenamedelimter);
-  ssize_t filepos=-1,fileendpos=0,filecurpos=0,fileterm=0;
-  for(size_t dp=0; dp<dislen; dp++){
-    if(lowfilenamedelimter[filecurpos]==disposition[dp] || 
-        HIGHfilenamedelimter[filecurpos]==disposition[dp]){
-        if(filecurpos==0){
-          filepos=dp;
-        }
-        filecurpos++;
-      }else{
-        filecurpos=0;
-        filepos=-1;
-      }
-      if(filecurpos==filenamedelimtersize)
-        break;
-  }
-  if(filepos!=-1){
-    fileendpos=filepos+filenamedelimtersize;
-    for(size_t dp=fileendpos; dp<dislen; dp++){
-      if(disposition[dp]=='\"'){
-        fileterm=dp;
-        break;
-      }
-    }
-  
-    size_t filenamesize=(fileterm-fileendpos);
-    char *filename=new char[filenamesize+1];
-    memcpy(filename,disposition+fileendpos,filenamesize);
-    filename[filenamesize]='\0';
-    getContentDisposition()->setFilename(filename);
-    delete[] filename;
+      _firstDisposition=new ContentDisposition(disposition);
+      _lastDisposition=_firstDisposition;
   }
 }
 
-void libhttppp::HttpForm::MultipartFormData::addContent(const char *key,const char *value){
-  if(!_firstContent){
-    _firstContent= new Content(key,value);
-    _lastContent=_firstContent;
-  }else{
-    _lastContent->_nextContent=new Content(key,value);
-    _lastContent=_lastContent->_nextContent;
-  }
-}
-
-const char * libhttppp::HttpForm::MultipartFormData::getContent(const char* key){
-  if(!key)
-    return nullptr;
-  for(Content *curcontent=_firstContent; curcontent; curcontent=curcontent->_nextContent){
-    if(strcmp(curcontent->getKey(),key)==0){
-      return curcontent->getValue();
-    }
-  }
-  return nullptr;
-}
-
-const char  *libhttppp::HttpForm::MultipartFormData::getContentType(){
-  return getContent("content-type");
-}
-
-libhttppp::HttpForm::MultipartFormData *libhttppp::HttpForm::MultipartFormData::nextMultipartFormData(){
-   return _nextMultipartFormData; 
-}
-
-libhttppp::HttpForm::MultipartFormData::Content::Content(const char *key,const char *value){
-  _nextContent=nullptr;
-  if(!key || !value)
-    return;
-  
-  _Key=new char[strlen(key)+1];
-  memcpy(_Key,key,strlen(key));
-  _Key[strlen(key)]='\0';
-  
-  _Value=new char[strlen(value)+1];
-  memcpy(_Value,value,strlen(value));
-  _Value[strlen(value)]='\0';
-}
-
-libhttppp::HttpForm::MultipartFormData::Content::~Content(){
-  delete[] _Key;
-  delete[] _Value; 
-  delete _nextContent;
-}
-
-const char *libhttppp::HttpForm::MultipartFormData::Content::getKey(){
-  return _Key;
-}
-
-const char *libhttppp::HttpForm::MultipartFormData::Content::getValue(){
-  return _Value;
-}
-
-libhttppp::HttpForm::MultipartFormData::Content * libhttppp::HttpForm::MultipartFormData::Content::nextContent(){
-  return _nextContent;
-}
-
-libhttppp::HttpForm::MultipartFormData::ContentDisposition::ContentDisposition(){
-  _Disposition=nullptr;
-  _Name=nullptr;
-  _Filename=nullptr;
-}
-
-libhttppp::HttpForm::MultipartFormData::ContentDisposition::~ContentDisposition(){
-  delete[] _Disposition;
-  delete[] _Name;
-  delete[] _Filename;  
-}
-
-char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getDisposition(){
-  return _Disposition;    
-}
-
-char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getFilename(){
-  return _Filename;  
-}
-
-char *libhttppp::HttpForm::MultipartFormData::ContentDisposition::getName(){
-  return _Name;  
-}
-
-void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setDisposition(const char* disposition){
-  delete[] _Disposition;
-  _Disposition=new char[strlen(disposition)+1];
-  memcpy(_Disposition,disposition,strlen(disposition));
-  _Disposition[strlen(disposition)]='\0';
-}
-
-void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setName(const char* name){
-  delete[] _Name;
-  _Name=new char[strlen(name)+1];
-  memcpy(_Name,name,strlen(name));
-  _Name[strlen(name)]='\0';
-}
-
-void libhttppp::HttpForm::MultipartFormData::ContentDisposition::setFilename(const char* filename){
-  delete[] _Filename;
-  _Filename=new char[strlen(filename)+1];
-  memcpy(_Filename,filename,strlen(filename));
-  _Filename[strlen(filename)]='\0';
-}
 
 void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   HTTPException httpexception;
@@ -1225,11 +1103,8 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
                 urlDecode(value.c_str(),value.length(),&urldecdValue);
             }
             urlDecode(key.c_str(),key.length(),&urldecdKey);
-            UrlcodedFormData *newenrty;
-            newenrty=addUrlcodedFormData();
-            newenrty->setKey(urldecdKey);
-            newenrty->setValue(urldecdValue);
-
+            UrlcodedForm::Data urldat(urldecdKey,urldecdValue);
+            UrlFormData.addFormData(urldat);
           }
           fdatstpos=fdatpos+1;
         };
@@ -1240,7 +1115,7 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
   }
 }
 
-void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
+void libhttppp::HttpForm::UrlcodedForm::Data::setKey(const char* key){
    if(!key){
 	HTTPException httpexception;
 	httpexception[HTTPException::Error] << "no urldecoded key set";
@@ -1249,7 +1124,7 @@ void libhttppp::HttpForm::UrlcodedFormData::setKey(const char* key){
    _Key=key;
 }
 
-void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
+void libhttppp::HttpForm::UrlcodedForm::Data::setValue(const char* value){
   if(!value){
       _Value.clear();
       return;
@@ -1257,39 +1132,68 @@ void libhttppp::HttpForm::UrlcodedFormData::setValue(const char* value){
   _Value=value; 
 }
 
-const char *libhttppp::HttpForm::UrlcodedFormData::getKey(){
+const char *libhttppp::HttpForm::UrlcodedForm::Data::getKey(){
   return _Key.c_str();
 }
 
-const char *libhttppp::HttpForm::UrlcodedFormData::getValue(){
+const char *libhttppp::HttpForm::UrlcodedForm::Data::getValue(){
   return _Value.c_str();
 }
 
-libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::UrlcodedFormData::nextUrlcodedFormData(){
-  return _nextUrlcodedFormData;  
+libhttppp::HttpForm::UrlcodedForm::Data  *libhttppp::HttpForm::UrlcodedForm::Data::nextData(){
+  return _next;
 }
 
-libhttppp::HttpForm::UrlcodedFormData::UrlcodedFormData(){
-  _nextUrlcodedFormData=nullptr;
-}
+libhttppp::HttpForm::UrlcodedForm::Data::Data(Data& fdat){
+  _Key=fdat._Key;
+  _Value=fdat._Value;
+  _next = nullptr;
+  Data *ndat=fdat._next;
 
-libhttppp::HttpForm::UrlcodedFormData::~UrlcodedFormData(){
-  delete _nextUrlcodedFormData;
-}
-
-libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::addUrlcodedFormData(){
-  if(!_firstUrlcodedFormData){
-    _firstUrlcodedFormData= new UrlcodedFormData;
-    _lastUrlcodedFormData=_firstUrlcodedFormData;
-  }else{
-    _lastUrlcodedFormData->_nextUrlcodedFormData=new UrlcodedFormData;
-    _lastUrlcodedFormData=_lastUrlcodedFormData->_nextUrlcodedFormData;
+  while(ndat){
+     _next = new Data(ndat->_Key.c_str(),ndat->_Value.c_str());
+     ndat=ndat->_next;
   }
-  return _lastUrlcodedFormData;
 }
 
-libhttppp::HttpForm::UrlcodedFormData  *libhttppp::HttpForm::getUrlcodedFormData(){
-  return _firstUrlcodedFormData;
+libhttppp::HttpForm::UrlcodedForm::Data::Data(const char *key,const char *value){
+  _Key=key;
+  _Value=value;
+  _next=nullptr;
+}
+
+libhttppp::HttpForm::UrlcodedForm::Data::~Data(){
+}
+
+libhttppp::HttpForm::UrlcodedForm::UrlcodedForm(){
+  _firstData=nullptr;
+  _lastData=nullptr;
+}
+
+libhttppp::HttpForm::UrlcodedForm::~UrlcodedForm(){
+  Data *next=_firstData,*curel=nullptr;
+  while(next){
+        curel=next->_next;
+        next->_next=nullptr;
+        delete next;
+        next=curel;
+  }
+  _lastData=nullptr;
+}
+
+
+void libhttppp::HttpForm::UrlcodedForm::addFormData(Data &formdat){
+  if(!_firstData){
+    _firstData= new UrlcodedForm::Data(formdat);
+    _lastData=_firstData;
+  }else{
+    _lastData->_next=new UrlcodedForm::Data(formdat);
+    _lastData=_lastData->_next;
+  }
+}
+
+libhttppp::HttpForm::UrlcodedForm::Data  *libhttppp::HttpForm::UrlcodedForm::getFormData(){
+  return _firstData;
 }
 
 libhttppp::HttpCookie::CookieData::CookieData(){

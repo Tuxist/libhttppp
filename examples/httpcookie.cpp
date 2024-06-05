@@ -72,27 +72,24 @@ public:
     const char *getData(const char *key){
         libhttppp::HttpForm curform;
         curform.parse(_Curreq);
-        if(curform.getUrlcodedFormData()){
-            for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
-                cururlform=cururlform->nextUrlcodedFormData()){
-                if(strcmp(key,cururlform->getKey())==0)
-                    return cururlform->getValue();
-                }
+        for(libhttppp::HttpForm::UrlcodedForm::Data *cururlform=curform.UrlFormData.getFormData() ; cururlform;
+            cururlform=cururlform->nextData()){
+            if(strcmp(key,cururlform->getKey())==0)
+                return cururlform->getValue();
         }
+
         return nullptr;
     }
     
     int getDataInt(const char *key){
         libhttppp::HttpForm curform;
         curform.parse(_Curreq);
-        if(curform.getUrlcodedFormData()){
-            for(libhttppp::HttpForm::UrlcodedFormData *cururlform=curform.getUrlcodedFormData(); cururlform; 
-                cururlform=cururlform->nextUrlcodedFormData()){
-                if(strcmp(key,cururlform->getKey())==0){
-                        char ktmp[255];
-                        memcpy(ktmp,cururlform->getValue(),strlen(cururlform->getValue())+1);
-                        return atoi(ktmp);
-                    }
+        for(libhttppp::HttpForm::UrlcodedForm::Data *cururlform=curform.UrlFormData.getFormData(); cururlform;
+            cururlform=cururlform->nextData()){
+            if(strcmp(key,cururlform->getKey())==0){
+                    char ktmp[255];
+                    memcpy(ktmp,cururlform->getValue(),strlen(cururlform->getValue())+1);
+                    return atoi(ktmp);
                 }
         }
         return 0;

@@ -25,10 +25,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *******************************************************************************/
 
-#include <string.h>
-
 #include <iostream>
-#include <netplus/eventapi.h>
+
+#include <netplus/exception.h>
 
 #include "http.h"
 #include "httpd.h"
@@ -43,7 +42,7 @@ public:
             libhttppp::HttpResponse curres;
             const char *hello="<!DOCTYPE html><html><head><title>hello</title></head><body>Hello World</body></html>";
             curres.setContentType("text/html");
-            curres.send(curreq,hello,strlen(hello));
+            curres.send(curreq,hello,85);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() << std::endl;
         }
@@ -56,15 +55,22 @@ public:
   HttpConD(int argc, char** argv) : HttpD(argc,argv){
     libhttppp::HTTPException httpexception;
     try {
-      Controller controller(getServerSocket());
-      controller.runEventloop();
-    }catch(libhttppp::HTTPException &e){
-      std::cout << e.what() << std::endl;
+        Controller controller(getServerSocket());
+        controller.runEventloop();
+    }catch(netplus::NetException &e){
+        httpexception[libhttppp::HTTPException::Critical] << e.what();
+        throw httpexception;
     }
   };
 private:
 };
 
 int main(int argc, char** argv){
-  HttpConD(argc,argv);
+  try {
+    HttpConD(argc,argv);
+    return 0;
+  }catch(libhttppp::HTTPException &e){
+    std::cout << e.what() << std::endl;
+    return -1;
+  }
 }

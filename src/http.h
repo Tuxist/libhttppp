@@ -168,78 +168,87 @@ namespace libhttppp {
   
   class HttpForm {
   public:
-    class MultipartFormData{
+    class MultipartForm{
     public:
-      class Content{
-      public:
+      class Data{
+        class ContentDisposition{
+        public:
           const char *getKey();
           const char *getValue();
-          Content    *nextContent();
-      private:
-         Content(const char *key,const char *value);
-         ~Content();
-         char    *_Key;
-         char    *_Value;
-         Content *_nextContent;
-         friend class MultipartFormData;
-      };
-      class ContentDisposition{
+
+          void setKey(const char *key);
+          void setValue(const char *value);
+
+          ContentDisposition();
+          ~ContentDisposition();
+
+          ContentDisposition *nextContentDisposition();
+
+        private:
+          ContentDisposition *_nextContentDisposition;
+          std::vector<char>   _Key;
+          std::vector<char>   _Value;
+          friend class HttpForm;
+          friend class MultipartFormData;
+        };
       public:
-        char *getDisposition();
-        char *getName();
-        char *getFilename();
-        
-        void  setDisposition(const char *disposition);
-        void  setName(const char *name);
-        void  setFilename(const char *filename);
+        ContentDisposition *getDisposition();
+        void                addDisposition(ContentDisposition disposition);
       private:
-        ContentDisposition();
-        ~ContentDisposition();
-        char *_Disposition;
-        char *_Name;
-        char *_Filename;
+        Data();
+        ~Data();
+        ContentDisposition *_firstDisposition;
+        ContentDisposition *_lastDisposition;
+        std::vector<char>   _Value;
+        Data               *_nextData;
+        friend class HttpForm;
         friend class MultipartFormData;
       };
-      ContentDisposition *getContentDisposition();
       
-      const char         *getData();
-      size_t              getDataSize();
-      
-      void                addContent(const char *key,const char *value);
-      const char         *getContent(const char *key);
+
       const char         *getContentType();
       
-      MultipartFormData  *nextMultipartFormData();
+      Data               *nextData();
+
+      MultipartForm();
+      ~MultipartForm();
     private:
-      MultipartFormData();
-      ~MultipartFormData();
-      
-      Content            *_firstContent;
-      Content            *_lastContent;
-      
+      Data               *_firstData;
+      Data               *_lastData;
+
       void                _parseContentDisposition(const char *disposition);
-      ContentDisposition *_ContentDisposition;
-      
-      const char         *_Data;
-      size_t              _Datasize;
-      MultipartFormData  *_nextMultipartFormData;
+
       friend class HttpForm;
     };
     
-    class UrlcodedFormData{
+    class UrlcodedForm{
     public:
-      const char        *getKey();
-      const char        *getValue();
+      class Data {
+        public:
+          Data(Data &fdat);
+          Data(const char *key,const char *value);
+          ~Data();
+          const char   *getKey();
+          const char   *getValue();
       
-      void               setKey(const char *key);
-      void               setValue(const char *value);
-      UrlcodedFormData  *nextUrlcodedFormData();
+          void          setKey(const char *key);
+          void          setValue(const char *value);
+          Data         *nextData();
+        private:
+          std::string        _Key;
+          std::string        _Value;
+          Data              *_next;
+          friend class HttpForm;
+      };
+
+      UrlcodedForm();
+      ~UrlcodedForm();
+
+      void  addFormData(Data &formdat);
+      Data *getFormData();
     private:
-      UrlcodedFormData();
-      ~UrlcodedFormData();
-      std::string        _Key;
-      std::string        _Value;
-      UrlcodedFormData  *_nextUrlcodedFormData;
+      Data *_firstData;
+      Data *_lastData;
       friend class HttpForm;
     };
     
@@ -249,28 +258,21 @@ namespace libhttppp {
     const char         *getContentType();
     /*urldecoded form*/
     ssize_t             urlDecode(const char *urlin,size_t urlinsize,char **urlout);
-    UrlcodedFormData   *addUrlcodedFormData();
-    UrlcodedFormData   *getUrlcodedFormData();
-    
+    UrlcodedForm        UrlFormData;
     /*multiform*/
     const char         *getBoundary();
     size_t              getBoundarySize();
-    
-    MultipartFormData  *getMultipartFormData();
-    MultipartFormData  *addMultipartFormData();
+    MultipartForm       MultipartFormData;
   private:
     /*urldecoded*/
     void               _parseUrlDecode(HttpRequest *request);
-    UrlcodedFormData  *_firstUrlcodedFormData;
-    UrlcodedFormData  *_lastUrlcodedFormData;
+
     /*multiform*/
     void               _parseMulitpart(HttpRequest *request);
-    void               _parseMultiSection(const char *section,size_t sectionsize);
+    void               _parseMultiSection(std::vector<char> &data,size_t start, size_t end);
     void               _parseBoundary(const char *contenttype);
     char              *_Boundary;
     size_t             _BoundarySize;
-    MultipartFormData *_firstMultipartFormData;
-    MultipartFormData *_lastMultipartFormData;
     
     /*both methods*/
     inline int         _ishex(int x);

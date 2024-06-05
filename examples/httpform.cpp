@@ -28,7 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 
 #include <iostream>
-#include <netplus/eventapi.h>
+#include <netplus/exception.h>
 
 #include <htmlpp/html.h>
 
@@ -69,7 +69,7 @@ private:
 
         if (curform.getBoundary()) {
             condat << "Boundary: " << curform.getBoundary() << "<br>";
-            for (libhttppp::HttpForm::MultipartFormData* curformdat = curform.getMultipartFormData(); curformdat; curformdat = curformdat->nextMultipartFormData()) {
+            for (libhttppp::HttpForm::MultipartForm::Data* curformdat = curform.getMultipartFormData(); curformdat; curformdat = curformdat->nextMultipartFormData()) {
                 condat << "Content-Disposition: <br>";
                 libhttppp::HttpForm::MultipartFormData::ContentDisposition* curctdisp = curformdat->getContentDisposition();
                 if (curctdisp->getDisposition())
@@ -82,12 +82,12 @@ private:
                     << "<div style=\"border: thin solid black\">";
                 if (curformdat->getContentType())
                     condat << "ContentType: " << curformdat->getContentType() << "<br>\r\n";
-                condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
-                for (size_t datapos = 0; datapos < curformdat->getDataSize(); datapos++) {
-                    condat.push_back(curformdat->getData()[datapos]);
-                    if (curformdat->getData()[datapos] == '\n')
-                        condat << "<br>";
-                }
+                // condat << "Datasize: " << curformdat->getDataSize() << "<br> Data:<br>\n";
+                // for (size_t datapos = 0; datapos < curformdat->getDataSize(); datapos++) {
+                //     condat.push_back(curformdat->getData()[datapos]);
+                //     if (curformdat->getData()[datapos] == '\n')
+                //         condat << "<br>";
+                // }
                 condat << "\r\n<br></div>";
             }
         }
@@ -96,14 +96,13 @@ private:
     void URlform(libhttppp::HttpRequest* curreq, libhtmlpp::HtmlString& condat) {
         libhttppp::HttpForm curform;
         curform.parse(curreq);
-        if (curform.getUrlcodedFormData()) {
-            for (libhttppp::HttpForm::UrlcodedFormData* cururlform = curform.getUrlcodedFormData(); cururlform;
-                cururlform = cururlform->nextUrlcodedFormData()) {
-                condat << "<span>"
-                    << "Key: " << cururlform->getKey()
-                    << " Value: " << cururlform->getValue()
-                    << "</span><br/>";
-            }
+
+        for (libhttppp::HttpForm::UrlcodedForm::Data* cururlform = curform.UrlFormData.getFormData(); cururlform;
+             cururlform = cururlform->nextData()) {
+            condat << "<span>"
+                   << "Key: " << cururlform->getKey()
+                   << " Value: " << cururlform->getValue()
+                   << "</span><br/>";
         }
     };
 
@@ -191,7 +190,7 @@ public:
     try {
       Controller controller(getServerSocket());
       controller.runEventloop();
-    }catch(libhttppp::HTTPException &e){
+    }catch(netplus::NetException &e){
       std::cerr << e.what() << std::endl;
     }
   };
