@@ -848,7 +848,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
         }
     }
 }
-#include <iostream>
+
 void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t start, size_t end){
 
   auto searchElement = [](size_t starts,size_t ends, const char *word,std::vector<char> &sdata){
@@ -935,7 +935,6 @@ void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t star
       size_t scvss=std::string::npos,scvse=std::string::npos;
 
       for(size_t sc=ifdp; sc<cdispo->_Value.size(); ++sc){
-        std::cout <<  cdispo->_Value[sc] << std::endl;
         if(scss==std::string::npos){
           if(cdispo->_Value[sc]!=';' && cdispo->_Value[sc]!=' '){
             scss=sc;
@@ -963,8 +962,6 @@ void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t star
             }
           }
         }
-
-        std::cout << scss << ": " << scse << std::endl;
 
         if(scss !=std::string::npos && scse !=std::string::npos){
           MultipartForm::Data::ContentDisposition dispo;
