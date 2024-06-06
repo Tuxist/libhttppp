@@ -287,7 +287,7 @@ namespace libhttppp {
     void                parse(HttpRequest *request);
     const char         *getContentType();
     /*urldecoded form*/
-    ssize_t             urlDecode(const char *urlin,size_t urlinsize,char **urlout);
+    ssize_t             urlDecode(const char *urlin,size_t urlinsize,std::vector<char> &out);
     UrlcodedForm        UrlFormData;
     /*multiform*/
     const char         *getBoundary();

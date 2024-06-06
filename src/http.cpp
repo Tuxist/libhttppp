@@ -633,7 +633,7 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
 }
 
 size_t libhttppp::HttpRequest::getContentLength(){
-  return getDataInt(_ContentLength);
+  return getDataSizet(_ContentLength);
 }
 
 size_t libhttppp::HttpRequest::getMaxUploadSize(){
@@ -718,23 +718,22 @@ libhttppp::HttpForm::HttpForm(){
 libhttppp::HttpForm::~HttpForm(){
 }
 
-
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
-
   try{
       if(request->getRequestType()==POSTREQUEST){
           std::vector<char> bodydat;
           HttpHeader::HeaderData *ctype=request->getData("content-type");
-          _ContentType = request->getData(ctype);
-          if(_ContentType &&
-              strncmp(_ContentType,"multipart/form-data",16)==0){
-              _parseMulitpart(bodydat);
-          }else{
-              size_t clen = request->getDataSizet(request->_ContentLength);
-              if(request->RecvData.size()>= clen){
-                  std::copy(request->RecvData.begin(),request->RecvData.begin()+clen,
-                            std::inserter<std::vector<char>>(bodydat,bodydat.begin()));
-                  bodydat.push_back('\0');
+
+          if(request->RecvData.size()<= request->getContentLength()){
+              std::copy(request->RecvData.begin(),request->RecvData.begin()+request->getContentLength(),
+                        std::inserter<std::vector<char>>(bodydat,bodydat.begin()));
+
+
+              if(ctype && strncmp(request->getData(ctype),"multipart/form-data",16)==0){
+                  _parseBoundary(request->getData(ctype));
+                  _parseMulitpart(bodydat);
+              }
+              if(ctype && strncmp(request->getData(ctype),"application/x-www-form-urlencoded",34)==0){
                   _parseUrlDecode(bodydat);
               }
           }
@@ -758,7 +757,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
 }
 
 const char *libhttppp::HttpForm::getContentType(){
-  return _ContentType;;
+  return _ContentType;
 }
 
 inline int libhttppp::HttpForm::_ishex(int x){
@@ -767,25 +766,20 @@ inline int libhttppp::HttpForm::_ishex(int x){
           (x >= 'A' && x <= 'F');
 }
 
-ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,char **urlout){
+ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,std::vector<char> &out){
     char *o;
-    char *dec = new char[urlinsize+1];
-    *urlout=dec;
     const char *end = urlin + urlinsize;
     int c;
-    for (o = dec; urlin <= end; o++) {
+    while(urlin <= end) {
         c = *urlin++;
         if (c == '+'){
             c = ' ';
-        }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	||
-            !sscanf(urlin - 2, "%2x", &c))){
-            return -1;
-            }
-            if (dec){
-                *o = c;
-            }
+        }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	|| !sscanf(urlin - 2, "%2x", &c))){
+                return -1;
+        }
+        out.push_back(c);
     }
-    return o - dec;
+    return out.size();
 }
 
 const char *libhttppp::HttpForm::getBoundary(){
@@ -829,7 +823,6 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
 }
 
 void libhttppp::HttpForm::_parseMulitpart(const std::vector<char> &data){
-    _parseBoundary(_ContentType);
     std::vector<char> realboundary;
     realboundary.resize(_Boundary.size()+2);
     std::copy(_Boundary.begin(),_Boundary.end(),realboundary.begin()+2);
@@ -1161,29 +1154,27 @@ void libhttppp::HttpForm::_parseUrlDecode(const std::vector<char> &data){
   size_t fdatstpos=0;
   size_t keyendpos=0;
   for(size_t fdatpos=0; fdatpos<=data.size(); fdatpos++){
-    switch(data[fdatpos]){
-        case '&': case '\0':{
-          if(keyendpos >fdatstpos && keyendpos<fdatpos){
-            std::string key;
-            size_t vlstpos=keyendpos+1;
-            std::string value;
-            char *urldecdValue=nullptr;
-            char *urldecdKey=nullptr;
-            std::copy(data.begin()+fdatstpos,data.begin()+keyendpos,std::inserter<std::string>(key,key.begin()));
-            if(vlstpos<=data.size()){
-              std::copy(data.begin()+vlstpos,data.begin()+fdatpos,std::inserter<std::string>(value,value.begin()));
-              urlDecode(value.c_str(),value.length(),&urldecdValue);
-            }
-            urlDecode(key.c_str(),key.length(),&urldecdKey);
-            UrlcodedForm::Data urldat(urldecdKey,urldecdValue);
-            UrlFormData.addFormData(urldat);
-          }
-          fdatstpos=fdatpos+1;
-        };
-        case '=':{
-          keyendpos=fdatpos;  
-        };
-    }
+    if(data[fdatpos] == '&' || fdatpos==data.size()){
+      if(keyendpos >fdatstpos && keyendpos<fdatpos){
+        std::vector<char> key,ukey;;
+        size_t vlstpos=keyendpos+1;
+        std::vector<char> value,uvalue;
+        char *urldecdKey=nullptr;
+        std::copy(data.begin()+fdatstpos,data.begin()+keyendpos,std::inserter<std::vector<char>>(key,key.begin()));
+        key.push_back('\0');
+        if(vlstpos<=data.size()){
+          std::copy(data.begin()+vlstpos,data.begin()+fdatpos,std::inserter<std::vector<char>>(value,value.begin()));
+          value.push_back('\0');
+          urlDecode(value.data(),value.size(),uvalue);
+        }
+        urlDecode(key.data(),key.size(),ukey);
+        UrlcodedForm::Data urldat(ukey.data(),uvalue.data());
+        UrlFormData.addFormData(urldat);
+      }
+      fdatstpos=fdatpos+1;
+    }else if( data[fdatpos] == '=' ){
+      keyendpos=fdatpos;
+    };
   }
 }
 
@@ -1220,12 +1211,6 @@ libhttppp::HttpForm::UrlcodedForm::Data::Data(Data& fdat){
   _Key=fdat._Key;
   _Value=fdat._Value;
   _next = nullptr;
-  Data *ndat=fdat._next;
-
-  while(ndat){
-     _next = new Data(ndat->_Key.c_str(),ndat->_Value.c_str());
-     ndat=ndat->_next;
-  }
 }
 
 libhttppp::HttpForm::UrlcodedForm::Data::Data(const char *key,const char *value){
