@@ -528,7 +528,7 @@ size_t libhttppp::HttpRequest::parse(){
     }
 
     for(size_t cpos=pos; cpos<header.size(); ++cpos){
-      if(header[cpos]==' ' && (cpos-pos)<255){
+      if(header[cpos]=='\n' && (cpos-pos)<255){
         std::copy(header.begin()+pos,header.begin()+cpos,std::inserter<std::string>(_RequestVersion,_RequestVersion.begin()));
         _RequestVersion.push_back('\0');
         ++pos;
@@ -573,14 +573,6 @@ size_t libhttppp::HttpRequest::parse(){
         delimeter=0;
         lrow=pos;
         startkeypos=lrow+2;
-      }
-    }
-
-    if(_RequestType==POSTREQUEST){
-      if( RecvData.size() > _MaxUploadSize){
-        RecvData.clear();
-        excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
-        throw excep;
       }
     }
 
@@ -643,6 +635,11 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
 size_t libhttppp::HttpRequest::getContentLength(){
   return getDataInt(_ContentLength);
 }
+
+size_t libhttppp::HttpRequest::getMaxUploadSize(){
+  return _MaxUploadSize;
+}
+
 
 bool libhttppp::HttpRequest::isMobile(){
   for(HttpHeader::HeaderData *curdat=_firstHeaderData; curdat; curdat=nextHeaderData(curdat)){
@@ -723,18 +720,39 @@ libhttppp::HttpForm::~HttpForm(){
 
 
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
+
   try{
       if(request->getRequestType()==POSTREQUEST){
-        HttpHeader::HeaderData *ctype=request->getData("content-type");
-        _ContentType = request->getData(ctype);
-        if(_ContentType &&
-          strncmp(_ContentType,"multipart/form-data",16)==0){
-          _parseMulitpart(request);
-        }else{
-          _parseUrlDecode(request);
+          std::vector<char> bodydat;
+          HttpHeader::HeaderData *ctype=request->getData("content-type");
+          _ContentType = request->getData(ctype);
+          if(_ContentType &&
+              strncmp(_ContentType,"multipart/form-data",16)==0){
+              _parseMulitpart(bodydat);
+          }else{
+              size_t clen = request->getDataSizet(request->_ContentLength);
+              if(request->RecvData.size()>= clen){
+                  std::copy(request->RecvData.begin(),request->RecvData.begin()+clen,
+                            std::inserter<std::vector<char>>(bodydat,bodydat.begin()));
+                  bodydat.push_back('\0');
+                  _parseUrlDecode(bodydat);
+              }
+          }
+      }
+      std::vector<char> urldat;
+      const char *rurl=request->getRequest();
+      size_t rurlsize=strlen(rurl);
+      ssize_t rdelimter=-1;
+      for(size_t cpos=0; cpos<rurlsize; cpos++){
+        if(rurl[cpos]=='?'){
+          rdelimter=cpos;
+          rdelimter++;
+          break;
         }
-      }else{
-        _parseUrlDecode(request);
+      }
+      if(rdelimter!=-1){
+         std::copy(rurl+rdelimter,rurl+rurlsize,std::inserter<std::vector<char>>(urldat,urldat.begin()));
+         _parseUrlDecode(urldat);
       }
   }catch(...){}
 }
@@ -810,7 +828,7 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary.push_back('\0');
 }
 
-void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
+void libhttppp::HttpForm::_parseMulitpart(const std::vector<char> &data){
     _parseBoundary(_ContentType);
     std::vector<char> realboundary;
     realboundary.resize(_Boundary.size()+2);
@@ -820,7 +838,7 @@ void libhttppp::HttpForm::_parseMulitpart(libhttppp::HttpRequest* request){
 
     std::vector<char> req;
 
-    std::copy(request->RecvData.begin(),request->RecvData.begin()+request->getContentLength(),
+    std::copy(data.begin(),data.end(),
               std::inserter<std::vector<char>>(req,req.begin()));
 
     size_t realboundarypos=0;
@@ -1137,37 +1155,13 @@ void libhttppp::HttpForm::MultipartForm::Data::addContent(Content content){
 }
 
 
-void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
+void libhttppp::HttpForm::_parseUrlDecode(const std::vector<char> &data){
   HTTPException httpexception;
-  std::string formdat;
-  if(request->getRequestType()==POSTREQUEST){
-      size_t clen = request->getDataSizet(request->_ContentLength);
-      if(request->RecvData.size()>= clen){
-        std::copy(request->RecvData.begin(),request->RecvData.begin()+clen,std::inserter<std::string>(formdat,formdat.begin()));
-        formdat.push_back('\0');
-      }
-  }else if(request->getRequestType()==GETREQUEST){
-      const char *rurl=request->getRequest();
-      size_t rurlsize=strlen(rurl);
-      ssize_t rdelimter=-1;
-      for(size_t cpos=0; cpos<rurlsize; cpos++){
-        if(rurl[cpos]=='?'){
-          rdelimter=cpos;
-          rdelimter++;
-          break;
-        }
-      }
-      if(rdelimter!=-1){
-         formdat.append(rurl+rdelimter,rurlsize-rdelimter);
-      }
-  }else{
-    httpexception[HTTPException::Error] << "HttpForm unknown Requestype";
-    throw httpexception;
-  }
+
   size_t fdatstpos=0;
   size_t keyendpos=0;
-  for(size_t fdatpos=0; fdatpos<=formdat.length(); fdatpos++){
-    switch(formdat[fdatpos]){
+  for(size_t fdatpos=0; fdatpos<=data.size(); fdatpos++){
+    switch(data[fdatpos]){
         case '&': case '\0':{
           if(keyendpos >fdatstpos && keyendpos<fdatpos){
             std::string key;
@@ -1175,10 +1169,10 @@ void libhttppp::HttpForm::_parseUrlDecode(libhttppp::HttpRequest* request){
             std::string value;
             char *urldecdValue=nullptr;
             char *urldecdKey=nullptr;
-            key=formdat.substr(fdatstpos,keyendpos-fdatstpos);
-            if(vlstpos<=formdat.length()){
-                value=formdat.substr(vlstpos,(fdatpos-vlstpos));
-                urlDecode(value.c_str(),value.length(),&urldecdValue);
+            std::copy(data.begin()+fdatstpos,data.begin()+keyendpos,std::inserter<std::string>(key,key.begin()));
+            if(vlstpos<=data.size()){
+              std::copy(data.begin()+vlstpos,data.begin()+fdatpos,std::inserter<std::string>(value,value.begin()));
+              urlDecode(value.c_str(),value.length(),&urldecdValue);
             }
             urlDecode(key.c_str(),key.length(),&urldecdKey);
             UrlcodedForm::Data urldat(urldecdKey,urldecdValue);

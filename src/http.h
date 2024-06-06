@@ -144,6 +144,7 @@ namespace libhttppp {
     size_t            getRequestLength();
     const char       *getRequestVersion();
     size_t            getContentLength();
+    size_t            getMaxUploadSize();
 
     /*mobilphone switch*/
     bool isMobile();
@@ -155,7 +156,9 @@ namespace libhttppp {
     /*only for post Reuquesttype*/
     void              setRequestData(const char *data,size_t len);
     void              setMaxUploadSize(size_t upsize);
+
     void              send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
+
   private:
     std::string       _Request;
     int               _RequestType;
@@ -292,10 +295,10 @@ namespace libhttppp {
     MultipartForm       MultipartFormData;
   private:
     /*urldecoded*/
-    void               _parseUrlDecode(HttpRequest *request);
+    void               _parseUrlDecode(const std::vector<char> &data);
 
     /*multiform*/
-    void               _parseMulitpart(HttpRequest *request);
+    void               _parseMulitpart(const std::vector<char> &data);
     void               _parseMultiSection(std::vector<char> &data,size_t start, size_t end);
     void               _parseBoundary(const char *contenttype);
     std::vector<char>  _Boundary;

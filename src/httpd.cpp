@@ -37,6 +37,7 @@
 #include "http.h"
 #include "httpd.h"
 #include "exception.h"
+#include "config.h"
 
 #define MAXDEFAULTCONN 1024
 #define MBEDTLS_PSA_CRYPTO_CONFIG true
@@ -77,9 +78,20 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
                 cureq->clear();
                 break;
             case POSTREQUEST:
+                if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
+                    HTTPException excep;
+                    excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
+                    throw excep;
+                }
+
                 if(cureq->getContentLength()<=cureq->RecvData.size()){
                     RequestEvent(cureq);
                     cureq->clear();
+                    if(cureq->getContentLength()==cureq->RecvData.size())
+                        cureq->RecvData.clear();
+                    else
+                        std::move(cureq->RecvData.begin()+cureq->getContentLength(),cureq->RecvData.end(),
+                                    std::inserter<std::vector<char>>(cureq->RecvData,cureq->RecvData.begin()));
                 }
                 break;
             default:
