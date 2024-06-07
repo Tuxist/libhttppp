@@ -193,7 +193,7 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
         excep[HTTPException::Error] << "no headerdata key set can't do this";
         throw excep;
     }
-    for(size_t i=0; i<=strlen(key); ++i){
+    for(size_t i=0; i<strlen(key); ++i){
        _Key.push_back(tolower(key[i]));
     }
     _nextHeaderData=nullptr;
