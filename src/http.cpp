@@ -191,7 +191,9 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
         excep[HTTPException::Error] << "no headerdata key set can't do this";
         throw excep;
     }
-    _Key = key;
+    for(size_t i=0; i<=strlen(key); ++i){
+       _Key.push_back(tolower(key[i]));
+    }
     _nextHeaderData=nullptr;
 }
 
@@ -1340,7 +1342,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
       }else if (cdat[cpos] == ';'){
           delimeter = cpos;
       }else if (cpos == (cdat.size() - 1)) {
-		  delimeter = cpos;
+		  delimeter = cpos+1;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
@@ -1351,7 +1353,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
           for(size_t i=++keyendpos; i<delimeter; ++i){
             curcookie->_Value.push_back(cdat[i]);
           }
-
+          
           keyendpos = -1;
           delimeter = -1;
           startpos = ++cpos;
