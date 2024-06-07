@@ -998,8 +998,8 @@ void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t star
         }
 
       }
-
-      std::copy(data.begin()+findel,data.begin()+end,std::inserter<std::vector<char>>(MultipartFormData._lastData->Value,
+      if(MultipartFormData._lastData)
+          std::copy(data.begin()+findel,data.begin()+end,std::inserter<std::vector<char>>(MultipartFormData._lastData->Value,
                                                                                           MultipartFormData._lastData->Value.begin()));
   }
 
@@ -1323,14 +1323,15 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   if(!hc)
     return;
 
-  std::string cdat;
-  cdat = curreq->getData(hc);
+  std::vector<char> cdat;
+  std::copy(curreq->getData(hc),curreq->getData(hc)+strlen(curreq->getData(hc)),
+            std::inserter<std::vector<char>>(cdat,cdat.begin()));
 
   int delimeter=-1;
   int keyendpos=-1;
   int startpos=0;
   
-  for (size_t cpos = 0; cpos < cdat.length(); cpos++) {
+  for (size_t cpos = 0; cpos < cdat.size(); cpos++) {
       if (cdat[cpos] == ' ') {
           ++startpos;
       }
@@ -1338,13 +1339,19 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
           keyendpos = cpos;
       }else if (cdat[cpos] == ';'){
           delimeter = cpos;
-      }else if (cpos == (cdat.length() - 1)) {
+      }else if (cpos == (cdat.size() - 1)) {
 		  delimeter = cpos+1;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
-          curcookie->_Key = cdat.substr(startpos, keyendpos-startpos);
-		  curcookie->_Value = cdat.substr((keyendpos+1),delimeter-(keyendpos+1));
+          for(size_t i=startpos; i<keyendpos; ++i){
+              curcookie->_Key.push_back(tolower(cdat[i]));
+          }
+
+          for(size_t i=++keyendpos; i<delimeter; ++i){
+            curcookie->_Value.push_back(cdat[i]);
+          }
+
           keyendpos = -1;
           delimeter = -1;
           startpos = ++cpos;
