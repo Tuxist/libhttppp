@@ -41,6 +41,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <netplus/connection.h>
 #include <netplus/exception.h>
+#include <assert.h>
 
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
@@ -99,6 +100,7 @@ const char* libhttppp::HttpHeader::getData(HttpHeader::HeaderData *pos){
   if(!pos){
       HTTPException httpexception;
       httpexception[HTTPException::Note] << "getData no valid pointer set !";
+      assert(0);
       throw httpexception;
   }
   return pos->_Value.c_str();
@@ -436,7 +438,6 @@ libhttppp::HttpRequest::HttpRequest() : HttpHeader(){
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
   _firstHeaderData=nullptr;
   _lastHeaderData=nullptr;
-  _ContentLength=nullptr;
 };
 
 libhttppp::HttpRequest::HttpRequest(netplus::eventapi *evapi) : netplus::con(evapi) {
@@ -444,7 +445,6 @@ libhttppp::HttpRequest::HttpRequest(netplus::eventapi *evapi) : netplus::con(eva
   _MaxUploadSize=DEFAULT_UPLOADSIZE;
   _firstHeaderData=nullptr;
   _lastHeaderData=nullptr;
-  _ContentLength=nullptr;
 }
 
 void libhttppp::HttpRequest::clear(){
@@ -581,8 +581,6 @@ size_t libhttppp::HttpRequest::parse(){
     std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
     RecvData.resize(RecvData.size()-endpos);
 
-    _ContentLength=getData("content-length");
-
   }catch(netplus::NetException &e){
     if (e.getErrorType() != netplus::NetException::Note) {
       RecvData.clear();
@@ -635,7 +633,10 @@ const char * libhttppp::HttpRequest::getRequestVersion(){
 }
 
 size_t libhttppp::HttpRequest::getContentLength(){
-  return getDataSizet(_ContentLength);
+  HttpHeader::HeaderData *clen=getData("content-length");
+  if(!clen)
+    return 0;
+  return getDataSizet(clen);
 }
 
 size_t libhttppp::HttpRequest::getMaxUploadSize(){

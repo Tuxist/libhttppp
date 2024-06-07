@@ -78,6 +78,8 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
                 break;
             case POSTREQUEST:
                 if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
+                    cureq->clear();
+                    cureq->RecvData.clear();
                     HTTPException excep;
                     excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
                     throw excep;
