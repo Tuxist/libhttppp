@@ -86,11 +86,13 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
                 if(cureq->getContentLength()<=cureq->RecvData.size()){
                     RequestEvent(cureq);
                     cureq->clear();
-                    if(cureq->getContentLength()==cureq->RecvData.size())
+                    if(cureq->getContentLength()==cureq->RecvData.size()){
                         cureq->RecvData.clear();
-                    else
+                    }else{
                         std::move(cureq->RecvData.begin()+cureq->getContentLength(),cureq->RecvData.end(),
                                     std::inserter<std::vector<char>>(cureq->RecvData,cureq->RecvData.begin()));
+                        cureq->RecvData.resize(cureq->RecvData.size()-cureq->getContentLength());
+                    }
                 }
                 break;
             default:
