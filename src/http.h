@@ -108,7 +108,7 @@ namespace libhttppp {
     const char *getVersion();
     const char *getTransferEncoding();
 
-    size_t printHeader(std::string &buffer);
+    size_t printHeader(std::vector<char> &buffer);
 
     /*server methods*/
     void send(netplus::con *curconnection,const char* data);

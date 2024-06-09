@@ -77,23 +77,21 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
                 cureq->clear();
                 break;
             case POSTREQUEST:
-                if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
+                if( cureq->RecvSize() > cureq->getMaxUploadSize()){
                     cureq->clear();
-                    cureq->RecvData.clear();
+                    cureq->clearRecvData();
                     HTTPException excep;
                     excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
                     throw excep;
                 }
 
-                if(cureq->getContentLength()<=cureq->RecvData.size()){
+                if(cureq->getContentLength()<=cureq->RecvSize()){
                     RequestEvent(cureq);
                     cureq->clear();
-                    if(cureq->getContentLength()==cureq->RecvData.size()){
-                        cureq->RecvData.clear();
+                    if(cureq->getContentLength()==cureq->RecvSize()){
+                        cureq->clearRecvData();
                     }else{
-                        std::move(cureq->RecvData.begin()+cureq->getContentLength(),cureq->RecvData.end(),
-                                    std::inserter<std::vector<char>>(cureq->RecvData,cureq->RecvData.begin()));
-                        cureq->RecvData.resize(cureq->RecvData.size()-cureq->getContentLength());
+                        cureq->ResizeRecvData(cureq->getContentLength());
                     }
                 }
                 break;

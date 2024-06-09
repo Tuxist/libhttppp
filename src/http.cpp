@@ -275,20 +275,27 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection, const char* data
   send(curconnection,data,strlen(data));
 }
 
-size_t libhttppp::HttpResponse::printHeader(std::string &buffer){
-    buffer=_Version;
-    buffer.append(" ");
-    buffer.append(_State.c_str());
-    buffer.append("\r\n");
+size_t libhttppp::HttpResponse::printHeader(std::vector<char> &buffer){
+
+    auto append=[&buffer](const char *data){
+        for(size_t i=0; i<strlen(data); ++i){
+            buffer.push_back(data[i]);
+        }
+    };
+
+    append(_Version.c_str());
+    append(" ");
+    append(_State.c_str());
+    append("\r\n");
     for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-        buffer.append(getKey(curdat));
-        buffer.append(": ");
+        append(getKey(curdat));
+        append(": ");
         if(getValue(curdat))
-            buffer.append(getValue(curdat));
-        buffer.append("\r\n");
+            append(getValue(curdat));
+        append("\r\n");
     } 
-    buffer.append("\r\n");
-    return buffer.length();
+    append("\r\n");
+    return buffer.size();
 }
 
 
@@ -296,13 +303,13 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   if(datalen>=0){
         setContentLength(datalen);
   }
-  std::string header;
+  std::vector<char> header;
   size_t headersize = printHeader(header);
-  std::copy(header.begin(),header.end(),std::inserter<std::vector<char>>(curconnection->SendData,
-                                                                         curconnection->SendData.end()));
+
+  curconnection->addSendData(header);
+
   if(datalen>0)
-    std::copy(data,data+datalen,std::inserter<std::vector<char>>(curconnection->SendData,
-                                                                         curconnection->SendData.end()));
+    curconnection->addSendData(data,datalen);
   curconnection->sending(true);
 }
 
@@ -462,14 +469,16 @@ size_t libhttppp::HttpRequest::parse(){
 
   std::vector<char> header;
 
-  auto searchElement = [this](const char *word){
+  getRecvData(header);
+
+  auto searchElement = [header](const char *word){
     size_t wsize=strlen(word);
-    for(size_t i=0; i<RecvData.size(); ++i){
+    for(size_t i=0; i<header.size(); ++i){
       for(size_t ii=0; ii<=wsize; ++ii){
         if(ii==wsize){
           return i-wsize;
         }
-        if(RecvData[i]==word[ii]){
+        if(header[i]==word[ii]){
           ++i;
           continue;
         }
@@ -489,7 +498,7 @@ size_t libhttppp::HttpRequest::parse(){
       _RequestType=POSTREQUEST;
     }else{
       excep[HTTPException::Warning] << "Requesttype not known cleanup";
-      RecvData.clear();
+      clearRecvData();
       throw excep;
     }
 
@@ -499,10 +508,9 @@ size_t libhttppp::HttpRequest::parse(){
       throw excep;
     }
 
-    std::copy(RecvData.begin()+startpos,RecvData.begin()+endpos,
-              std::inserter<std::vector<char>>(header,header.begin()));
+    std::move(header.begin(),header.begin()+endpos,header.begin());
+    header.resize(endpos);
 
-    endpos+=4;
     bool found=false;
     int pos=0;
 
@@ -577,13 +585,11 @@ size_t libhttppp::HttpRequest::parse(){
         startkeypos=lrow+2;
       }
     }
-
-    std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
-    RecvData.resize(RecvData.size()-endpos);
+    ResizeRecvData(endpos);
 
   }catch(netplus::NetException &e){
     if (e.getErrorType() != netplus::NetException::Note) {
-      RecvData.clear();
+      clearRecvData();
     }
     excep[HTTPException::Error] << "netplus error: " << e.what();
     throw excep;
@@ -727,9 +733,9 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
           std::vector<char> bodydat;
           HttpHeader::HeaderData *ctype=request->getData("content-type");
 
-          if(request->RecvData.size()<= request->getContentLength()){
-              std::copy(request->RecvData.begin(),request->RecvData.begin()+request->getContentLength(),
-                        std::inserter<std::vector<char>>(bodydat,bodydat.begin()));
+          if(request->RecvSize()<= request->getContentLength()){
+              std::vector<char> bodydat;
+              request->getRecvData(bodydat);
 
 
               if(ctype && strncmp(request->getData(ctype),"multipart/form-data",16)==0){
