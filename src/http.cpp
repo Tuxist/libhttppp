@@ -306,10 +306,10 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
   std::vector<char> header;
   size_t headersize = printHeader(header);
 
-  curconnection->addSendData(header);
+  curconnection->SendData.append(header.data(),header.size());
 
   if(datalen>0)
-    curconnection->addSendData(data,datalen);
+    curconnection->SendData.append(data,datalen);
   curconnection->sending(true);
 }
 
@@ -469,47 +469,28 @@ size_t libhttppp::HttpRequest::parse(){
 
   std::vector<char> header;
 
-  getRecvData(header);
-
-  auto searchElement = [header](const char *word){
-    size_t wsize=strlen(word);
-    for(size_t i=0; i<header.size(); ++i){
-      for(size_t ii=0; ii<=wsize; ++ii){
-        if(ii==wsize){
-          return i-wsize;
-        }
-        if(header[i]==word[ii]){
-          ++i;
-          continue;
-        }
-        break;
-      }
-    }
-    return std::string::npos;
-  };
-
   try{
 
     size_t startpos=0;
 
-    if((startpos=searchElement("GET"))!=std::string::npos){
+    if((startpos=RecvData.search("GET"))!=std::string::npos){
       _RequestType=GETREQUEST;
-    }else if((startpos=searchElement("POST"))!=std::string::npos){
+    }else if((startpos=RecvData.search("POST"))!=std::string::npos){
       _RequestType=POSTREQUEST;
     }else{
       excep[HTTPException::Warning] << "Requesttype not known cleanup";
-      clearRecvData();
+      RecvData.clear();
       throw excep;
     }
 
-    size_t endpos=searchElement("\r\n\r\n");
+    size_t endpos=RecvData.search("\r\n\r\n");
     if(endpos==std::string::npos){
       excep[HTTPException::Error] << "can't find newline headerend";
       throw excep;
     }
 
-    std::move(header.begin(),header.begin()+endpos,header.begin());
-    header.resize(endpos);
+    std::copy(RecvData.begin(),RecvData.begin()+endpos,
+              std::inserter<std::vector<char>>(header,header.begin()));
 
     bool found=false;
     int pos=0;
@@ -585,11 +566,11 @@ size_t libhttppp::HttpRequest::parse(){
         startkeypos=lrow+2;
       }
     }
-    ResizeRecvData(endpos);
+    RecvData.resize(endpos);
 
   }catch(netplus::NetException &e){
     if (e.getErrorType() != netplus::NetException::Note) {
-      clearRecvData();
+        RecvData.clear();
     }
     excep[HTTPException::Error] << "netplus error: " << e.what();
     throw excep;
@@ -730,20 +711,16 @@ libhttppp::HttpForm::~HttpForm(){
 void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
   try{
       if(request->getRequestType()==POSTREQUEST){
-          std::vector<char> bodydat;
           HttpHeader::HeaderData *ctype=request->getData("content-type");
 
-          if(request->RecvSize()<= request->getContentLength()){
-              std::vector<char> bodydat;
-              request->getRecvData(bodydat);
-
+          if(request->RecvData.size()<= request->getContentLength()){;
 
               if(ctype && strncmp(request->getData(ctype),"multipart/form-data",16)==0){
                   _parseBoundary(request->getData(ctype));
-                  _parseMulitpart(bodydat);
+                  _parseMulitpart(request->RecvData);
               }
               if(ctype && strncmp(request->getData(ctype),"application/x-www-form-urlencoded",34)==0){
-                  _parseUrlDecode(bodydat);
+                  _parseUrlDecode(request->RecvData);
               }
           }
       }
