@@ -494,6 +494,7 @@ size_t libhttppp::HttpRequest::parse(){
 
     bool found=false;
     int pos=0;
+    endpos+=4;
 
     for(size_t cpos=pos; cpos< header.size(); ++cpos){
       if(header[cpos]==' '){
