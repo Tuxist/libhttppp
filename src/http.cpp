@@ -178,10 +178,10 @@ size_t libhttppp::HttpHeader::getHeaderSize(){
 
 void libhttppp::HttpHeader::clear(){
   while(_firstHeaderData){
-    HeaderData *tmpdat=_firstHeaderData->_nextHeaderData;
-    _firstHeaderData->_nextHeaderData=nullptr;
-    delete _firstHeaderData;
-    _firstHeaderData=tmpdat;
+      HeaderData *tmpdat=_firstHeaderData->_nextHeaderData;
+      _firstHeaderData->_nextHeaderData=nullptr;
+      delete _firstHeaderData;
+      _firstHeaderData=tmpdat;
   }
   _lastHeaderData=nullptr;
 }
@@ -200,7 +200,6 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
 }
 
 libhttppp::HttpHeader::HeaderData::~HeaderData(){
-  delete _nextHeaderData;
 }
 
 libhttppp::HttpHeader::~HttpHeader(){
@@ -310,7 +309,6 @@ void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data,
 
   if(datalen>0)
     curconnection->SendData.append(data,datalen);
-  curconnection->sending(true);
 }
 
 size_t libhttppp::HttpResponse::parse(const char *data,size_t inlen){
@@ -462,7 +460,7 @@ void libhttppp::HttpRequest::clear(){
   _RequestVersion.clear();
 }
 
-
+#include <iostream>
 
 size_t libhttppp::HttpRequest::parse(){
   HTTPException excep;
@@ -470,7 +468,6 @@ size_t libhttppp::HttpRequest::parse(){
   std::vector<char> header;
 
   try{
-
     size_t startpos=0;
 
     if((startpos=RecvData.search("GET"))!=std::string::npos){
@@ -495,6 +492,8 @@ size_t libhttppp::HttpRequest::parse(){
     bool found=false;
     int pos=0;
     endpos+=4;
+
+    std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
 
     for(size_t cpos=pos; cpos< header.size(); ++cpos){
       if(header[cpos]==' '){
@@ -567,8 +566,6 @@ size_t libhttppp::HttpRequest::parse(){
         startkeypos=lrow+2;
       }
     }
-    RecvData.resize(endpos);
-
   }catch(netplus::NetException &e){
     if (e.getErrorType() != netplus::NetException::Note) {
         RecvData.clear();
@@ -662,7 +659,7 @@ void libhttppp::HttpRequest::setRequestVersion(const char* version){
 }
 
 
-void libhttppp::HttpRequest::send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest){
+void libhttppp::HttpRequest::send(netplus::socket* src,netplus::socket* dest){
   std::string header;
   printHeader(header);
 
@@ -1141,7 +1138,7 @@ void libhttppp::HttpForm::_parseUrlDecode(const std::vector<char> &data){
   size_t fdatstpos=0;
   size_t keyendpos=0;
   for(size_t fdatpos=0; fdatpos<=data.size(); fdatpos++){
-    if(data[fdatpos] == '&' || fdatpos==data.size()){
+    if(data.at(fdatpos) == '&' || fdatpos==data.size()){
       if(keyendpos >fdatstpos && keyendpos<fdatpos){
         std::vector<char> key,ukey;;
         size_t vlstpos=keyendpos+1;
@@ -1159,7 +1156,7 @@ void libhttppp::HttpForm::_parseUrlDecode(const std::vector<char> &data){
         UrlFormData.addFormData(urldat);
       }
       fdatstpos=fdatpos+1;
-    }else if( data[fdatpos] == '=' ){
+    }else if( data.at(fdatpos) == '=' ){
       keyendpos=fdatpos;
     };
   }

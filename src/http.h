@@ -28,7 +28,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <stddef.h>
 #include <sys/types.h>
 
-#include <memory>
 #include <vector>
 #include <string>
 
@@ -157,7 +156,7 @@ namespace libhttppp {
     void              setRequestData(const char *data,size_t len);
     void              setMaxUploadSize(size_t upsize);
 
-    void              send(std::shared_ptr<netplus::socket> src,std::shared_ptr<netplus::socket> dest);
+    void              send(netplus::socket *src,netplus::socket *dest);
 
   private:
     std::string       _Request;

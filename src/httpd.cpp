@@ -68,10 +68,11 @@ void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq){
 void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
     HttpRequest *cureq =(HttpRequest*)curcon;
     try{
-        if(cureq->getRequestType()==0)
-            cureq->parse();
-
+REQUESTHANDLING:
         switch(cureq->getRequestType()){
+            case 0:
+                cureq->parse();
+                goto REQUESTHANDLING;
             case GETREQUEST:
                 RequestEvent(cureq);
                 cureq->clear();

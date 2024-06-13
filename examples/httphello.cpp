@@ -57,6 +57,7 @@ public:
     try {
         Controller controller(getServerSocket());
         controller.runEventloop();
+        std::cout << "noe" << std::endl;
     }catch(netplus::NetException &e){
         httpexception[libhttppp::HTTPException::Critical] << e.what();
         throw httpexception;
