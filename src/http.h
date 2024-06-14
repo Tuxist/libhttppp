@@ -293,11 +293,11 @@ namespace libhttppp {
     MultipartForm       MultipartFormData;
   private:
     /*urldecoded*/
-    void               _parseUrlDecode(const std::vector<char> &data);
+    void               _parseUrlDecode(const netplus::condata<char> &data);
 
     /*multiform*/
-    void               _parseMulitpart(const std::vector<char> &data);
-    void               _parseMultiSection(std::vector<char> &data,size_t start, size_t end);
+    void               _parseMulitpart(const netplus::condata<char> &data);
+    void               _parseMultiSection(netplus::condata<char> &data,size_t start, size_t end);
     void               _parseBoundary(const char *contenttype);
     std::vector<char>  _Boundary;
     

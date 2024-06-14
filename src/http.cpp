@@ -722,7 +722,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
               }
           }
       }
-      std::vector<char> urldat;
+      netplus::condata<char> urldat;
       const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);
       ssize_t rdelimter=-1;
@@ -734,7 +734,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
         }
       }
       if(rdelimter!=-1){
-         std::copy(rurl+rdelimter,rurl+rurlsize,std::inserter<std::vector<char>>(urldat,urldat.begin()));
+         std::copy(rurl+rdelimter,rurl+rurlsize,std::inserter<netplus::condata<char>>(urldat,urldat.begin()));
          _parseUrlDecode(urldat);
       }
   }catch(...){}
@@ -806,17 +806,17 @@ void libhttppp::HttpForm::_parseBoundary(const char* contenttype){
   _Boundary.push_back('\0');
 }
 
-void libhttppp::HttpForm::_parseMulitpart(const std::vector<char> &data){
-    std::vector<char> realboundary;
+void libhttppp::HttpForm::_parseMulitpart(const netplus::condata<char> &data){
+    netplus::condata<char> realboundary;
     realboundary.resize(_Boundary.size()+2);
     std::copy(_Boundary.begin(),_Boundary.end(),realboundary.begin()+2);
     realboundary[0]='-';
     realboundary[1]='-';
 
-    std::vector<char> req;
+    netplus::condata<char> req;
 
     std::copy(data.begin(),data.end(),
-              std::inserter<std::vector<char>>(req,req.begin()));
+              std::inserter<netplus::condata<char>>(req,req.begin()));
 
     size_t realboundarypos=0;
     size_t oldpos=std::string::npos;
@@ -844,26 +844,9 @@ void libhttppp::HttpForm::_parseMulitpart(const std::vector<char> &data){
     }
 }
 
-void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t start, size_t end){
+void libhttppp::HttpForm::_parseMultiSection(netplus::condata<char> &data,size_t start, size_t end){
 
-  auto searchElement = [](size_t starts,size_t ends, const char *word,std::vector<char> &sdata){
-    size_t wsize=strlen(word);
-    for(size_t i=starts; i< ends; ++i){
-      for(size_t ii=0; ii<=wsize; ++ii){
-        if(ii==wsize){
-          return i;
-        }
-        if( tolower(sdata[i])==tolower(word[ii]) ){
-          ++i;
-          continue;
-        }
-        break;
-      }
-    }
-    return std::string::npos;
-  };
-
-  size_t findel=searchElement(start,end,"\r\n\r\n",data);
+  size_t findel=data.search("\r\n\r\n");
 
   if(findel==std::string::npos)
     return;
@@ -914,14 +897,31 @@ void libhttppp::HttpForm::_parseMultiSection(std::vector<char> &data,size_t star
   MultipartForm::Data::Content *cdispo=nullptr;
 
   for(MultipartForm::Data::Content *curcontent=MultipartFormData._lastData->_firstContent; curcontent; curcontent=curcontent->nextContent()){
-     if( strcmp(curcontent->getKey(),"content-disposition") ==0 ) {
-        cdispo=curcontent;
-     }
+    if( strcmp(curcontent->getKey(),"content-disposition") ==0 ) {
+      cdispo=curcontent;
+    }
   }
+
+  auto searchElement=[](int startpos,size_t size,const char* word,std::vector<char> &sdata){
+    size_t wsize=strlen(word);
+    for(size_t i=startpos; i<size; ++i){
+      for(size_t ii=0; ii<=wsize; ++ii){
+        if(ii==wsize){
+          return i-wsize;
+        }
+        if(sdata.at(i)==word[ii]){
+          ++i;
+          continue;
+        }
+        break;
+      }
+    }
+    return std::string::npos;
+  };
 
   if(cdispo){
 
-      size_t ifdp= searchElement(0,cdispo->_Value.size(),"form-data",cdispo->_Value);
+    size_t ifdp= searchElement(0,cdispo->_Value.size(),"form-data",cdispo->_Value);
 
       size_t scss=std::string::npos,scse=std::string::npos;
 
@@ -1132,7 +1132,7 @@ void libhttppp::HttpForm::MultipartForm::Data::addContent(Content content){
 }
 
 
-void libhttppp::HttpForm::_parseUrlDecode(const std::vector<char> &data){
+void libhttppp::HttpForm::_parseUrlDecode(const netplus::condata<char> &data){
   HTTPException httpexception;
 
   size_t fdatstpos=0;
