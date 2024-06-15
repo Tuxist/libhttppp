@@ -41,7 +41,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <netplus/connection.h>
 #include <netplus/exception.h>
-#include <assert.h>
 
 libhttppp::HttpHeader::HttpHeader(){
   _firstHeaderData=nullptr;
@@ -100,7 +99,6 @@ const char* libhttppp::HttpHeader::getData(HttpHeader::HeaderData *pos){
   if(!pos){
       HTTPException httpexception;
       httpexception[HTTPException::Note] << "getData no valid pointer set !";
-      assert(0);
       throw httpexception;
   }
   return pos->_Value.c_str();
@@ -460,8 +458,6 @@ void libhttppp::HttpRequest::clear(){
   _RequestVersion.clear();
 }
 
-#include <iostream>
-
 size_t libhttppp::HttpRequest::parse(){
   HTTPException excep;
 
@@ -494,6 +490,8 @@ size_t libhttppp::HttpRequest::parse(){
     endpos+=4;
 
     std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
+
+    RecvData.resize(endpos);
 
     for(size_t cpos=pos; cpos< header.size(); ++cpos){
       if(header[cpos]==' '){

@@ -80,7 +80,6 @@ REQUESTHANDLING:
             case POSTREQUEST:
                 if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
                     cureq->clear();
-                    cureq->RecvData.clear();
                     HTTPException excep;
                     excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
                     throw excep;
@@ -89,19 +88,17 @@ REQUESTHANDLING:
                 if(cureq->getContentLength()<=cureq->RecvData.size()){
                     RequestEvent(cureq);
                     cureq->clear();
-                    if(cureq->getContentLength()==cureq->RecvData.size()){
-                        cureq->RecvData.clear();
-                    }else{
-                        cureq->RecvData.resize(cureq->getContentLength());
-                    }
+                    cureq->RecvData.resize(cureq->getContentLength());
                 }
                 break;
             default:
-                break;
+                libhttppp::HTTPException re;
+                re[libhttppp::HTTPException::Error] << "unknown requesttype !";
+                throw re;
         }
     }catch(HTTPException &e){
         netplus::NetException re;
-        re[netplus::NetException::Error] << "http error:" << e.what();
+        re[netplus::NetException::Error] << "httpd error: " << e.what();
         throw re;
     }
 }

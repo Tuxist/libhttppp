@@ -110,17 +110,19 @@ int main(int argc, char** argv){
     bool chunked=false;
     int rlen=0;
 
+    hsize=res.parse(data,recv);
+
+    hsize+=2;
+
     try {
-      hsize=res.parse(data,len);
-      if(strcmp(res.getTransferEncoding(),"chunked")==0){
-          chunklen=readchunk(data,recv,--hsize);
-          chunked=true;
-      }else{
-         rlen=res.getContentLength();
-         html.resize(rlen);
-      }
-    }catch(libhttppp::HTTPException &e){
-      std::cerr << e.what() << std::endl;
+        const char *rctype=res.getTransferEncoding();
+        if(strcmp(rctype,"chunked")==0){
+            chunklen=readchunk(data,recv,hsize);
+            chunked=true;
+        }
+    }catch(...){
+        chunked=false;
+        rlen=res.getContentLength();
     };
 
     if(!chunked){
@@ -145,8 +147,7 @@ int main(int argc, char** argv){
         }
       }while((chunklen=readchunk(data,recv,cpos))>0);
     }
-    if(!html.empty())
-      std::cout << html << std::endl;
+    std::cout << html << std::endl;
     return 0;
   }catch(netplus::NetException &exp){
     std::cerr << exp.what() <<std::endl;
