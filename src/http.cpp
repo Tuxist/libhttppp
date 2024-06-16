@@ -719,7 +719,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
       netplus::condata<char> urldat;
       const char *rurl=request->getRequest();
       size_t rurlsize=strlen(rurl);
-      ssize_t rdelimter=-1;
+      size_t rdelimter=std::string::npos;
       for(size_t cpos=0; cpos<rurlsize; cpos++){
         if(rurl[cpos]=='?'){
           rdelimter=cpos;
@@ -727,9 +727,9 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
           break;
         }
       }
-      if(rdelimter!=-1){
+      if(rdelimter!=std::string::npos){
          std::copy(rurl+rdelimter,rurl+rurlsize,std::inserter<netplus::condata<char>>(urldat,urldat.begin()));
-         _parseUrlDecode(urldat,rurlsize);
+         _parseUrlDecode(urldat,urldat.size());
       }
   }catch(...){}
 }
