@@ -489,8 +489,6 @@ size_t libhttppp::HttpRequest::parse(){
     int pos=0;
     endpos+=4;
 
-    std::move(RecvData.begin()+endpos,RecvData.end(),RecvData.begin());
-
     RecvData.resize(endpos);
 
     for(size_t cpos=pos; cpos< header.size(); ++cpos){
@@ -709,14 +707,12 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
       if(request->getRequestType()==POSTREQUEST){
           HttpHeader::HeaderData *ctype=request->getData("content-type");
 
-          if(request->RecvData.size()<= request->getContentLength()){;
-
-              if(ctype && strncmp(request->getData(ctype),"multipart/form-data",16)==0){
+          if(request->getContentLength() <= request->RecvData.size()){
+              if(ctype && strncmp(request->getData(ctype),"multipart/form-data",17)==0){
                   _parseBoundary(request->getData(ctype));
                   _parseMulitpart(request->RecvData);
-              }
-              if(ctype && strncmp(request->getData(ctype),"application/x-www-form-urlencoded",34)==0){
-                  _parseUrlDecode(request->RecvData);
+              }else if(ctype && strncmp(request->getData(ctype),"application/x-www-form-urlencoded",34)==0){
+                  _parseUrlDecode(request->RecvData,request->getContentLength());
               }
           }
       }
@@ -733,7 +729,7 @@ void libhttppp::HttpForm::parse(libhttppp::HttpRequest* request){
       }
       if(rdelimter!=-1){
          std::copy(rurl+rdelimter,rurl+rurlsize,std::inserter<netplus::condata<char>>(urldat,urldat.begin()));
-         _parseUrlDecode(urldat);
+         _parseUrlDecode(urldat,rurlsize);
       }
   }catch(...){}
 }
@@ -742,26 +738,29 @@ const char *libhttppp::HttpForm::getContentType(){
   return _ContentType;
 }
 
-inline int libhttppp::HttpForm::_ishex(int x){
-  return  (x >= '0' && x <= '9')  ||
-          (x >= 'a' && x <= 'f')  ||
-          (x >= 'A' && x <= 'F');
-}
+ssize_t libhttppp::HttpForm::urlDecode(const std::vector<char> in,std::vector<char> &out){
+      for (auto i = in.begin(), nd = in.end(); i < nd; ++i)
+      {
+        auto c = ( *i );
 
-ssize_t libhttppp::HttpForm::urlDecode(const char *urlin,size_t urlinsize,std::vector<char> &out){
-    char *o;
-    const char *end = urlin + urlinsize;
-    int c;
-    while(urlin <= end) {
-        c = *urlin++;
-        if (c == '+'){
-            c = ' ';
-        }else if (c == '%' && (!_ishex(*urlin++)|| !_ishex(*urlin++)	|| !sscanf(urlin - 2, "%2x", &c))){
-                return -1;
+        switch(c)
+        {
+          case '%':
+            if (i[1] && i[2]) {
+                char hs[]{ i[1], i[2] };
+                out.push_back(static_cast<char>(strtol(hs, nullptr, 16)));
+                i += 2;
+            }
+            break;
+          case '+':
+            out.push_back(' ');
+            break;
+          default:
+            out.push_back(c);
         }
-        out.push_back(c);
-    }
-    return out.size();
+      }
+
+      return out.size();
 }
 
 const char *libhttppp::HttpForm::getBoundary(){
@@ -1129,34 +1128,33 @@ void libhttppp::HttpForm::MultipartForm::Data::addContent(Content content){
   }
 }
 
-
-void libhttppp::HttpForm::_parseUrlDecode(const netplus::condata<char> &data){
+void libhttppp::HttpForm::_parseUrlDecode(const netplus::condata<char> &data,size_t csize){
   HTTPException httpexception;
 
   size_t fdatstpos=0;
   size_t keyendpos=0;
-  for(size_t fdatpos=0; fdatpos<=data.size(); fdatpos++){
-    if(data.at(fdatpos) == '&' || fdatpos==data.size()){
-      if(keyendpos >fdatstpos && keyendpos<fdatpos){
+  for(size_t fdatpos=0; fdatpos<=csize; ++fdatpos){
+    if(fdatpos==csize || data.at(fdatpos) == '&'){
+      if(keyendpos > fdatstpos && keyendpos < fdatpos){
         std::vector<char> key,ukey;;
         size_t vlstpos=keyendpos+1;
         std::vector<char> value,uvalue;
-        char *urldecdKey=nullptr;
         std::copy(data.begin()+fdatstpos,data.begin()+keyendpos,std::inserter<std::vector<char>>(key,key.begin()));
         key.push_back('\0');
+        urlDecode(key,ukey);
         if(vlstpos<=data.size()){
-          std::copy(data.begin()+vlstpos,data.begin()+fdatpos,std::inserter<std::vector<char>>(value,value.begin()));
-          value.push_back('\0');
-          urlDecode(value.data(),value.size(),uvalue);
+            std::copy(data.begin()+vlstpos,data.begin()+fdatpos,std::inserter<std::vector<char>>(value,value.begin()));
+            value.push_back('\0');
+            urlDecode(value,uvalue);
         }
-        urlDecode(key.data(),key.size(),ukey);
         UrlcodedForm::Data urldat(ukey.data(),uvalue.data());
         UrlFormData.addFormData(urldat);
+        fdatstpos=fdatpos;
+        ++fdatstpos;
       }
-      fdatstpos=fdatpos+1;
     }else if( data.at(fdatpos) == '=' ){
       keyendpos=fdatpos;
-    };
+    }
   }
 }
 

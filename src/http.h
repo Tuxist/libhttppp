@@ -285,7 +285,7 @@ namespace libhttppp {
     void                parse(HttpRequest *request);
     const char         *getContentType();
     /*urldecoded form*/
-    ssize_t             urlDecode(const char *urlin,size_t urlinsize,std::vector<char> &out);
+    ssize_t             urlDecode(const std::vector<char> in,std::vector<char> &out);
     UrlcodedForm        UrlFormData;
     /*multiform*/
     const char         *getBoundary();
@@ -293,7 +293,7 @@ namespace libhttppp {
     MultipartForm       MultipartFormData;
   private:
     /*urldecoded*/
-    void               _parseUrlDecode(const netplus::condata<char> &data);
+    void               _parseUrlDecode(const netplus::condata<char> &data,size_t csize);
 
     /*multiform*/
     void               _parseMulitpart(const netplus::condata<char> &data);
@@ -302,7 +302,6 @@ namespace libhttppp {
     std::vector<char>  _Boundary;
     
     /*both methods*/
-    inline int         _ishex(int x);
     size_t             _Elements;
     const char*        _ContentType;
   };
