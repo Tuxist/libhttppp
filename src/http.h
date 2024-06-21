@@ -55,6 +55,7 @@ namespace libhttppp {
       HeaderData &operator=(size_t value);
       HeaderData &operator=(int value);
 
+      void clear();
     private:
       HeaderData(const char *key);
       ~HeaderData();

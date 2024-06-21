@@ -107,6 +107,8 @@ void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
     HttpRequest *cureq =(HttpRequest*)curcon;
     try{
         ResponseEvent(cureq);
+        if(cureq->SendData.empty())
+            cureq->clear();
     }catch(HTTPException &e){
         cureq->clear();
         throw e;

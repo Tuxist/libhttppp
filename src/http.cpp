@@ -88,6 +88,11 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator=(
   return *this;
 }
 
+void libhttppp::HttpHeader::HeaderData::clear(){
+  _Value.clear();
+}
+
+
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
   return _firstHeaderData;
 }
@@ -214,7 +219,6 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     for(size_t i=0; i<strlen(key); ++i){
        _Key.push_back(tolower(key[i]));
     }
-    _Key.push_back('\0');
     _nextHeaderData=nullptr;
 }
 
@@ -434,10 +438,10 @@ HEADERENDFOUND:
     }
   }
 
- _ContentLength=getData("content-length");
- _Connection=getData("connection");
- _ContentType=getData("content-type");
- _TransferEncoding=getData("transfer-encoding");
+  _ContentLength=getData("content-length");
+  _Connection=getData("connection");
+  _ContentType=getData("content-type");
+  _TransferEncoding=getData("transfer-encoding");
 
   return helen;
 }
