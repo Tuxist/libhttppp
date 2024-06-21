@@ -422,7 +422,7 @@ HEADERENDFOUND:
               if(isalpha(value[it]))
                 value[it] = (char)tolower(value[it]);
             }
-            *setData(key.c_str())<<value.c_str();
+            *setData(key.c_str())=value.c_str();
           }
         }
       }
