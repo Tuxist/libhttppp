@@ -50,6 +50,11 @@ namespace libhttppp {
       HeaderData &operator<<(const char *value);
       HeaderData &operator<<(size_t value);
       HeaderData &operator<<(int value);
+
+      HeaderData &operator=(const char *value);
+      HeaderData &operator=(size_t value);
+      HeaderData &operator=(int value);
+
     private:
       HeaderData(const char *key);
       ~HeaderData();
@@ -165,6 +170,7 @@ namespace libhttppp {
     std::string       _RequestVersion;
     size_t            _MaxUploadSize;
     friend class HttpForm;
+    friend class HttpEvent;
   };
   
   class HttpForm {

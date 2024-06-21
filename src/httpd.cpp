@@ -57,6 +57,7 @@ void libhttppp::HttpEvent::RequestEvent(HttpRequest *curreq){
 }
 
 void libhttppp::HttpEvent::ResponseEvent(HttpRequest *curreq){
+
 }
 
 void libhttppp::HttpEvent::ConnectEvent(HttpRequest *curreq){
@@ -75,7 +76,6 @@ REQUESTHANDLING:
                 goto REQUESTHANDLING;
             case GETREQUEST:
                 RequestEvent(cureq);
-                cureq->clear();
                 break;
             case POSTREQUEST:
                 if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
@@ -104,7 +104,10 @@ REQUESTHANDLING:
 }
 
 void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
-    ResponseEvent((HttpRequest*)curcon);
+    HttpRequest *cureq =(HttpRequest*)curcon;
+    ResponseEvent(cureq);
+    if(cureq->SendData.empty())
+        cureq->clear();
 }
 
 void libhttppp::HttpEvent::ConnectEvent(netplus::con* curcon){

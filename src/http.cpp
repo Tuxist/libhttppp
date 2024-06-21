@@ -68,6 +68,26 @@ libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator<<
   return *this;
 }
 
+
+libhttppp::HttpHeader::HeaderData& libhttppp::HttpHeader::HeaderData::operator=(const char* value) {
+    _Value=value;
+    return *this;
+}
+
+libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator=(size_t value){
+  char buf[512];
+  snprintf(buf,512,"%zu",value);
+  *this=buf;
+  return *this;
+}
+
+libhttppp::HttpHeader::HeaderData &libhttppp::HttpHeader::HeaderData::operator=(int value){
+  char buf[512];
+  snprintf(buf,512,"%d",value);
+  *this=buf;
+  return *this;
+}
+
 libhttppp::HttpHeader::HeaderData* libhttppp::HttpHeader::getfirstHeaderData(){
   return _firstHeaderData;
 }
@@ -194,6 +214,7 @@ libhttppp::HttpHeader::HeaderData::HeaderData(const char *key){
     for(size_t i=0; i<strlen(key); ++i){
        _Key.push_back(tolower(key[i]));
     }
+    _Key.push_back('\0');
     _nextHeaderData=nullptr;
 }
 
@@ -208,9 +229,10 @@ libhttppp::HttpResponse::HttpResponse() : HttpHeader(){
   setState(HTTP200);
   setVersion(HTTPVERSION(1.1));
   _ContentType=nullptr;
-  _ContentLength=nullptr;
+  _ContentLength=setData("content-length");
+  *_ContentLength=0;
   _Connection=setData("connection");
-  *_Connection<<"keep-alive";
+  *_Connection="keep-alive";
   _TransferEncoding=nullptr;
 }
 
@@ -229,21 +251,19 @@ void libhttppp::HttpResponse::setState(const char* httpstate){
 }
 
 void libhttppp::HttpResponse::setContentLength(size_t len){
-  if(!_ContentLength)
-      _ContentLength=setData("content-length");
-  *_ContentLength<<len;
+  *_ContentLength=len;
 }
 
 void libhttppp::HttpResponse::setContentType(const char* type){
   if(!_ContentType)
     _ContentType=setData("content-type");
-  *_ContentType<<type;
+  *_ContentType=type;
 }
 
 void libhttppp::HttpResponse::setConnection(const char* type){
   if(!_Connection)
     _Connection=setData("connection");
-  *_Connection<<type;
+  *_Connection=type;
 }
 
 void libhttppp::HttpResponse::setVersion(const char* version){
@@ -295,13 +315,14 @@ size_t libhttppp::HttpResponse::printHeader(std::vector<char> &buffer){
     return buffer.size();
 }
 
-
 void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data, int datalen){
   if(datalen>=0){
         setContentLength(datalen);
   }
+
   std::vector<char> header;
-  size_t headersize = printHeader(header);
+
+  printHeader(header);
 
   curconnection->SendData.append(header.data(),header.size());
 
@@ -1320,18 +1341,18 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
       }else if (cdat[cpos] == ';'){
           delimeter = cpos;
       }else if (cpos == (cdat.size() - 1)) {
-		  delimeter = cpos+1;
+		  delimeter = cpos;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
           for(size_t i=startpos; i<keyendpos; ++i){
               curcookie->_Key.push_back(tolower(cdat[i]));
           }
-
+          curcookie->_Key.push_back('\0');
           for(size_t i=++keyendpos; i<delimeter; ++i){
             curcookie->_Value.push_back(cdat[i]);
           }
-          
+          curcookie->_Value.push_back('\0');
           keyendpos = -1;
           delimeter = -1;
           startpos = ++cpos;
