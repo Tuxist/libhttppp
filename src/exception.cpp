@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2021, Jan Koester jan.koester@gmx.net
+c * Copyright (c) 2021, Jan Koester jan.koester@gmx.net
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
 
+#include <mutex>
+
 #include "exception.h"
+
+namespace libhttppp {
+    std::mutex g_exception;
+};
 
 libhttppp::HTTPException::HTTPException() {
     _curCType=HTTPException::Note;
@@ -48,6 +54,7 @@ const char* libhttppp::HTTPException::what(){
 }
 
 libhttppp::HTTPException& libhttppp::HTTPException::append(const char *src){
+    const std::lock_guard<std::mutex> lock(g_exception);
     _Msg+=src;
     return *this;   
 }
