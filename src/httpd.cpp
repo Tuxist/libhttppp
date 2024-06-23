@@ -53,20 +53,20 @@ void libhttppp::HttpEvent::deleteConnetion(netplus::con* curon){
     delete (HttpRequest*)curon;
 }
 
-void libhttppp::HttpEvent::RequestEvent(HttpRequest *curreq){
+void libhttppp::HttpEvent::RequestEvent(HttpRequest *curreq,const int tid,void *args){
 }
 
-void libhttppp::HttpEvent::ResponseEvent(HttpRequest *curreq){
+void libhttppp::HttpEvent::ResponseEvent(HttpRequest *curreq,const int tid,void *args){
 
 }
 
-void libhttppp::HttpEvent::ConnectEvent(HttpRequest *curreq){
+void libhttppp::HttpEvent::ConnectEvent(HttpRequest *curreq,const int tid,void *args){
 }
 
-void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq){
+void libhttppp::HttpEvent::DisconnectEvent(HttpRequest *curreq,const int tid,void *args){
 }
 
-void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon){
+void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon,const int tid,void *args){
     HttpRequest *cureq =(HttpRequest*)curcon;
     try{
 REQUESTHANDLING:
@@ -76,7 +76,7 @@ REQUESTHANDLING:
                 cureq->parse();
                 goto REQUESTHANDLING;
             case GETREQUEST:
-                RequestEvent(cureq);
+                RequestEvent(cureq,tid,args);
                 break;
             case POSTREQUEST:
                 if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
@@ -87,7 +87,7 @@ REQUESTHANDLING:
                 }
 
                 if(cureq->getContentLength()<=cureq->RecvData.size()){
-                    RequestEvent(cureq);
+                    RequestEvent(cureq,tid,args);
                     cureq->RecvData.resize(cureq->getContentLength());
                 }
                 break;
@@ -104,10 +104,10 @@ REQUESTHANDLING:
     }
 }
 
-void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
+void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon,const int tid,void *args){
     HttpRequest *cureq =(HttpRequest*)curcon;
     try{
-        ResponseEvent(cureq);
+        ResponseEvent(cureq,tid,args);
         if(cureq->SendData.empty()){
             cureq->RecvData.pos=0;
             cureq->SendData.pos=0;
@@ -120,12 +120,12 @@ void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon){
     }
 }
 
-void libhttppp::HttpEvent::ConnectEvent(netplus::con* curcon){
-    ConnectEvent((HttpRequest*)curcon);
+void libhttppp::HttpEvent::ConnectEvent(netplus::con* curcon,const int tid,void *args){
+    ConnectEvent((HttpRequest*)curcon,tid,args);
 }
 
-void libhttppp::HttpEvent::DisconnectEvent(netplus::con* curcon){
-    DisconnectEvent((HttpRequest*)curcon);
+void libhttppp::HttpEvent::DisconnectEvent(netplus::con* curcon,const int tid,void *args){
+    DisconnectEvent((HttpRequest*)curcon,tid,args);
 }
 
 

@@ -320,6 +320,7 @@ size_t libhttppp::HttpResponse::printHeader(std::vector<char> &buffer){
 }
 
 void libhttppp::HttpResponse::send(netplus::con* curconnection,const char* data, int datalen){
+
   if(datalen>=0){
         setContentLength(datalen);
   }

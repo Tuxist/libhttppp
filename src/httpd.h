@@ -45,16 +45,16 @@ namespace libhttppp {
         void CreateConnetion(netplus::con **curon);
         void deleteConnetion(netplus::con *curon);
 
-        virtual void RequestEvent(HttpRequest *curreq);
-        virtual void ResponseEvent(HttpRequest *curreq);
-        virtual void ConnectEvent(HttpRequest *curreq);
-        virtual void DisconnectEvent(HttpRequest *curreq);
+        virtual void RequestEvent(HttpRequest *curreq,const int tid,void *args);
+        virtual void ResponseEvent(HttpRequest *curreq,const int tid,void *args);
+        virtual void ConnectEvent(HttpRequest *curreq,const int tid,void *args);
+        virtual void DisconnectEvent(HttpRequest *curreq,const int tid,void *args);
 
     private:
-        void RequestEvent(netplus::con *curcon);
-        void ResponseEvent(netplus::con *curcon);
-        void ConnectEvent(netplus::con *curcon);
-        void DisconnectEvent(netplus::con *curcon);
+        void RequestEvent(netplus::con *curcon,const int tid,void *args);
+        void ResponseEvent(netplus::con *curcon,const int tid,void *args);
+        void ConnectEvent(netplus::con *curcon,const int tid,void *args);
+        void DisconnectEvent(netplus::con *curcon,const int tid,void *args);
 
     };
 
