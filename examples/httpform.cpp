@@ -44,7 +44,7 @@ public:
         
     };
 
-    void RequestEvent(libhttppp::HttpRequest* curreq ){
+    void RequestEvent(libhttppp::HttpRequest* curreq , const int tid,void *args){
             libhtmlpp::HtmlString formdat;
             try {
                 Multiform(curreq, formdat);

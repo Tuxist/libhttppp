@@ -69,7 +69,7 @@ public:
     Controller(netplus::socket* serversocket) : HttpEvent(serversocket){
         
     };
-    void RequestEvent(libhttppp::HttpRequest *curreq){
+    void RequestEvent(libhttppp::HttpRequest *curreq, const int tid,void *args){
         try{
             std::cout << "Send answer" << std::endl;
             sendResponse(curreq);

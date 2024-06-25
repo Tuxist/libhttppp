@@ -43,7 +43,7 @@ public:
         
     };
     
-    void RequestEvent(libhttppp::HttpRequest *curreq){
+    void RequestEvent(libhttppp::HttpRequest *curreq, const int tid,void *args){
         try{
             std::cout << "Parse Request\n" << std::endl;
             const char *cururl=curreq->getRequestURL();

@@ -157,7 +157,7 @@ public:
         }
     }
     /*virtual method from event will call for every incomming Request*/
-    void RequestEvent(libhttppp::HttpRequest* curreq){
+    void RequestEvent(libhttppp::HttpRequest* curreq, const int tid,void *args){
         try{
             /*self implemented controller see above*/
             IndexController(curreq);
