@@ -144,10 +144,12 @@ public:
                 curres.send(curreq,html.c_str(),html.size());
             }else if(strncmp(cururl,"/images/header.png",18)==0){
                 curres.setContentType("image/png");
-                curres.send(curreq,(const char*)header_png,header_png_size);
+                curres.setContentLength(header_png_size);
+                curres.send(curreq,nullptr,-1);
             }else if(strncmp(cururl,"/favicon.ico ",12)==0){
                 curres.setContentType("image/ico");
-                curres.send(curreq,(const char*)favicon_ico,favicon_ico_size);
+                curres.setContentLength(favicon_ico_size);
+                curres.send(curreq,nullptr,-1);
             }else{
                 curres.setState(HTTP404);
                 curres.send(curreq,nullptr,0);
@@ -163,6 +165,23 @@ public:
             IndexController(curreq);
         }catch(libhttppp::HTTPException &e){
             std::cerr << e.what() <<std::endl;
+        }
+    }
+
+    void ResponseEvent(libhttppp::HttpRequest * curreq, const int tid, void * args){
+        const char *cururl=curreq->getRequestURL();
+        if(strncmp(cururl,"/images/header.png",18)==0){
+            if(curreq->SendData.pos < header_png_size){
+                size_t si = BLOCKSIZE < (header_png_size-curreq->SendData.pos) ? BLOCKSIZE : (header_png_size-curreq->SendData.pos);
+                curreq->SendData.append((const char*)header_png+curreq->SendData.pos,si);
+                curreq->SendData.pos+=si;
+            }
+        }else if(strncmp(cururl,"/favicon.ico ",12)==0){
+            if(curreq->SendData.pos < favicon_ico_size){
+                size_t si = BLOCKSIZE < (favicon_ico_size-curreq->SendData.pos) ? BLOCKSIZE : (favicon_ico_size-curreq->SendData.pos);
+                curreq->SendData.append((const char*)favicon_ico+curreq->SendData.pos,si);
+                curreq->SendData.pos+=si;
+            }
         }
     }
 private:
