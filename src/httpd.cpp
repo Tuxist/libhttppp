@@ -79,13 +79,6 @@ REQUESTHANDLING:
                 RequestEvent(cureq,tid,args);
                 break;
             case POSTREQUEST:
-                if( cureq->RecvData.size() > cureq->getMaxUploadSize()){
-                    cureq->clear();
-                    HTTPException excep;
-                    excep[HTTPException::Note] << "Upload too big increase Max Upload Size";
-                    throw excep;
-                }
-
                 if(cureq->getContentLength()<=cureq->RecvData.size()){
                     RequestEvent(cureq,tid,args);
                     cureq->RecvData.resize(cureq->getContentLength());
@@ -93,6 +86,8 @@ REQUESTHANDLING:
                 break;
             default:
                 cureq->clear();
+                cureq->RecvData.clear();
+                cureq->RecvData.pos=0;
                 libhttppp::HTTPException re;
                 re[libhttppp::HTTPException::Error] << "unknown requesttype !";
                 throw re;
@@ -109,7 +104,6 @@ void libhttppp::HttpEvent::ResponseEvent(netplus::con* curcon,const int tid,void
     try{
         ResponseEvent(cureq,tid,args);
         if(cureq->SendData.empty()){
-            cureq->RecvData.pos=0;
             cureq->SendData.pos=0;
             cureq->clear();
         }
