@@ -1337,7 +1337,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   int keyendpos=-1;
   int startpos=0;
   
-  for (size_t cpos = 0; cpos <= cdat.size(); cpos++) {
+  for (size_t cpos = 0; cpos < cdat.size(); cpos++) {
       if (cdat[cpos] == ' ') {
           ++startpos;
       }
@@ -1345,7 +1345,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
           keyendpos = cpos;
       }else if (cdat[cpos] == ';'){
           delimeter = cpos;
-      }else if (cpos == cdat.size()) {
+      }else if (cpos+1 == cdat.size()) {
 		  delimeter = cpos;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
