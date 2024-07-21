@@ -13,6 +13,8 @@ find_package(libnetplus REQUIRED)
 find_package(libcmdplus REQUIRED)
 find_package(MbedTLS REQUIRED)
 
+find_package(htmlpp)
+
 SET(CMAKE_CXX_FLAGS "-fPIC -Wall")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}  ${CMAKE_SOURCE_DIR}/cmake/)

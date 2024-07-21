@@ -22,8 +22,13 @@ add_library(httppp-static STATIC ${libhttpSrcs} )
 
 generate_export_header(httppp)
 
-target_link_libraries(httppp MbedTLS::mbedcrypto netplus cmdplus)
-target_link_libraries(httppp-static MbedTLS::mbedcrypto netplus cmdplus)
+if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
+  target_link_libraries(httppp MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus)
+  target_link_libraries(httppp-static MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus)
+else()
+  target_link_libraries(httppp MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus pthread)
+  target_link_libraries(httppp-static MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus pthread)
+endif()
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
 
