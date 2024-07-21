@@ -86,8 +86,6 @@ REQUESTHANDLING:
                 break;
             default:
                 cureq->clear();
-                cureq->RecvData.clear();
-                cureq->RecvData.pos=0;
                 libhttppp::HTTPException re;
                 re[libhttppp::HTTPException::Error] << "unknown requesttype !";
                 throw re;
