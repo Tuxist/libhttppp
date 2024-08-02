@@ -70,7 +70,7 @@ write_basic_package_version_file(
 
 export(EXPORT httpppTargets
   FILE "${CMAKE_CURRENT_BINARY_DIR}/httppp/httpppTargets.cmake"
-  NAMESPACE Upstream::
+  NAMESPACE httppp::
 )
 
 configure_file(cmake/httpppConfig.cmake
@@ -83,7 +83,7 @@ install(EXPORT httpppTargets
   FILE
     httpppTargets.cmake
   NAMESPACE
-    Upstream::
+    httppp::
   DESTINATION
     ${ConfigPackageLocation}
 )
