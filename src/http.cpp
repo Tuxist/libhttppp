@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cstdlib>
 #include <ctype.h>
 #include <cstring>
+#include <iterator>
 
 #include "config.h"
 
@@ -37,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "exception.h"
 
-#include <mbedtls/base64.h>
+#include <netplus/base64.h>
 
 #include <netplus/connection.h>
 #include <netplus/exception.h>
@@ -764,7 +765,7 @@ const char *libhttppp::HttpForm::getContentType(){
   return _ContentType;
 }
 
-ssize_t libhttppp::HttpForm::urlDecode(const std::vector<char> in,std::vector<char> &out){
+long libhttppp::HttpForm::urlDecode(const std::vector<char> in,std::vector<char> &out){
       for (auto i = in.begin(), nd = in.end(); i < nd; ++i)
       {
         auto c = ( *i );
@@ -1416,8 +1417,7 @@ void libhttppp::HttpAuth::parse(libhttppp::HttpRequest* curreq){
       unsigned char *base64str=new char unsigned[base64strsize+1];
       memcpy(base64str,authstr+6,strlen(authstr)-5);
       char *clearstr= new char[(base64strsize/4)*3];
-      size_t cleargetlen;
-      mbedtls_base64_decode((unsigned char*)clearstr,((base64strsize/4)*3),&cleargetlen,base64str,base64strsize);
+      size_t cleargetlen=netplus::base64::Decode((char*)base64str,clearstr);
       delete[] base64str;
       for(size_t clearpos=0; clearpos<cleargetlen; clearpos++){
          if(clearstr[clearpos]==':'){

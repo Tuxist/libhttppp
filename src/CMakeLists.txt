@@ -1,3 +1,4 @@
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_INCLUDE_CURRENT_DIR_IN_INTERFACE ON)
 
@@ -9,25 +10,20 @@ set(libhttpSrcs
   httpd.cpp
 )
 
-include_directories(
-    ${MbedTLS_INCLUDE_DIRS}
-    ${systempp_INCLUDE_DIR}
-)
-
-add_library(httppp        SHARED ${libhttpSrcs} )
+add_library(httppp SHARED ${libhttpSrcs})
 
 target_compile_definitions(httppp PUBLIC -DSHARED)
 
-add_library(httppp-static STATIC ${libhttpSrcs} )
+add_library(httppp-static STATIC ${libhttpSrcs})
 
 generate_export_header(httppp)
 
 if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Windows")
-  target_link_libraries(httppp MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus)
-  target_link_libraries(httppp-static MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus)
+  target_link_libraries(httppp netplus::netplus-static cmdplus::cmdplus)
+  target_link_libraries(httppp netplus::netplus-static cmdplus::cmdplus)
 else()
-  target_link_libraries(httppp MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus pthread)
-  target_link_libraries(httppp-static MbedTLS::mbedcrypto netplus::netplus cmdplus::cmdplus pthread)
+  target_link_libraries(httppp netplus::netplus cmdplus::cmdplus pthread)
+  target_link_libraries(httppp-static netplus::netplus-static cmdplus::cmdplus pthread)
 endif()
 
 SET(CMAKE_INSTALL_LIBDIR lib CACHE PATH "Output directory for libraries")
@@ -44,9 +40,10 @@ install(TARGETS httppp EXPORT httpppTargets
   INCLUDES DESTINATION include
 )
 
-install(TARGETS httppp-static
+install(TARGETS httppp-static EXPORT httpppTargets
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  INCLUDES DESTINATION include
 )
 
 install(FILES httpd.h

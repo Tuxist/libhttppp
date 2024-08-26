@@ -31,7 +31,12 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+
+#include <config.h>
+
+#ifndef Windows
 #include <unistd.h>
+#endif
 
 #include <http.h>
 #include <httpd.h>

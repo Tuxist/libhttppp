@@ -199,8 +199,8 @@ libhttppp::HttpD::HttpD(int argc, char** argv) {
 
             cert.push_back('\0');
             
-            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.data(),
-                                             cert.size(),(const unsigned char*)key.data(),key.size());
+//            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.data(),
+//                                             cert.size(),(const unsigned char*)key.data(),key.size());
         }else{
             #ifndef Windows
             if (portset == true)
@@ -247,8 +247,8 @@ libhttppp::HttpD::HttpD(const char *httpaddr, int port,int maxconnections,const 
 
             cert.push_back('\0');
 
-            _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.data(),
-                                             cert.size(),(const unsigned char*)key.data(),key.size());
+ //           _ServerSocket = new netplus::ssl(httpaddr, port, maxconnections,-1,(const unsigned char*)cert.data(),
+ //                                            cert.size(),(const unsigned char*)key.data(),key.size());
         }else{
             #ifndef Windows
             if (port != -1)

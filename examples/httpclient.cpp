@@ -80,9 +80,11 @@ size_t readchunk(const char *data,size_t datasize,size_t &pos){
 }
 
 int main(int argc, char** argv){
+#ifndef Windows
   signal(SIGPIPE, SIG_IGN);
+#endif
   netplus::tcp cltsock;
-  netplus::tcp srvsock(argv[1],atoi(argv[2]),1,0);
+  netplus::tcp srvsock(argv[1],(SOCKET)atoi(argv[2]),1,0);
   try{
     srvsock.connect(&cltsock);
 
@@ -101,14 +103,14 @@ int main(int argc, char** argv){
       return -1;
     }
 
-    char data[16384];
+    char *data = new char[16384];
     size_t recv=srvsock.recvData(&cltsock,data,16384);
 
     std::string html;
     libhttppp::HttpResponse res;
     size_t len=recv,chunklen=0,hsize=0;
     bool chunked=false;
-    int rlen=0;
+    long long rlen=0;
 
     hsize=res.parse(data,recv);
 
@@ -122,15 +124,15 @@ int main(int argc, char** argv){
         }
     }catch(...){
         chunked=false;
-        rlen=res.getContentLength();
+        rlen=(long)res.getContentLength();
     };
 
     if(!chunked){
       do{
         html.append(data+hsize,recv-hsize);
-        rlen-=recv-hsize;
+        rlen-=((long)recv-hsize);
         if(rlen>0){
-          recv=srvsock.recvData(&cltsock,data,16384);
+          recv=(long)srvsock.recvData(&cltsock,data,16384);
           hsize=0;
         }
       }while(rlen>0);
@@ -147,6 +149,9 @@ int main(int argc, char** argv){
         }
       }while((chunklen=readchunk(data,recv,cpos))>0);
     }
+
+    delete[] data;
+
     std::cout << html << std::endl;
     return 0;
   }catch(netplus::NetException &exp){
