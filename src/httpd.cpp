@@ -72,9 +72,9 @@ void libhttppp::HttpEvent::RequestEvent(netplus::con* curcon,const int tid,void 
 REQUESTHANDLING:
         switch(cureq->getRequestType()){
             case 0:
-                std::cout.write(cureq->RecvData.data(),cureq->RecvData.size())<<std::endl;
                 cureq->parse();
                 goto REQUESTHANDLING;
+                break;
             case GETREQUEST:
                 RequestEvent(cureq,tid,args);
                 break;
@@ -84,11 +84,12 @@ REQUESTHANDLING:
                     cureq->RecvData.resize(cureq->getContentLength());
                 }
                 break;
-            default:
+            default:{
                 cureq->clear();
                 libhttppp::HTTPException re;
                 re[libhttppp::HTTPException::Error] << "unknown requesttype !";
                 throw re;
+            }
         }
     }catch(HTTPException &e){
         netplus::NetException re;

@@ -4,7 +4,7 @@ enable_testing ()
 
 set(LIBV "1.0.0")
 set(Upstream_VERSION 1.0.0)
-set (BLOCKSIZE 1500 CACHE STRING "Block size from Network Packages")
+set (BLOCKSIZE 16384 CACHE STRING "Block size from Network Packages")
 set (DEFAULT_UPLOADSIZE 4e+6 CACHE STRING "Block size from Network Packages")
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
