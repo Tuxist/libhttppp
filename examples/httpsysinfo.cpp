@@ -63,7 +63,7 @@
 </div></div></body></html>"
 
 libhtmlpp::HtmlPage     SysPage;
-libhtmlpp::HtmlElement *RootNode;
+libhtmlpp::HtmlElement  RootNode;
 
 class Sysinfo{
 public:
@@ -108,7 +108,7 @@ public:
         libhtmlpp::HtmlString html;
         html << "<div><span>KernelInfo:</span> <br/> </div> ";
         /*convert Htmlstring to Html Dom element*/
-        libhtmlpp::HtmlElement *div=html.parse();
+        libhtmlpp::HtmlElement *div=(libhtmlpp::HtmlElement*)html.parse();
 
         /*append table to dom element div*/
         div->appendChild(&table);
@@ -208,7 +208,7 @@ int main(int argc, char** argv){
         /*loads Macro INDEXPAGE into class HtmlPage for parsing and
          *return the first element from indexpage normaly <!DOCTYPE html>
          */
-        RootNode=SysPage.loadString(INDEXPAGE);
+        SysPage.loadString(RootNode,INDEXPAGE);
         /*parse cmd for port , bind address and etc ...
          *after that mainloop will started so you
          * to send interuppt signal if you want running the code afterwards
