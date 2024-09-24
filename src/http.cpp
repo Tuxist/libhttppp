@@ -227,7 +227,7 @@ libhttppp::HttpHeader::HeaderData::~HeaderData(){
 }
 
 libhttppp::HttpHeader::~HttpHeader(){
-  delete _firstHeaderData;
+    clear();
 }
 
 libhttppp::HttpResponse::HttpResponse() : HttpHeader(){
