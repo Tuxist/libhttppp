@@ -1323,7 +1323,6 @@ void libhttppp::HttpCookie::setcookie(HttpResponse *curresp,
     
 }
 
-
 void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
   HttpHeader::HeaderData *hc = curreq->getData("cookie");
 
@@ -1348,6 +1347,7 @@ void libhttppp::HttpCookie::parse(libhttppp::HttpRequest* curreq){
           delimeter = cpos;
       }else if (cpos+1 == cdat.size()) {
 		  delimeter = cpos;
+          ++delimeter;
 	  }
 	  if (keyendpos != -1 && delimeter != -1) {
 		  CookieData* curcookie = addCookieData();
