@@ -707,10 +707,10 @@ void libhttppp::HttpRequest::send(netplus::socket* src,netplus::socket* dest){
   printHeader(header);
 
   try {
-    size_t send=dest->sendData(src,(void*)header.c_str(),header.length());
+    size_t send=src->sendData(dest,(void*)header.c_str(),header.length());
 
     while(send<_Request.length()){
-      send+=dest->sendData(src,(void*)_Request.substr(send,_Request.length()-send).c_str(),
+      send+=src->sendData(dest,(void*)_Request.substr(send,_Request.length()-send).c_str(),
                           _Request.length()-send);
     }
   }catch(netplus::NetException &e){
