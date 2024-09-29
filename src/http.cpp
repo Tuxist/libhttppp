@@ -305,12 +305,32 @@ size_t libhttppp::HttpResponse::printHeader(std::vector<char> &buffer){
         }
     };
 
+    auto appendKey=[&buffer](const char *data){
+
+        bool start=true;
+
+        for(size_t i=0; i<strlen(data); ++i){
+            if(start)
+              buffer.push_back(toupper(data[i]));
+            else
+              buffer.push_back(data[i]);
+            switch(data[i]){
+              case '-':
+                  start=true;
+                  break;
+              default:
+                  start=false;
+                  break;
+            }
+        }
+    };
+
     append(_Version.c_str());
     append(" ");
     append(_State.c_str());
     append("\r\n");
     for(HeaderData *curdat=getfirstHeaderData(); curdat; curdat=nextHeaderData(curdat)){ 
-        append(getKey(curdat));
+        appendKey(getKey(curdat));
         append(": ");
         if(getValue(curdat))
             append(getValue(curdat));
